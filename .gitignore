@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.expo/
+.next/
+dist/
+build/
+*.log
+.DS_Store
+Thumbs.db
+*.keystore
+*.jks
+supabase/.temp/
+.turbo/
+coverage/
