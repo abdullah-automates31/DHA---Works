@@ -20,8 +20,6 @@ MOCK=$!
 SERVE=$!
 trap 'kill $MOCK $SERVE 2>/dev/null; docker rm -f $(docker ps -q --filter name=supabase_edge_runtime_dha-works) >/dev/null 2>&1; rm -f "$ENVF" "$LOG"' EXIT
 
-echo "NOTE: applying the grants from REQUIRED_GRANTS.sql to the LOCAL database only (they are not in any migration yet)"
-psql < supabase/functions/send-push/REQUIRED_GRANTS.sql >/dev/null
 U1=00000000-0000-0000-0000-0000000000e1; U2=00000000-0000-0000-0000-0000000000e2; U3=00000000-0000-0000-0000-0000000000e3
 psql <<SQL
 insert into auth.users (id, aud, role, email) values
