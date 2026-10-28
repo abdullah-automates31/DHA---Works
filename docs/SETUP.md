@@ -51,3 +51,18 @@ pnpm dev                 # runs apps through Turborepo
 - A leftover Relay project (another product, other account) may auto-start in Docker; never touch it. Stop with `supabase stop --project-id Relay`.
 - The `pg-delta` "failed to cache migrations catalog" warning after `db push` is harmless.
 - Full session handover: [HANDOVER.md](HANDOVER.md).
+
+## Environments and branches (set 28 Oct)
+
+GitHub: `https://github.com/abdullah-automates31/DHA---Works.git`
+
+| Environment | Git branch | Supabase project | Status |
+| --- | --- | --- | --- |
+| **Dev** | `dev` | `xiozwoocisesgmegewww` (the currently linked project) | Active. All work goes here. |
+| **Production** | `main` | not created yet | The user creates it later (new project, own ref, own keys) and links it only at release time. |
+
+Rules:
+- All work happens on `dev` (or short branches off `dev`). Nothing is pushed to `main` or to a production Supabase project until the user says so.
+- Release = merge `dev` into `main`, then the user runs `supabase link --project-ref <prod ref>` and `supabase db push` against production. Link back to the dev ref afterwards.
+- Migrations are the same files in both environments; never edit either database by hand.
+- Keep separate keys per environment in untracked `.env` files; only `.env.example` is committed.

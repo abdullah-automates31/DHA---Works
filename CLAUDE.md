@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 13 migrations in `supabase/migrations` (0001 to 0012 pushed to hosted project ref `xiozwoocisesgmegewww`; 0013 local until the user runs `supabase db push`). pgTAP: `supabase/tests/job_lifecycle.test.sql`, 52 assertions.
 - Commands (Supabase CLI, Docker running): `supabase db reset`, `supabase test db`, `supabase db lint --local`, `supabase migration list --linked`. The user runs `login`, `link` and `db push` themselves.
 - **Never touch the Relay project** (other product, old account) or the abandoned `dha-suite` ref. The Supabase MCP connector is logged in to the old account: do not use it here.
+- **Branches: work on `dev` only.** `main` = production, no Supabase production project exists yet; the linked project `xiozwoocisesgmegewww` is DEV. Remote: github.com/abdullah-automates31/DHA---Works. Never push to `main` unless the user says so (see docs/SETUP.md).
 - Commit messages end with `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. Nothing is committed yet; ask before committing.
 - When a requirement is unclear, build what is clear and record the rest in `docs/OPEN-QUESTIONS.md` for Shariq (the user's standing instruction).
 

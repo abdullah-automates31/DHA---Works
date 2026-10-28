@@ -7,7 +7,7 @@ Read this first in a new session. It is the detailed record of where the work st
 - Documentation is complete and rewritten for the competing-quotes model (27 Oct).
 - **Database and mobile API are written, tested locally and pushed** to the hosted Supabase project (migrations 0001 to 0012). Migration **0013 is written and tested locally but NOT pushed**. The user must run `supabase db push` in their own PowerShell.
 - No app code exists: no Customer app, Worker app, admin portal, Edge Function or `packages/*` yet.
-- **Nothing is committed to git.** `supabase/` and the doc changes are uncommitted (branch `master`; main branch is `main`). Commit messages end with `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
+- **Git:** everything is committed and pushed to `https://github.com/abdullah-automates31/DHA---Works.git`. Branches: `main` (production, untouched) and `dev` (all work, tracks origin/dev). Local `master` was renamed `main`. The linked Supabase project `xiozwoocisesgmegewww` is the DEV database; no production project exists yet (see SETUP.md). Commit messages end with `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
 
 ## 2. Accounts, projects and environment (do not mix these up)
 
@@ -75,7 +75,7 @@ The user's instruction: build what is clear, leave what is unsure, they will con
 ## 7. Next steps, in order
 
 1. User runs `supabase db push` to put 0013 on the hosted project; then verify with `supabase migration list --linked` and `supabase db lint --linked`.
-2. Commit `supabase/` and docs (ask the user first).
+2. (Done 28 Oct) Committed and pushed to `dev`. Keep working on `dev`.
 3. When Shariq answers: apply the worker-only cash change (0014) if confirmed; adjust the bill and rating rules if assumptions were wrong; clarify "v2 need expiry".
 4. Write the second pgTAP file: concurrent accept, sweeps, cancellation requests, report windows, storage policies, RLS across residents. Add `supabase/seed.sql` for dev.
 5. Expo push Edge Function (reads `notifications` where `push_sent_at is null`).
