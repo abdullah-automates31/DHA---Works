@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Database and mobile API built; no app code yet.** Read `docs/HANDOVER.md` first in every session: it has the full state, accounts, pending questions and next steps. Shariq Bhai (25 Oct) approved Supabase on the free tier and the order: DB + mobile-app APIs, then mobile apps, then the admin portal. The full architecture is not formally approved. Do not scaffold apps or create Supabase projects without explicit approval. `docs/` is the source of truth; `README.md` has the reading order.
 
-- 13 migrations in `supabase/migrations` (0001 to 0012 pushed to hosted project ref `xiozwoocisesgmegewww`; 0013 local until the user runs `supabase db push`). pgTAP: `supabase/tests/job_lifecycle.test.sql`, 52 assertions.
+- 13 migrations in `supabase/migrations` (0001 to 0012 pushed to hosted project ref `xiozwoocisesgmegewww`; 0013 local until the user runs `supabase db push`). pgTAP: `supabase/tests/*.test.sql`, 106 assertions in 2 files, plus the concurrent race script `supabase/tests/concurrency/accept_race.sh`.
 - Commands (Supabase CLI, Docker running): `supabase db reset`, `supabase test db`, `supabase db lint --local`, `supabase migration list --linked`. The user runs `login`, `link` and `db push` themselves.
 - **Never touch the Relay project** (other product, old account) or the abandoned `dha-suite` ref. The Supabase MCP connector is logged in to the old account: do not use it here.
 - **Branches: work on `dev` only.** `main` = production, no Supabase production project exists yet; the linked project `xiozwoocisesgmegewww` is DEV. Remote: github.com/abdullah-automates31/DHA---Works. Never push to `main` unless the user says so (see docs/SETUP.md).

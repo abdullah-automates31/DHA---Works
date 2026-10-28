@@ -47,9 +47,9 @@ Verified: `supabase db reset` applies all 13; `supabase db lint --local` and `--
 
 ## 4. Tests
 
-`supabase/tests/job_lifecycle.test.sql` (pgTAP, `no_plan`, helper schema `tests` with `act(uuid)` / `back()`): **52 assertions pass** (`supabase test db`). Covers draft and post, feed visibility, competing quotes, reject and no re-entry, single accept, privacy of `job_private` and worker phone, start, complete (bill rules), cash write-once, review anonymity and rating aggregate, price mismatch closes the job, low rating files a report, audit_log append-only.
+Two pgTAP files, **106 assertions pass** (`supabase test db`): `job_lifecycle.test.sql` (52: draft and post, feed visibility, competing quotes, reject and no re-entry, single accept, privacy, start/complete and bill rules, cash write-once, price mismatch closes the job, review anonymity, low rating report, audit append-only) and `lifecycle_edges.test.sql` (54: resident-vs-resident isolation, direct-write denial, cancellation requests, report rules and 7-day window, expiry, 20h reminder, stuck-job and rating-reminder sweeps, storage policies). Helper schema `tests` with `act(uuid)` / `back()`.
 
-**Not tested yet:** a real concurrent `accept_quote` race, the expiry / stuck / rating sweeps, cancellation requests, `file_report` windows, storage policies, resident-vs-resident RLS. No `supabase/seed.sql` (reset prints a harmless warning).
+`supabase/tests/concurrency/accept_race.sh` (local only, commits throwaway rows, run `supabase db reset` after): two real sessions accept different quotes on one job; exactly one wins and the other gets "this job can no longer accept a quote". **PASS (29 Oct).** Not tested yet: `file_report` for resident-vs-worker edge cases beyond the above, Realtime, Edge Functions. No `supabase/seed.sql` (reset prints a harmless warning).
 
 ## 5. Shariq Bhai's feedback (27 Oct, reported 28 Oct) and its status
 
@@ -77,7 +77,7 @@ The user's instruction: build what is clear, leave what is unsure, they will con
 1. User runs `supabase db push` to put 0013 on the hosted project; then verify with `supabase migration list --linked` and `supabase db lint --linked`.
 2. (Done 28 Oct) Committed and pushed to `dev`. Keep working on `dev`.
 3. When Shariq answers: apply the worker-only cash change (0014) if confirmed; adjust the bill and rating rules if assumptions were wrong; clarify "v2 need expiry".
-4. Write the second pgTAP file: concurrent accept, sweeps, cancellation requests, report windows, storage policies, RLS across residents. Add `supabase/seed.sql` for dev.
+4. (Done 29 Oct) Second pgTAP file and the concurrent accept race. Still to add: `supabase/seed.sql` for dev.
 5. Expo push Edge Function (reads `notifications` where `push_sent_at is null`).
 6. Generate TypeScript types into `packages/supabase` (`supabase gen types typescript --linked`).
 7. Scaffold the monorepo (pnpm + Turborepo) and start the Customer app. Needs explicit approval first (CLAUDE.md says do not scaffold apps without it).
