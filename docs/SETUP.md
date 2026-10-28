@@ -67,3 +67,7 @@ Rules:
 - Release = merge `dev` into `main`, then the user runs `supabase link --project-ref <prod ref>` and `supabase db push` against production. Link back to the dev ref afterwards.
 - Migrations are the same files in both environments; never edit either database by hand.
 - Keep separate keys per environment in untracked `.env` files; only `.env.example` is committed.
+
+## Push Edge Function (built 29 Oct, not deployed)
+
+`supabase/functions/send-push`, see its README. Local checks: `cd supabase/functions/send-push && deno test`, and `bash supabase/functions/send-push/integration/run.sh` (then `supabase db reset`). Deploying needs: the grants in `REQUIRED_GRANTS.sql` as a migration, `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, and a scheduler call. Types: `packages/supabase/database.types.ts` was generated from DEV with `supabase gen types typescript --linked`.

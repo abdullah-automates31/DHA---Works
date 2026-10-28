@@ -89,3 +89,13 @@ The user's instruction: build what is clear, leave what is unsure, they will con
 - UI reference (outside the repo): `C:\Users\Abdullah Ali\DHA-Works-UI\` (`SPEC.md`, screenshots; ignore `.dc.html`). Screen ids: C = customer, W = worker, A = admin.
 - Claude's own memory index: `C:\Users\Abdullah Ali\.claude\projects\C--Users-Abdullah-Ali-dha-works\memory\MEMORY.md`.
 - Full old conversation transcript: `C:\Users\Abdullah Ali\.claude\projects\C--Users-Abdullah-Ali-dha-works\5489b549-2150-4e6a-b922-b482bb0cd147.jsonl`.
+
+## 9. Update 29 Oct: migration 0013 on DEV, types, push function
+
+- **0013 applied to DEV** (`xiozwoocisesgmegewww`) via `supabase db push` after checking branch `dev`, the linked ref and a dry run. Remote history matches local (0001 to 0013), `supabase db lint --linked` clean, and the generated types confirm `jobs.material_bill_path`, `complete_job(p_job_id, p_bill_path)` and the `poor_work` kind. Section 3's note "0013 local only" is now obsolete.
+- **Types:** `packages/supabase/database.types.ts` (generated from DEV; there is no package.json there yet, the monorepo is not scaffolded). Regenerate after every migration.
+- **Push Edge Function:** `supabase/functions/send-push` (handler, lib, 23 Deno tests, integration script with a mock Expo server). **Not deployed.** Design and security notes in its README.
+- **Blocker found:** `service_role` has no table privileges on `notifications`, `device_tokens`, `profiles`. A migration with the grants in `supabase/functions/send-push/REQUIRED_GRANTS.sql` is needed before deployment. Not written, because the task said not to change migrations; needs the user's go-ahead.
+- Also still needed for push: a scheduler (pg_cron + pg_net or a database webhook) calling the function with the secret, `PUSH_DISPATCH_SECRET`, an Expo project and real devices.
+- New pgTAP file `notifications_privacy.test.sql`. Totals: 125 pgTAP assertions in 3 files, 23 Deno tests, 13 integration checks, 1 concurrent race script.
+- Still pending Shariq: worker-only cash, "v2 need expiry", the bill and rating assumptions (section 5).
