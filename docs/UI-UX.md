@@ -122,3 +122,16 @@ Short, friendly, plain English. Say what happens next. Show money as "Rs 3,000".
 
 - Helpline 1092 wording and FAQ answers (Shariq).
 - App names and icons (pending).
+
+## 10. Design queries from Shariq Bhai (27 Oct, reported 28 Oct)
+
+Screens are in `DHA-Works-UI/` (outside this repo); these are the corrections the design owner must make. Nothing here has been drawn yet.
+
+- **Customer status variations:** make a status-variation screen for the customer app, like the worker app has, one frame per job status.
+- **C13 Job status timeline:** the last step "Cash paid and review" is replaced by **"Review pending"** as a single standalone step. Cash collected by the worker shows as its own status on C13. The button "Work finished? Confirm cash paid" is **pending Shariq**: if cash becomes worker-only, it goes away and C20 is removed.
+- **W11 My jobs:** remove all action buttons.
+- **Direct requests screen:** remove it (direct booking is out of MVP 1).
+- **Worker complete-job screen (W12):** add a mandatory **material bill photo** upload (needed when the quote has materials). Typing a list of materials stays optional.
+- **C20 / W13:** drop the "disputed" state added in section 8; a price difference never disputes a job. Pending: whether C20 itself goes.
+- **Rating screen:** a rating below 3 files a Poor work report automatically; the resident may be told "staff will review this".
+- **"v2 need expiry":** unclear, pending (quote expiry?).

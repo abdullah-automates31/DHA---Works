@@ -43,3 +43,11 @@ pnpm dev                 # runs apps through Turborepo
 - Preview builds: EAS preview (APK for testers).
 - Production: EAS production build to the Play Store.
 - Admin: Vercel preview and production.
+
+## Supabase CLI workflow (as used, 28 Oct)
+
+- Windows: Supabase CLI 2.109.1 and Docker Desktop. Local stack: `supabase start`, `supabase db reset` (applies all migrations), `supabase test db` (pgTAP), `supabase db lint --local`.
+- Hosted project (production-like, free tier): ref `xiozwoocisesgmegewww`, eu-west-1, Postgres 17, account `dhaworks.developments@gmail.com`. The user runs `supabase login`, `supabase link --project-ref xiozwoocisesgmegewww` and `supabase db push` themselves in their own PowerShell. Check with `supabase migration list --linked` and `supabase db lint --linked`.
+- A leftover Relay project (another product, other account) may auto-start in Docker; never touch it. Stop with `supabase stop --project-id Relay`.
+- The `pg-delta` "failed to cache migrations catalog" warning after `db push` is harmless.
+- Full session handover: [HANDOVER.md](HANDOVER.md).

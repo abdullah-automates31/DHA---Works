@@ -39,7 +39,7 @@ Screen numbers (C05, W07, A03 and so on) refer to `DHA-Works-UI/`. Rules are in 
 
 1. Worker and resident each enter the amount paid, in either order, and cannot edit it afterwards.
 2. Equal amounts: the job becomes **Cash collected**; any difference from the quote is recorded.
-3. Different amounts: the job becomes **Disputed** and a cash report is sent to staff.
+3. Different amounts: the job still becomes **Cash collected**; both amounts are kept for staff. The resident can report a problem or rate below 3 (which files a Poor work report automatically).
 
 ## 5. Report a problem or an unsafe situation (C14, W14)
 

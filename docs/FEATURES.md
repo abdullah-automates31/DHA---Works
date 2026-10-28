@@ -67,7 +67,7 @@ IDs match the screens in `DHA-Works-UI/` (C = resident app, W = worker app, A = 
 - **Atomic quote acceptance.** Accepting one quote rejects the rest in one transaction, once only.
 - **24-hour expiry** of open jobs (hourly sweep), with repost.
 - **Server-calculated quote totals.** The total cannot be tampered with.
-- **Cash cross-check.** Both sides record the amount; mismatches become disputes.
+- **Cash cross-check.** Both sides record the amount; differences are stored for staff, never auto-disputed.
 - **Contact release.** Phone and plot number are shown only after acceptance.
 - **Notifications.** In-app and push (Expo); stored so nothing is lost if push fails.
 - **Audit log.** Append-only; nobody can edit or delete rows.

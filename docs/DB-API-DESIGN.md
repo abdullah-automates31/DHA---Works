@@ -28,11 +28,11 @@ draft -> open -> interested -> quoted -> accepted -> scheduled -> in_progress ->
 | (revision, **MVP 2**) | `approve_revision`, `reject_revision` | owning resident | revision pending | approve: new quote becomes the agreed one, old one `superseded`, `cash_records.agreed_amount` updated; reject: original quote stands (rejected revision still counts toward the limit) |
 | (withdraw) | `withdraw_quote`, `withdraw_interest` | worker | before accepted | recompute stage |
 | scheduled -> in_progress | `start_job` | accepted worker | | |
-| in_progress -> completed | `complete_job` | accepted worker | | prompts both for cash |
-| (cash) | `record_cash_worker`, `confirm_cash_resident` | worker / resident | job completed; either side may go first | when both present: equal -> `cash_collected`; different -> `disputed` + auto report kind `cash_price` |
-| cash_collected -> reviewed | `submit_review` | resident | one per job | updates worker rating |
+| in_progress -> completed | `complete_job(job, bill_path)` | accepted worker | | material bill photo required when the accepted quote has materials above 0 (ASSUMED, see OPEN-QUESTIONS); prompts both for cash |
+| (cash) | `record_cash_worker`, `confirm_cash_resident` | worker / resident | job completed; either side may go first | when both present -> `cash_collected` always. Worker/resident gap and gap against the quote stay on `cash_records`. A price difference never disputes a job (Shariq, 27 Oct) |
+| cash_collected -> reviewed | `submit_review` | resident | one per job | updates worker rating; mean score below 3 also files a system-generated `poor_work` report |
 | -> cancelled | `cancel_job` | resident before accept; staff later (admin phase) | reason | notify workers who quoted |
-| -> disputed | `file_report` (kind cash/unsafe) or cash mismatch | either party | job from scheduled onward | staff alert |
+| -> disputed | no longer set by cash mismatch; `disputed` stays in the enum, unused for now. `file_report` flags the job (`under_review_reason`) without changing status | either party | job from scheduled onward | staff alert |
 
 Recommendation (needs Shariq): `accept_quote` moves the job straight to `scheduled` because every quote carries a visit window, so `accepted` is never visible to users. Keep `accepted` in the enum (SPEC lists it) but treat it as transient.
 
@@ -158,7 +158,7 @@ Unapproved or suspended users can read their own profile and status but cannot p
 ## 7. Background jobs and notifications
 
 - DB triggers write `notifications` rows for: new matching job, quote received, quote accepted, quote not selected, scheduled reminder, cash recorded, rating reminder, account verified, report received. An Edge Function sends push via Expo (still the only Edge Function for the mobile phase).
-- `pg_cron`: expire jobs not accepted within 24 hours (hourly sweep, reminder at 20h), flag stuck jobs (see section 9, item 15), send rating reminders, purge drafts. Both are available on the free tier.
+- `pg_cron`: expire jobs not accepted within 24 hours (hourly sweep, reminder at 20h), flag stuck jobs (see section 9, item 15), send rating reminders. Drafts are not purged. Both are available on the free tier.
 - Unsafe reports trigger an immediate staff alert row now; the admin UI shows it later.
 
 ## 8. Free-tier constraints that shape the build
@@ -200,3 +200,10 @@ Unapproved or suspended users can read their own profile and status but cannot p
 1. Shariq reviews this doc and answers section 9.
 2. Update PRD, USER-FLOWS, ARCHITECTURE, DATA-MODEL, TESTING to match.
 3. Write migrations in this order: extensions and enums; identity and verification; catalogue and settings; jobs, interests, quotes; cash, reviews, reports; notifications and audit; RLS; RPCs; seed; pgTAP tests. Review each before the next.
+
+## 11. Changes from Shariq's feedback (27 Oct, applied 28 Oct, migration 0013)
+
+- `jobs.material_bill_path`; `complete_job` requires it when the accepted quote has materials above 0.
+- A cash difference no longer disputes the job or files a `cash_price` report; the job closes as `cash_collected`.
+- `submit_review` with a mean score below 3 files a system-generated `poor_work` report.
+- Drafts are not purged (section 7 updated).

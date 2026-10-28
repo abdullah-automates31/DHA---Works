@@ -100,8 +100,8 @@ Statuses (stored): `draft`, `open`, `interested`, `quoted`, `accepted` (unused f
 ## 7. Cash
 
 1. After the worker marks the job completed, the worker and the resident each enter the amount paid, in either order.
-2. If both amounts are equal the job becomes Cash collected, even if it differs from the quote. The difference is recorded for staff.
-3. If they differ, the job becomes **Disputed** and a report is created for staff. It never closes automatically.
+2. When both amounts are in, the job becomes Cash collected, even if the amount differs from the quote or from the other side. The differences are recorded for staff. **A price difference never disputes a job** (Shariq, 27 Oct); the resident can file a report separately or rate below 3, which files a Poor work report automatically.
+3. Disputed stays in the status list but nothing sets it from cash for now.
 4. A submitted amount cannot be edited. Corrections go through staff dispute resolution.
 5. Matching entries show both sides agree on the reported payment; they do not prove it happened.
 
@@ -156,7 +156,7 @@ In-app and push (Expo). Stored so nothing is lost if push fails.
 | Quote accepted / not selected / rejected | Worker |
 | Job expiring (20 hours) / expired | Resident (and workers who quoted) |
 | Job scheduled reminder, started, completed | Other party |
-| Cash recorded, amount mismatch | Other party and staff |
+| Cash recorded | Other party |
 | Rating reminder; rating received (average updated) | Resident; worker |
 | Account approved, needs changes, visit HQ, rejected, suspended | The user |
 | Report received, updated, resolved; unsafe alert | Both parties; staff |

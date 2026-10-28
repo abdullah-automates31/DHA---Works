@@ -66,7 +66,7 @@ Allowed transitions are enforced in the database (one function per transition), 
 | scheduled | in progress | Worker starts | Accepted worker |
 | in progress | completed | Worker marks done | Accepted worker |
 | completed | cash collected | Both sides record equal amounts | Worker and resident |
-| completed (and later) | disputed | Amounts differ, or a report | System, either party |
+| completed (and later) | disputed | Not set by cash any more (price differences never dispute a job, Shariq 27 Oct). Enum value kept, unused for now | - |
 | cash collected | reviewed | Resident rates | Owning resident |
 | open / interested / quoted | expired | 24 hours with no accepted quote | System (pg_cron) |
 | open / interested / quoted | cancelled | Resident cancels | Owning resident |

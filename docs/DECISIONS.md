@@ -15,7 +15,9 @@ Most recent first within each group. "Confirmed" means agreed with Shariq Bhai; 
 | Worker verification is manual, by DHA staff. Documents per the UI: CNIC, police certificate, photo (supersedes "CNIC only"). Outcomes: Approve / Visit HQ / Reject | Confirmed by Shariq (reported by user, 26 Oct) |
 | Residents are also verified by staff (CNIC + utility bill, one time) before they can post | Confirmed by Shariq (reported by user, 26 Oct) |
 | Job statuses: open, interested, quoted, accepted, scheduled, in_progress, completed, cash_collected, reviewed; side states disputed and cancelled | Per UI design (SPEC.md) |
-| Cash: worker records the amount, resident confirms; a mismatch moves the job to disputed | Confirmed by Shariq (reported by user, 26 Oct) |
+| Cash: worker records the amount, resident confirms; ~~a mismatch moves the job to disputed~~ | **Superseded 27 Oct**: a price difference never disputes a job (next rows) |
+| A price difference never disputes a job by itself; the resident complains separately or rates below 3. A rating below 3 adds a `poor_work` report automatically | Shariq, 27 Oct (reported by user, 28 Oct) |
+| Worker must upload a material bill (mandatory); typing a materials list is optional | Shariq, 27 Oct (reported by user, 28 Oct); exact trigger pending |
 | Safety: "Report a problem" and "I feel unsafe" in both apps; helpline 1092; staff see both phone numbers | Per UI design; helpline wording to confirm |
 | **MVP 2 (not MVP 1, per Shariq 26 Oct):** quote revisions: max 2 per job; allowed before work starts; after start only for unexpected extra work with explanation and itemised prices; resident must approve explicitly; all versions kept | Decided by user, 26 Oct |
 | ~~Discussion timeout is 24 hours~~ | Superseded by the competition model |

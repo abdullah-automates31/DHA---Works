@@ -32,3 +32,11 @@ Updated 27 Oct 2026. From this date the builder (Abdullah) decides the remaining
 ## Decided, kept here for reference
 
 Competing quotes model, 24-hour expiry with repost, accept goes straight to Scheduled, no re-quote after a rejected quote, contact details only after acceptance, several categories per worker (eight total), voice notes in MVP 1, no distance filter, no chat, draft jobs, cash rules, report window and outcomes, cancellation requests after acceptance, stuck-job flags, quote revisions in MVP 2, commission 0%, own backups. Details: [DECISIONS.md](DECISIONS.md).
+
+## From Shariq's 27 Oct feedback (assumed in migration 0013, to confirm)
+
+- Pending: is the material bill required on every job, or only when the quote has materials? Built: only when materials are above 0.
+- Pending: "rated below 3" is built as the mean of the three scores being below 3.
+- Pending: with a price difference the job closes as `cash_collected` and both amounts are kept for staff. Built that way.
+- Pending: "v2 need expiry" is not understood (quote expiry?). Nothing built.
+- UI only, no backend change: customer status-variation screen; C13 shows cash collected by the worker with a single "Review pending" view; remove W11 action buttons; remove the Direct requests screen.

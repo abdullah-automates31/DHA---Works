@@ -20,7 +20,7 @@ CI runs lint, type check and tests on every change. The database comes first (bu
 4. **Quote integrity.** Total is computed on the server from labour, materials and other; a tampered total is rejected; "other" needs a reason; a sent quote cannot be edited; one live quote per worker per job.
 5. **No re-quote.** A worker whose quote was rejected cannot quote the same job again; other workers can.
 6. **Expiry.** An open job older than 24 hours with no accepted quote becomes expired, its quotes expire and both sides are notified; accepted jobs do not expire; a draft never expires; repost copies the job.
-7. **Cash rules.** Either side can record first; amounts are write-once; equal amounts close the job and store the difference from the quote; unequal amounts set Disputed and create a report.
+7. **Cash rules.** Either side can record first; amounts are write-once; equal amounts close the job and store the difference from the quote; unequal amounts still close the job as Cash collected with `matched = false` (no dispute, no report).
 8. **Reports window.** Allowed from Scheduled until the setting's days after completion; blocked before and after; staff can still update existing reports.
 9. **Verification gating.** Pending, needs-changes, rejected and suspended users cannot post, quote or see the feed.
 10. **Storage access.** Another user's CNIC link cannot be opened; signed URLs expire.

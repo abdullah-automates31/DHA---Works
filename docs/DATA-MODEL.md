@@ -37,7 +37,9 @@ jobs 1--* reports 1--* report_photos, report_notes, report_calls
 - **Quote total** is computed by the database from labour, materials and other. A sent quote is immutable.
 - **No re-quote** after a rejection: `submit_quote` refuses a worker who already has a rejected quote on the job.
 - **Open jobs expire** 24 hours after posting (hourly pg_cron sweep); accepted jobs never expire.
-- **Cash:** each side's amount is write-once; equal amounts close the job and record `quote_difference`; unequal amounts set Disputed and create a report.
+- **Cash:** each side's amount is write-once; once both are in, the job closes as `cash_collected` and `quote_difference` and `matched` are stored for staff. A price difference never sets Disputed (Shariq, 27 Oct). Pending: Shariq may make cash worker-only (see OPEN-QUESTIONS).
+- **Material bill:** `jobs.material_bill_path`, required by `complete_job` when the accepted quote has materials above 0 (assumed rule).
+- **Low rating:** `submit_review` below 3 (mean of three scores) files a system `poor_work` report.
 - **Reviews:** one per job, only by the job's resident after Cash collected; the worker cannot read them (aggregate rating only).
 - **Contact release:** `job_private` (plot, floor, resident phone) is readable only by the owner, the accepted worker and staff.
 - **Reports:** allowed only from Scheduled until `report_window_days` after completion.
