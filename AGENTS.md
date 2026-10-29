@@ -15,7 +15,7 @@ DHA Works is a home-services marketplace for DHA Karachi. Backend first: Supabas
 ```powershell
 supabase start                 # local stack, project id dha-works, ports 553xx
 supabase db reset              # applies all migrations; no seed.sql (warning is harmless)
-supabase test db               # 6 pgTAP files, 255 assertions
+supabase test db               # 9 pgTAP files, 377 assertions
 supabase db lint --local
 ```
 

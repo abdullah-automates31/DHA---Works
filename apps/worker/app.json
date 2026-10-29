@@ -20,6 +20,20 @@
       "expo-font",
       "expo-secure-store",
       [
+        "expo-image-picker",
+        {
+          "cameraPermission": "DHA Works uses the camera so you can photograph your CNIC, police certificate and profile picture.",
+          "photosPermission": "DHA Works reads photos you choose for your CNIC, police certificate and profile picture.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "DHA Works uses the microphone to record your short voice introduction."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#0E5A3A",

@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
+import { isSessionGone } from '@/features/auth/errors';
 import { env } from './env';
 import { supabase } from './supabase';
 
@@ -25,6 +26,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     void supabase.auth.getSession().then(({ data }) => {
       if (active) setState((prev) => (prev.ready ? prev : { ready: true, session: data.session }));
+      if (!data.session) return;
+      // The stored token can outlive its account (user deleted, database reset): ask the server, and sign out if so.
+      void supabase.auth.getUser().then(({ error }) => {
+        if (active && isSessionGone(error)) void supabase.auth.signOut();
+      });
     });
 
     return () => {

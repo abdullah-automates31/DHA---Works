@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { authErrorKey } from './errors.ts';
+import { authErrorKey, isSessionGone } from './errors.ts';
 
 test('rate limits map to tooManyRequests', () => {
   assert.equal(authErrorKey({ code: 'over_email_send_rate_limit', status: 429 }), 'auth.errors.tooManyRequests');
@@ -26,4 +26,13 @@ test('anything else is generic and raw text is never returned', () => {
   assert.equal(authErrorKey({ code: 'unexpected_failure', message: 'secret internals' }), 'auth.errors.generic');
   assert.equal(authErrorKey(null), 'auth.errors.generic');
   assert.equal(authErrorKey(undefined), 'auth.errors.generic');
+});
+
+test('a deleted or reset account counts as a gone session; a network failure does not', () => {
+  assert.equal(isSessionGone({ code: 'user_not_found', status: 403 }), true);
+  assert.equal(isSessionGone({ code: 'session_not_found' }), true);
+  assert.equal(isSessionGone({ message: 'User from sub claim in JWT does not exist' }), true);
+  assert.equal(isSessionGone({ name: 'AuthRetryableFetchError', status: 0, message: 'Network request failed' }), false);
+  assert.equal(isSessionGone({ status: 429, code: 'over_request_rate_limit' }), false);
+  assert.equal(isSessionGone(null), false);
 });

@@ -1,0 +1,48 @@
+// Decides where a signed-in worker may be, from their profile. Pure and unit tested.
+// Screens that do not exist yet are temporary stand-ins (see docs/OPEN-QUESTIONS.md).
+
+export type ProfileSnapshot = {
+  role: 'resident' | 'worker' | 'admin';
+  verification_status: 'incomplete' | 'pending' | 'approved' | 'needs_changes' | 'visit_hq' | 'rejected';
+  account_status: 'active' | 'suspended';
+  full_name: string | null;
+  phone: string | null;
+  cnic: string | null;
+  gender: string | null;
+  date_of_birth: string | null;
+};
+
+export type AppRoute = '/about' | '/documents' | '/references' | '/work' | '/status' | '/home';
+
+export type StatusKind = 'wrong_role' | 'suspended' | 'pending' | 'visit_hq' | 'rejected';
+
+/** All five W02 fields are present (the rules for them live in the form and the database). */
+export function identityComplete(p: ProfileSnapshot): boolean {
+  return Boolean(p.full_name && p.phone && p.cnic && p.gender && p.date_of_birth);
+}
+
+/** Which message the temporary status screen shows, or null when the account has a real destination. */
+export function statusKind(p: ProfileSnapshot | null): StatusKind | null {
+  if (!p) return null;
+  if (p.role !== 'worker') return 'wrong_role';
+  if (p.account_status === 'suspended') return 'suspended';
+  switch (p.verification_status) {
+    case 'pending':
+      return 'pending';
+    case 'visit_hq':
+      return 'visit_hq';
+    case 'rejected':
+      return 'rejected';
+    default:
+      return null;
+  }
+}
+
+/** Routes the worker may be on, the first being where they are sent. */
+export function allowedRoutes(p: ProfileSnapshot | null): AppRoute[] {
+  if (!p) return ['/about'];
+  if (statusKind(p) !== null) return ['/status'];
+  if (p.verification_status === 'approved') return ['/home'];
+  // incomplete or needs_changes: identity first; once it is complete, the documents step and those after it.
+  return identityComplete(p) ? ['/documents', '/references', '/work', '/about'] : ['/about'];
+}

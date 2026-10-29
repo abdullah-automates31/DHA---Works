@@ -30,3 +30,19 @@ export function authErrorKey(error: ErrorLike): AuthErrorKey {
   }
   return 'auth.errors.generic';
 }
+
+/**
+ * True when the server says this sign-in no longer belongs to a real account (user deleted, session revoked,
+ * or a local database reset). A network failure is not 'gone': the person stays signed in and can retry.
+ */
+export function isSessionGone(error: ErrorLike): boolean {
+  if (!error) return false;
+  const code = error.code ?? '';
+  if (code === 'user_not_found' || code === 'session_not_found' || code === 'refresh_token_not_found') return true;
+  const message = (error.message ?? '').toLowerCase();
+  return (
+    message.includes('user from sub claim in jwt does not exist') ||
+    message.includes('user not found') ||
+    message.includes('session from session_id claim in jwt does not exist')
+  );
+}
