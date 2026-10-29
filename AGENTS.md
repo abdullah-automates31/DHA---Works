@@ -6,7 +6,7 @@ DHA Works is a home-services marketplace for DHA Karachi. Backend first: Supabas
 
 - `supabase/` (migrations, pgTAP tests, Edge Functions), `packages/supabase` (generated types) and, since 29 Oct, `apps/worker` (Expo SDK 58 worker app, foundation only). Minimal npm workspace at the root (`npm install` there); no pnpm, Turborepo or CI yet. Worker commands: `npm run worker:typecheck`, `worker:lint`, `worker:test`, `worker` (expo start). Do not scaffold other apps without approval.
 - 17 migrations: 0001-0015 applied locally and on the linked DEV project (`xiozwoocisesgmegewww`, verified 29 Oct); `0016` (submit_for_review drops the areas requirement; areas are chosen after approval) and `0017` (worker_feed.quote_count) are local only until the user asks for a push. `0014` = column-level grants to `service_role` for the push function; `0015` = removes TRUNCATE/REFERENCES/TRIGGER/MAINTAIN from anon, authenticated and service_role on public tables and views, and from postgres's default privileges in `public`. When docs disagree, trust `supabase migration list --linked`.
-- `supabase/dev/` holds LOCAL-ONLY developer scripts (`seed_open_jobs.sql`: fake resident and 5 open jobs; `seed_job_photos.mjs`: fake thumbnails for some of those jobs, uses the local key for one run; `approve_local_worker.sql`: marks one local test worker approved). Never run them on hosted DEV or production. They are not `seed.sql` on purpose: that runs on every `db reset` and the pgTAP tests expect an empty database apart from their own fixtures.
+- `supabase/dev/` holds LOCAL-ONLY developer scripts (`seed_open_jobs.sql`: fake resident and 5 open jobs; `seed_job_photos.mjs`: fake photos and a silent voice note for some of those jobs, uses the local key for one run; `approve_local_worker.sql`: marks one local test worker approved). Never run them on hosted DEV or production. They are not `seed.sql` on purpose: that runs on every `db reset` and the pgTAP tests expect an empty database apart from their own fixtures.
 - `supabase/functions/send-push` (Expo push dispatcher) is built and tested locally, **not deployed**. See its README for the security model.
 - `supabase/config.toml` intentionally registers `send-push` with `verify_jwt = false`. The handler enforces an `x-push-secret` shared secret; do not "harden" it by enabling JWT.
 - `packages/supabase/database.types.ts` is generated (`supabase gen types typescript --local`/`--linked`); regenerate, never hand-edit.
@@ -16,7 +16,7 @@ DHA Works is a home-services marketplace for DHA Karachi. Backend first: Supabas
 ```powershell
 supabase start                 # local stack, project id dha-works, ports 553xx
 supabase db reset              # applies all migrations; no seed.sql (warning is harmless)
-supabase test db               # 10 pgTAP files, 401 assertions
+supabase test db               # 12 pgTAP files, 490 assertions
 supabase db lint --local
 ```
 

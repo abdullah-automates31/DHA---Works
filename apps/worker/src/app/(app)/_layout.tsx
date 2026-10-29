@@ -51,7 +51,8 @@ function ProfileGate() {
       <Stack.Screen name="areas" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="notifications" />
-      <Stack.Screen name="job/[id]" />
+      <Stack.Screen name="job/[id]/index" />
+      <Stack.Screen name="job/[id]/quote" />
     </Stack>
   );
 }

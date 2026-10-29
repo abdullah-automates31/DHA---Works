@@ -4,11 +4,11 @@ import { test } from 'node:test';
 import { isCompleteOtp, isValidEmail, normalizeEmail, sanitizeOtp } from './validation.ts';
 
 test('normalizeEmail trims and lower-cases', () => {
-  assert.equal(normalizeEmail('  Usman.Khan@Gmail.com '), 'usman.khan@gmail.com');
+  assert.equal(normalizeEmail('  Usman.Khan@Example.com '), 'usman.khan@example.com');
 });
 
 test('accepts ordinary addresses', () => {
-  assert.ok(isValidEmail('usman.khan@gmail.com'));
+  assert.ok(isValidEmail('usman.khan@example.com'));
   assert.ok(isValidEmail(' a+tag@sub.example.pk '));
 });
 

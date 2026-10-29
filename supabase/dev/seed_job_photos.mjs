@@ -34,10 +34,16 @@ function solidPng(r, g, b, size = 64) {
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 }
 const COLOURS = [[207, 224, 214], [246, 231, 180], [214, 230, 247]];
+// A silent 2 second MP3 (77 frames of MPEG-1 Layer III, 128 kbps, 44.1 kHz), so the voice note on the first seeded job can be played.
+const silentMp3 = Buffer.concat(Array.from({ length: 77 }, () => Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])));
 const plan = [
-  ['11111111-1111-4111-8111-1111111111b1', 2], // Kitchen sink leakage: two photos
+  ['11111111-1111-4111-8111-1111111111b1', 3], // Kitchen sink leakage: three photos
+  ['11111111-1111-4111-8111-1111111111b2', 5], // AC not cooling: five photos (the detail row scrolls)
   ['11111111-1111-4111-8111-1111111111b3', 1], // Geyser not heating: one photo
 ];
+
+const voice = await admin.storage.from('job-media').upload(`${RESIDENT}/seed-voice.mp3`, silentMp3, { contentType: 'audio/mpeg', upsert: true });
+if (voice.error) throw new Error('voice upload failed: ' + voice.error.message);
 
 const rows = [];
 for (const [job, count] of plan) {

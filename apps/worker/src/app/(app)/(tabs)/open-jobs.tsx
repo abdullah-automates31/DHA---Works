@@ -6,6 +6,7 @@ import { PrimaryButton } from '@/components/AuthForm';
 import { FeedJobCard } from '@/components/FeedJobCard';
 import { feedSubtitle } from '@/features/feed/format';
 import { useFeed } from '@/features/feed/useFeed';
+import { jobHref } from '@/features/job/routes';
 import { t } from '@/i18n';
 import { useMyProfile } from '@/lib/profile';
 import { colors, fontFamily } from '@/theme';
@@ -53,7 +54,7 @@ export default function OpenJobsScreen() {
 
         {data.status === 'ready'
           ? data.jobs.map((job) => (
-              <FeedJobCard key={job.id} job={job} now={now} onPress={() => router.push({ pathname: '/job/[id]', params: { id: job.id } })} />
+              <FeedJobCard key={job.id} job={job} now={now} onPress={() => router.push(jobHref(job.id))} />
             ))
           : null}
       </ScrollView>

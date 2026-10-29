@@ -47,7 +47,7 @@ delete from public.job_views where job_id in (select id from public.jobs where r
 insert into public.jobs (id, resident_id, category_id, address_id, phase, lane, title, description, urgency, preferred_date, window_from, window_to, voice_note_path, status, posted_at)
 values
   ('11111111-1111-4111-8111-1111111111b1', '11111111-1111-4111-8111-111111111111', 1, '11111111-1111-4111-8111-1111111111a1', 6, 'Lane 7',
-   'Kitchen sink leakage', 'Water drips under the cabinet. Needs fixing this week.', 'asap', null, null, null, '11111111-1111-4111-8111-111111111111/seed-voice.m4a', 'open', now() - interval '12 minutes'),
+   'Kitchen sink leakage', 'Water drips under the cabinet. Needs fixing this week.', 'asap', null, null, null, '11111111-1111-4111-8111-111111111111/seed-voice.mp3', 'open', now() - interval '12 minutes'),
   ('11111111-1111-4111-8111-1111111111b2', '11111111-1111-4111-8111-111111111111', 3, '11111111-1111-4111-8111-1111111111a1', 6, 'Lane 7',
    'AC not cooling', 'The split AC runs but the room stays warm.', 'scheduled', current_date + 1, '11:00', '13:00', null, 'open', now() - interval '3 hours'),
   ('11111111-1111-4111-8111-1111111111b3', '11111111-1111-4111-8111-111111111111', 1, '11111111-1111-4111-8111-1111111111a1', 5, 'Lane 2',

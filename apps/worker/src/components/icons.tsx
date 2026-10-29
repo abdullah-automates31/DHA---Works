@@ -211,3 +211,10 @@ export const ToolIcon = (p: IconProps) => (
     <Path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
   </Icon>
 );
+
+export const UsersIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Circle cx="9" cy="8" r="3.5" />
+    <Path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5M17 5a3.5 3.5 0 0 1 0 7M19 15c2 .7 3 2.2 3 4.5" />
+  </Icon>
+);
