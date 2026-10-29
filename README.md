@@ -2,7 +2,7 @@
 
 A home-services marketplace for DHA Karachi. A verified resident posts a repair job with photos, several **verified** workers send **itemised quotes**, the resident accepts one, the work is done, and the customer pays **cash**. DHA staff verify every worker and resident and handle reports.
 
-> Status: **database and mobile API built, apps not started.** 13 migrations in `supabase/migrations` (12 pushed to the hosted Supabase project, 0013 local only until pushed), 106 pgTAP assertions pass. No app code yet. Shariq Bhai approved Supabase (free tier) and the order: database and mobile APIs, then mobile apps, then the admin portal. Start new sessions with [docs/HANDOVER.md](docs/HANDOVER.md). The DB and API design is in [docs/DB-API-DESIGN.md](docs/DB-API-DESIGN.md).
+> Status: **database and mobile API built, apps not started.** 15 migrations in `supabase/migrations`, all applied to the hosted DEV Supabase project; 217 pgTAP assertions pass. A push-notification Edge Function is built and tested locally but not deployed. No app code yet. Shariq Bhai approved Supabase (free tier) and the order: database and mobile APIs, then mobile apps, then the admin portal. Start new sessions with [docs/HANDOVER.md](docs/HANDOVER.md). The DB and API design is in [docs/DB-API-DESIGN.md](docs/DB-API-DESIGN.md).
 
 ## The three products
 
