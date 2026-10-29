@@ -5,7 +5,7 @@ DHA Works is a home-services marketplace for DHA Karachi. Backend first: Supabas
 ## State and layout
 
 - Backend only: `supabase/` (migrations, pgTAP tests, Edge Functions) and `packages/supabase/database.types.ts`. There is **no** root `package.json`, pnpm workspace, Turborepo, app code, or CI yet; do not run `pnpm`/`npm` scripts or scaffold apps without explicit approval.
-- 14 migrations. `0001`-`0013` are applied locally and on the linked DEV project (`xiozwoocisesgmegewww`, verified 29 Oct). `0014` (`send_push_grants`, column-level grants to `service_role` for the push function) is applied **locally only**; it is not on hosted DEV yet. When docs disagree, trust `supabase migration list --linked`.
+- 15 migrations. `0001`-`0014` are applied locally and on the linked DEV project (`xiozwoocisesgmegewww`, verified 29 Oct; 0014 = column-level grants to `service_role` for the push function). `0015` (`revoke_default_table_privileges`: removes TRUNCATE/REFERENCES/TRIGGER/MAINTAIN from anon, authenticated, service_role on public tables and in postgres's default privileges) is applied **locally only**; do not push it until the user approves. When docs disagree, trust `supabase migration list --linked`.
 - `supabase/functions/send-push` (Expo push dispatcher) is built and tested locally, **not deployed**. See its README for the security model.
 - `supabase/config.toml` intentionally registers `send-push` with `verify_jwt = false`. The handler enforces an `x-push-secret` shared secret; do not "harden" it by enabling JWT.
 - `packages/supabase/database.types.ts` is generated (`supabase gen types typescript --local`/`--linked`); regenerate, never hand-edit.
@@ -15,7 +15,7 @@ DHA Works is a home-services marketplace for DHA Karachi. Backend first: Supabas
 ```powershell
 supabase start                 # local stack, project id dha-works, ports 553xx
 supabase db reset              # applies all migrations; no seed.sql (warning is harmless)
-supabase test db               # 4 pgTAP files, 176 assertions
+supabase test db               # 5 pgTAP files, 217 assertions
 supabase db lint --local
 ```
 

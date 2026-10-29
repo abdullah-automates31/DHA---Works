@@ -1,7 +1,7 @@
 # send-push (Expo push dispatcher)
 
 Status: **implemented and tested locally, NOT deployed.** Deployment waits for
-the user's go-ahead, migration 0014 on hosted DEV, and a scheduler.
+the user's go-ahead, the secret and a scheduler (0014 is on hosted DEV).
 
 ## What it does
 
@@ -52,7 +52,7 @@ and `push_token` of `device_tokens` and delete rows; read `id` and
 `account_status` of `profiles`. Nothing for `anon` or `authenticated`.
 `supabase/tests/service_role_grants.test.sql` pins these privileges. If the
 function starts using another column, add a grant in a new migration and update
-that test. 0014 is applied locally only, not on hosted DEV yet.
+that test. 0014 is applied on hosted DEV (29 Oct).
 
 ## Tests
 

@@ -70,4 +70,4 @@ Rules:
 
 ## Push Edge Function (built 29 Oct, not deployed)
 
-`supabase/functions/send-push`, see its README. Local checks: `cd supabase/functions/send-push && deno test`, and `bash supabase/functions/send-push/integration/run.sh` (then `supabase db reset`). Deploying needs: migration `20261029000014_send_push_grants.sql` applied to the target project (local only so far), `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, and a scheduler call. Types: `packages/supabase/database.types.ts` was generated from DEV with `supabase gen types typescript --linked`.
+`supabase/functions/send-push`, see its README. Local checks: `cd supabase/functions/send-push && deno test`, and `bash supabase/functions/send-push/integration/run.sh` (then `supabase db reset`). Deploying needs: migration `20261029000014_send_push_grants.sql` applied to the target project (on DEV since 29 Oct), `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, and a scheduler call. Types: `packages/supabase/database.types.ts` was generated from DEV with `supabase gen types typescript --linked`.

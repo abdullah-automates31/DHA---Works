@@ -5,7 +5,7 @@ Read this first in a new session. It is the detailed record of where the work st
 ## 1. Where we are
 
 - Documentation is complete and rewritten for the competing-quotes model (27 Oct), plus Shariq's 27 Oct feedback.
-- **Database and mobile API:** 14 migrations. **0001 to 0013 are applied to hosted DEV** (`xiozwoocisesgmegewww`; 0013 on 29 Oct). **0014 (push-function grants) exists locally and passes all tests, but is NOT applied to hosted DEV.**
+- **Database and mobile API:** 15 migrations. **0001 to 0014 are applied to hosted DEV** (`xiozwoocisesgmegewww`; 0013 and 0014 on 29 Oct). **0015 (default-privileges cleanup) is committed and passes all tests locally, but is NOT applied to hosted DEV** (waiting for the user's approval).
 - **Push Edge Function** `supabase/functions/send-push`: built and tested locally, **NOT deployed**. No secret is set on DEV and no scheduler calls it.
 - **Types:** `packages/supabase/database.types.ts`, generated from DEV after 0013 (0014 only changes grants, so the types are unchanged).
 - No app code: no Customer app, Worker app, admin portal, root `package.json` or monorepo yet.
@@ -45,15 +45,17 @@ Rules: schema changes only as new migration files (never edit an existing one); 
 | 0011 | `pg_cron` hourly job `dw-hourly-sweeps` (`5 * * * *`): expire open jobs at 24 h with a 20 h reminder, flag stuck jobs, rating reminders. Drafts are not purged. | yes |
 | 0012 | private storage buckets `identity`, `job-media`, `worker-media`, `report-media`, path prefix `<uid>/...`, policies, `public.is_approved_worker` | yes |
 | 20261028000013 | Shariq's 27 Oct feedback: `jobs.material_bill_path`; `complete_job(job, bill_path)`; cash difference closes the job as `cash_collected` (never `disputed`, no `cash_price` report); `submit_review` below 3 files a system `poor_work` report; `resident_jobs` gains `material_bill_path`; `job_media_read` lets the resident read the bill | yes (29 Oct) |
-| **20261029000014** | **send-push grants:** column-level privileges for `service_role` only (read push columns of `notifications`, update `push_sent_at`; read `user_id, push_token` of `device_tokens` and delete; read `id, account_status` of `profiles`). Nothing for app users. | **no, local only** |
+| 20261029000014 | send-push grants: column-level privileges for `service_role` only (read push columns of `notifications`, update `push_sent_at`; read `user_id, push_token` of `device_tokens` and delete; read `id, account_status` of `profiles`). Nothing for app users. Hosted grants inspected after push: exact match. | yes (29 Oct) |
+| **20261029000015** | **default-privileges cleanup:** revokes TRUNCATE, REFERENCES, TRIGGER, MAINTAIN on all public tables and views from `anon`, `authenticated`, `service_role`, and removes them from the `postgres` default privileges in `public`. SELECT/INSERT/UPDATE/DELETE, column grants, RLS, policies, owners and Supabase schemas unchanged (verified by a before/after snapshot diff). | **no, local only** |
 
-Verified: `supabase db reset` applies all 14 locally; `supabase db lint --local` clean; hosted history matches local for 0001 to 0013 and `db lint --linked` is clean.
+Verified: `supabase db reset` applies all 15 locally; `supabase db lint --local` clean; hosted history matches local for 0001 to 0014 and `db lint --linked` is clean.
 
-The planned worker-only cash change (if Shariq confirms) will be **0015**.
+The planned worker-only cash change (if Shariq confirms) will be **0016**.
 
 ## 4. Tests (all local)
 
-- **pgTAP, `supabase test db`: 176 assertions in 4 files, all pass.**
+- **pgTAP, `supabase test db`: 217 assertions in 5 files, all pass.**
+  - `default_privileges.test.sql` (41): no app role holds TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on any public table or view, new tables and views get none by default, intended grants and RLS intact, `authenticated` and `service_role` can no longer truncate or lock, the audit-log guard still fires.
   - `job_lifecycle.test.sql` (52): draft and post, feed visibility, competing quotes, reject and no re-entry, single accept, privacy, start/complete and bill rules, cash write-once, price mismatch closes the job, review anonymity, low rating report, audit append-only.
   - `lifecycle_edges.test.sql` (54): resident isolation, direct-write denial, cancellation requests, report rules and 7-day window, expiry, 20 h reminder, stuck-job and rating-reminder sweeps, storage policies.
   - `notifications_privacy.test.sql` (19): users read only their own notifications, cannot create or edit them, cannot read or plant device tokens; a phone's token moves between accounts, never copies.
@@ -70,7 +72,7 @@ The planned worker-only cash change (if Shariq confirms) will be **0015**.
 | Rated below 3 means poor work, added inside reports | **Built.** **Assumed:** mean of the three scores below 3. Confirm. |
 | A price difference is never disputed by itself; complaints are separate or by rating below 3 | **Built.** Job closes as `cash_collected`, `cash_records.matched = false`. |
 | "Cash collected by worker (status should be shown on C13)" and a standalone "Review pending" instead of "Cash paid and review" | **UI only so far.** Written into UI-UX.md section 10. |
-| Possible meaning: cash becomes **worker-only** (customer does not confirm cash; no C20) | **NOT built. Pending Shariq.** If yes: migration 0015 makes `record_cash_worker` close the job directly and retires `confirm_cash_resident`; update tests and docs. |
+| Possible meaning: cash becomes **worker-only** (customer does not confirm cash; no C20) | **NOT built. Pending Shariq.** If yes: migration 0016 makes `record_cash_worker` close the job directly and retires `confirm_cash_resident`; update tests and docs. |
 | Customer status-variation screen like the worker app | UI task (design owner). Not drawn. |
 | Remove W11 My jobs action buttons; remove the Direct requests screen | UI tasks (design owner). |
 | "v2 need expiry" | **Not understood.** Do not guess; ask Shariq and record the answer in DECISIONS.md. |
@@ -85,19 +87,19 @@ The user's instruction: build what is clear, leave what is unsure, they will con
 
 ## 7. Security follow-ups
 
-- **Default privileges (found 29 Oct, not changed):** Supabase's default privileges for schema `public` give `anon`, `authenticated` and `service_role` TRUNCATE, TRIGGER, REFERENCES and MAINTAIN on **all 29 public tables** (table ACL `Dxtm`, from `pg_default_acl` of role `postgres`; not from our migrations). Not reachable through the Data API today (PostgREST has no TRUNCATE and users cannot run SQL), and `audit_log` has a no-truncate trigger, but RLS does not apply to TRUNCATE. **Recommended:** a separate migration that revokes those four privileges from the three roles on all public tables and alters the default privileges so new tables do not get them; then check hosted DEV the same way.
+- **Default privileges:** Supabase's default privileges for schema `public` give `anon`, `authenticated` and `service_role` TRUNCATE, TRIGGER, REFERENCES and MAINTAIN on **all 29 public tables and the 5 views** (ACL `Dxtm`, from `pg_default_acl` of role `postgres`; confirmed on hosted DEV, not from our migrations). Locally, a signed-in role could `truncate public.jobs cascade` (15 tables, bypassing RLS); not reachable through the Data API, but real. **Fixed by migration 0015 (committed, local only; still present on hosted DEV until 0015 is applied).**
+- Not covered by 0015: `supabase_admin`'s default privileges in `public` (only for objects that role creates; we never do) and Supabase-managed schemas.
 - `send-push` uses `verify_jwt = false`; the `x-push-secret` shared secret is the only gate. Use a long random value and rotate it if leaked.
 - The service-role key can still call every RPC; keep it server-side only.
 
 ## 8. Next steps, in order
 
-1. Review and approve applying 0014 to hosted DEV (user decision).
-2. Decide on the default-privileges revoke migration (section 7).
-3. To make push live on DEV: apply 0014, `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, add a scheduler (pg_cron + pg_net, needs a migration). Each needs the user's go-ahead.
-4. When Shariq answers: worker-only cash (0015) if confirmed; adjust bill and rating assumptions; record "v2 need expiry".
-5. Add `supabase/seed.sql` for dev.
-6. Scaffold the monorepo (pnpm + Turborepo) and start the Customer app. Needs explicit approval first.
-7. Backup routine and a tested restore before any real data.
+1. User approves applying 0015 to hosted DEV; then dry run (only 0015 pending), push, verify history, ACLs and lint, and check Realtime and Studio still work.
+2. To make push live on DEV: `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, add a scheduler (pg_cron + pg_net, needs a migration). Each needs the user's go-ahead.
+3. When Shariq answers: worker-only cash (0016) if confirmed; adjust bill and rating assumptions; record "v2 need expiry".
+4. Add `supabase/seed.sql` for dev.
+5. Scaffold the monorepo (pnpm + Turborepo) and start the Customer app. Needs explicit approval first.
+6. Backup routine and a tested restore before any real data.
 
 ## 9. Where things live
 
