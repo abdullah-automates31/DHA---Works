@@ -153,7 +153,19 @@ export function InfoNote({ children }: { children: string }) {
 }
 
 /** White bar fixed at the bottom with the main button (.cta + .btn). */
-export function BottomBar({ label, onPress, loading, disabled }: { label: string; onPress: () => void; loading?: boolean; disabled?: boolean }) {
+export function BottomBar({
+  label,
+  onPress,
+  loading,
+  disabled,
+  hideArrow,
+}: {
+  label: string;
+  onPress: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+  hideArrow?: boolean;
+}) {
   const insets = useSafeAreaInsets();
   const inactive = disabled || loading;
   return (
@@ -165,7 +177,7 @@ export function BottomBar({ label, onPress, loading, disabled }: { label: string
         style={({ pressed }) => [styles.btn, (inactive || pressed) && { opacity: 0.6 }]}
       >
         <Text style={styles.btnText}>{loading ? t('about.saving') : label}</Text>
-        {loading ? null : <ArrowRightIcon size={22} color="#fff" />}
+        {loading || hideArrow ? null : <ArrowRightIcon size={22} color="#fff" />}
       </Pressable>
     </View>
   );

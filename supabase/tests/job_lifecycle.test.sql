@@ -52,11 +52,11 @@ select lives_ok($$
 $$, 'resident saves a draft');
 
 select tests.back();
-create temp table t_job as select id from public.jobs limit 1;
+create temp table t_job as select id from public.jobs where title = 'Kitchen tap leaking' limit 1;
 grant select on t_job to authenticated;
 
 select tests.act('00000000-0000-0000-0000-0000000000b1');
-select is((select count(*) from public.jobs), 0::bigint, 'workers do not see a draft');
+select is((select count(*) from public.jobs where title = 'Kitchen tap leaking'), 0::bigint, 'workers do not see a draft');
 
 select tests.act('00000000-0000-0000-0000-0000000000a1');
 select lives_ok($$select public.post_job((select id from t_job))$$, 'resident posts the job');
@@ -64,11 +64,11 @@ select is((select status from public.jobs), 'open'::public.job_status, 'job is o
 
 -- ---------------------------------------------------------------- feed visibility
 select tests.act('00000000-0000-0000-0000-0000000000b1');
-select is((select count(*) from public.worker_feed), 1::bigint, 'matching approved worker sees the job in the feed');
+select is((select count(*) from public.worker_feed where title = 'Kitchen tap leaking'), 1::bigint, 'matching approved worker sees the job in the feed');
 select is((select count(*) from public.job_private), 0::bigint, 'plot, floor and phone are hidden before acceptance');
 
 select tests.act('00000000-0000-0000-0000-0000000000b3');
-select is((select count(*) from public.worker_feed), 0::bigint, 'pending worker sees no feed');
+select is((select count(*) from public.worker_feed where title = 'Kitchen tap leaking'), 0::bigint, 'pending worker sees no feed');
 select throws_ok($$select public.express_interest((select id from t_job))$$, null, null, 'pending worker cannot show interest');
 
 -- ---------------------------------------------------------------- competing quotes

@@ -26,7 +26,7 @@ const COLUMNS =
 type ProfileState =
   | { status: 'loading' }
   | { status: 'error' } // could not reach the server; the caller offers a retry
-  | { status: 'ready'; profile: MyProfile | null }; // null = signed in but no profile row yet
+  | { status: 'ready'; profile: MyProfile | null; areas: number[] }; // profile null = signed in but no row yet
 
 type ProfileContextValue = { state: ProfileState; refresh: () => Promise<void> };
 
@@ -37,8 +37,12 @@ const ProfileContext = createContext<ProfileContextValue>({
 
 async function fetchProfile(userId: string): Promise<ProfileState> {
   // RLS returns only the caller's own row, so no filter value could ever expose anyone else.
-  const { data, error } = await supabase.from('profiles').select(COLUMNS).eq('id', userId).maybeSingle();
-  return error ? { status: 'error' } : { status: 'ready', profile: data };
+  const [profile, areas] = await Promise.all([
+    supabase.from('profiles').select(COLUMNS).eq('id', userId).maybeSingle(),
+    supabase.from('worker_areas').select('phase'),
+  ]);
+  if (profile.error || areas.error) return { status: 'error' };
+  return { status: 'ready', profile: profile.data, areas: (areas.data ?? []).map((a) => a.phase) };
 }
 
 // Mount it with key={userId} so a different user always starts from 'loading' instead of the last user's data.

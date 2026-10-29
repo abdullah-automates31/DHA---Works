@@ -192,7 +192,7 @@ function WorkForm({ work, userId, refresh, onBack }: { work: Ready; userId: stri
           {voiceMessage ? <FieldError>{voiceMessage}</FieldError> : null}
           {formError ? <FieldError>{formError}</FieldError> : null}
         </ScrollView>
-        <BottomBar label={t('work.submit')} onPress={() => void onSubmit()} loading={submitting} />
+        <BottomBar label={t('work.submit')} onPress={() => void onSubmit()} loading={submitting} hideArrow />
       </KeyboardAvoidingView>
     </View>
   );

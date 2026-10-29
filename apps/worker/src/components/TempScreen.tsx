@@ -17,12 +17,14 @@ export function TempScreen({
   reason,
   reasonLabel,
   action,
+  noSignOut,
 }: {
   title: string;
   body: string;
   reason?: string | null;
   reasonLabel?: string;
   action?: { label: string; onPress: () => void };
+  noSignOut?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
@@ -50,7 +52,7 @@ export function TempScreen({
       </AppText>
       <View style={styles.buttons}>
         {action ? <PrimaryButton label={action.label} onPress={action.onPress} showArrow={false} /> : null}
-        <TextLink label={t('temp.signOut')} onPress={() => void supabase.auth.signOut()} />
+        {noSignOut ? null : <TextLink label={t('temp.signOut')} onPress={() => void supabase.auth.signOut()} />}
       </View>
     </View>
   );

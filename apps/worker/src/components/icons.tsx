@@ -122,3 +122,42 @@ export const PhoneIcon = (p: IconProps) => (
     <Path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />
   </Icon>
 );
+
+export const HomeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+  </Icon>
+);
+
+export const SearchIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Circle cx="11" cy="11" r="7" />
+    <Path d="M20 20l-4-4" />
+  </Icon>
+);
+
+export const BriefcaseIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M3 8h18v12H3zM8 8V5h8v3M3 13h18" />
+  </Icon>
+);
+
+export const UserIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Circle cx="12" cy="8" r="4" />
+    <Path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+  </Icon>
+);
+
+export const BellIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" />
+  </Icon>
+);
+
+export const ClockSmallIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Circle cx="12" cy="12" r="9" />
+    <Path d="M12 7v5l3 2" />
+  </Icon>
+);

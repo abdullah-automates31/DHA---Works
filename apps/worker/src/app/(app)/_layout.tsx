@@ -36,7 +36,7 @@ function ProfileGate() {
     );
   }
 
-  const allowed = allowedRoutes(state.profile as ProfileSnapshot | null);
+  const allowed = allowedRoutes(state.profile as ProfileSnapshot | null, state.areas.length);
   if (!allowed.includes(pathname as AppRoute)) {
     return <Redirect href={allowed[0] ?? '/about'} />;
   }
@@ -48,7 +48,9 @@ function ProfileGate() {
       <Stack.Screen name="references" />
       <Stack.Screen name="work" />
       <Stack.Screen name="status" />
-      <Stack.Screen name="home" />
+      <Stack.Screen name="areas" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="notifications" />
     </Stack>
   );
 }

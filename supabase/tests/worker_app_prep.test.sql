@@ -56,7 +56,7 @@ insert into public.worker_categories (worker_id, category_id)
 select id, 1 from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%' and id <> '00000000-0000-0000-0000-0000000000b2';
 
 -- ---------------------------------------------------------------- 0016: submit_for_review
-select is((select count(*) from public.worker_areas), 0::bigint, 'setup: no worker has any area');
+select is((select count(*) from public.worker_areas where worker_id::text like '00000000-0000-0000-0000-%'), 0::bigint, 'setup: no test worker has any area');
 
 select tests.act('00000000-0000-0000-0000-0000000000b1');
 select lives_ok($$select public.submit_for_review()$$, 'worker with everything but areas can submit');
@@ -108,7 +108,7 @@ select lives_ok($$
     array['00000000-0000-0000-0000-0000000000a1/p1.jpg'])
 $$, 'resident saves a draft');
 select tests.back();
-create temp table t_job as select id from public.jobs limit 1;
+create temp table t_job as select id from public.jobs where title = 'Kitchen tap leaking' limit 1;
 grant select on t_job to authenticated;
 select tests.act('00000000-0000-0000-0000-0000000000a1');
 select lives_ok($$select public.post_job((select id from t_job))$$, 'resident posts the job');
@@ -118,15 +118,15 @@ select tests.back();
 insert into public.worker_categories (worker_id, category_id) values ('00000000-0000-0000-0000-0000000000b6', 1)
 on conflict do nothing;
 select tests.act('00000000-0000-0000-0000-0000000000b6');
-select is((select count(*) from public.worker_feed), 0::bigint, 'approved worker without areas sees no jobs');
+select is((select count(*) from public.worker_feed where title = 'Kitchen tap leaking'), 0::bigint, 'approved worker without areas sees no jobs');
 select throws_ok($$select public.express_interest((select id from t_job))$$, null, 'this job is not available',
   'approved worker without areas cannot show interest');
 select lives_ok($$select public.set_my_areas(array[6]::smallint[])$$, 'worker picks areas after approval');
-select is((select count(*) from public.worker_feed), 1::bigint, 'after choosing areas the job appears in the feed');
+select is((select count(*) from public.worker_feed where title = 'Kitchen tap leaking'), 1::bigint, 'after choosing areas the job appears in the feed');
 
 -- ---------------------------------------------------------------- 0017: worker_feed.quote_count
-select is((select quote_count from public.worker_feed), 0::bigint, 'a new job has quote_count 0');
-select is((select interest_count from public.worker_feed), 0::bigint, 'a new job has interest_count 0');
+select is((select quote_count from public.worker_feed where title = 'Kitchen tap leaking'), 0::bigint, 'a new job has quote_count 0');
+select is((select interest_count from public.worker_feed where title = 'Kitchen tap leaking'), 0::bigint, 'a new job has interest_count 0');
 
 -- b1 and b5 become approved workers with phase 6 so they can engage with the job.
 select tests.back();
@@ -149,8 +149,8 @@ select lives_ok($$
 
 -- b6 (still has a feed view) sees the counts; b1 no longer does (their own stake hides the job).
 select tests.act('00000000-0000-0000-0000-0000000000b6');
-select is((select quote_count from public.worker_feed), 1::bigint, 'another worker sees quote_count 1');
-select is((select interest_count from public.worker_feed), 1::bigint, 'interest_count is preserved');
+select is((select quote_count from public.worker_feed where title = 'Kitchen tap leaking'), 1::bigint, 'another worker sees quote_count 1');
+select is((select interest_count from public.worker_feed where title = 'Kitchen tap leaking'), 1::bigint, 'interest_count is preserved');
 
 -- A second quote raises it; a withdrawn quote does not count.
 select tests.act('00000000-0000-0000-0000-0000000000b5');
@@ -159,14 +159,14 @@ select lives_ok($$
   select public.submit_quote((select id from t_job), 2500, now() + interval '1 day', now() + interval '1 day 2 hours',
     0, null, 0, null, null)$$, 'b5 sends a quote');
 select tests.act('00000000-0000-0000-0000-0000000000b6');
-select is((select quote_count from public.worker_feed), 2::bigint, 'two sent quotes count as 2');
-select is((select interest_count from public.worker_feed), 2::bigint, 'interest_count follows the two interested workers');
+select is((select quote_count from public.worker_feed where title = 'Kitchen tap leaking'), 2::bigint, 'two sent quotes count as 2');
+select is((select interest_count from public.worker_feed where title = 'Kitchen tap leaking'), 2::bigint, 'interest_count follows the two interested workers');
 
 select tests.act('00000000-0000-0000-0000-0000000000b5');
 select lives_ok($$select public.withdraw_quote((select id from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b5'))$$,
   'b5 withdraws the quote');
 select tests.act('00000000-0000-0000-0000-0000000000b6');
-select is((select quote_count from public.worker_feed), 1::bigint, 'a withdrawn quote no longer counts');
+select is((select quote_count from public.worker_feed where title = 'Kitchen tap leaking'), 1::bigint, 'a withdrawn quote no longer counts');
 
 -- Shape and privacy of the view.
 select tests.back();

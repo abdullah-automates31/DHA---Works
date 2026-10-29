@@ -34,8 +34,21 @@ test('under review, visit HQ and rejected show the status screen', () => {
   }
 });
 
-test('approved goes home', () => {
-  assert.deepEqual(allowedRoutes(with_({ verification_status: 'approved' })), ['/home']);
+test('approved without areas must choose areas first; with areas goes home and may change them', () => {
+  const approved = with_({ verification_status: 'approved' });
+  assert.deepEqual(allowedRoutes(approved), ['/areas']);
+  assert.deepEqual(allowedRoutes(approved, 0), ['/areas']);
+  assert.deepEqual(allowedRoutes(approved, 3), ['/home', '/open-jobs', '/my-jobs', '/profile', '/notifications', '/areas']);
+});
+
+test('areas do not matter before approval', () => {
+  assert.deepEqual(allowedRoutes(with_({ verification_status: 'pending' }), 5), ['/status']);
+  assert.deepEqual(allowedRoutes(base, 5), ['/documents', '/references', '/work', '/about']);
+});
+
+test('a suspended or wrong-role account never reaches the tabs', () => {
+  assert.deepEqual(allowedRoutes(with_({ verification_status: 'approved', account_status: 'suspended' }), 3), ['/status']);
+  assert.deepEqual(allowedRoutes(with_({ verification_status: 'approved', role: 'resident' }), 3), ['/status']);
 });
 
 test('a suspended account is blocked whatever its status', () => {

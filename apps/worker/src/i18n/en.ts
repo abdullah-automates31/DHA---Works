@@ -123,6 +123,51 @@ export const en = {
       generic: 'Could not submit your application. Please try again.',
     },
   },
+  // W05 (copy from worker/screens/w-areas.dc.html)
+  areas: {
+    approvedTitle: 'You are approved',
+    approvedBody: 'One last step before your first job.',
+    title: 'Where do you work?',
+    subtitle: 'Pick every DHA phase you can travel to. You only see jobs from these phases.',
+    phases: 'DHA phases',
+    selected: '{count} of {total} selected',
+    phase: 'Phase {n}',
+    moreTitle: 'More phases, more jobs',
+    moreBody: 'You can change areas any time from your profile.',
+    start: 'Start receiving jobs',
+    save: 'Save areas',
+    saving: 'Saving',
+    errors: {
+      pick: 'Pick at least one phase.',
+      network: 'Could not reach the server. Check your internet connection and try again.',
+      generic: 'Could not save your areas. Please try again.',
+    },
+  },
+  // W06 Home (copy from worker/screens/w-home.dc.html)
+  tabs: { home: 'Home', openJobs: 'Open jobs', myJobs: 'My jobs', profile: 'Profile' },
+  home: {
+    salam: 'Salam, {name}',
+    salamPlain: 'Salam',
+    seeJobs: 'See jobs',
+    allJobs: 'All jobs',
+    noneToday: 'No jobs scheduled for today.',
+    inProgress: 'In progress',
+    scheduled: 'Scheduled',
+    notifications: 'Notifications',
+    loadFailed: 'Could not load your jobs. Pull down to try again.',
+  },
+  // Temporary tab and notification screens (not built yet; docs/OPEN-QUESTIONS.md)
+  soon: {
+    openJobsTitle: 'Open jobs',
+    openJobsBody: 'The job feed comes next.',
+    myJobsTitle: 'My jobs',
+    myJobsBody: 'Your quotes and jobs will be listed here.',
+    profileTitle: 'Profile',
+    profileBody: 'Your profile and settings come later.',
+    notificationsTitle: 'Notifications',
+    notificationsBody: 'Your notifications will appear here.',
+    changeAreas: 'Change my areas',
+  },
   // W04 (copy from worker/screens/w-pending.dc.html)
   pending: {
     title: 'Application under review',
@@ -199,8 +244,6 @@ export const en = {
     signedInAs: 'Signed in as {email}',
     loadFailed: 'Could not load your account. Check your internet connection.',
     notYou: 'Not you? Sign out',
-    approvedTitle: 'You are approved',
-    approvedBody: 'Choosing your areas and the job feed come next.',
     status: {
       pendingTitle: 'Your application is under review',
       pendingBody: 'DHA staff are checking your details. We will tell you when there is a decision.',
