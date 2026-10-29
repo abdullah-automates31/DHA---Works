@@ -37,8 +37,8 @@ insert into public.worker_details (profile_id) values
   ('00000000-0000-0000-0000-0000000000b1'), ('00000000-0000-0000-0000-0000000000b2'),
   ('00000000-0000-0000-0000-0000000000b3');
 -- Plumbing (id 1) in phase 6 for all three workers.
-insert into public.worker_categories (worker_id, category_id) select id, 1 from public.profiles where role = 'worker';
-insert into public.worker_areas (worker_id, phase) select id, 6 from public.profiles where role = 'worker';
+insert into public.worker_categories (worker_id, category_id) select id, 1 from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%';
+insert into public.worker_areas (worker_id, phase) select id, 6 from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%';
 
 -- ---------------------------------------------------------------- draft and post
 select tests.act('00000000-0000-0000-0000-0000000000a1');

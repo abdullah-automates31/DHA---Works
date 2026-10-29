@@ -32,28 +32,28 @@ insert into public.profiles (id, role, full_name, email, phone, cnic, verificati
   ('00000000-0000-0000-0000-0000000000b5', 'worker', 'Refs Instead', 'u6@test.dev', '03001230000', '42101-6666666-1', 'incomplete'),
   ('00000000-0000-0000-0000-0000000000b6', 'worker', 'Approved No Areas', 'u7@test.dev', '03004560000', '42101-7777777-1', 'approved');
 insert into public.worker_details (profile_id)
-select id from public.profiles where role = 'worker';
+select id from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%';
 
 -- Documents: everyone gets CNIC both sides; b3 has no photo; b4 has no police certificate; b5 gets references below.
 insert into public.verification_documents (profile_id, doc_type, storage_path)
 select p.id, d, p.id || '/' || d
 from public.profiles p, unnest(array['cnic_front', 'cnic_back']::public.document_type[]) d
-where p.role = 'worker';
+where p.role = 'worker' and p.id::text like '00000000-0000-0000-0000-%';
 insert into public.verification_documents (profile_id, doc_type, storage_path)
 select p.id, 'profile_photo', p.id || '/photo'
 from public.profiles p
-where p.role = 'worker' and p.id <> '00000000-0000-0000-0000-0000000000b3';
+where p.role = 'worker' and p.id::text like '00000000-0000-0000-0000-%' and p.id <> '00000000-0000-0000-0000-0000000000b3';
 insert into public.verification_documents (profile_id, doc_type, storage_path)
 select p.id, 'police_cert', p.id || '/police'
 from public.profiles p
-where p.role = 'worker' and p.id not in ('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b5');
+where p.role = 'worker' and p.id::text like '00000000-0000-0000-0000-%' and p.id not in ('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b5');
 insert into public.worker_references (worker_id, name, phone, address) values
   ('00000000-0000-0000-0000-0000000000b5', 'Ref One', '03111111111', 'DHA'),
   ('00000000-0000-0000-0000-0000000000b5', 'Ref Two', '03222222222', 'DHA');
 
 -- Trades: everyone except b2. No worker has any area (phase) yet.
 insert into public.worker_categories (worker_id, category_id)
-select id, 1 from public.profiles where role = 'worker' and id <> '00000000-0000-0000-0000-0000000000b2';
+select id, 1 from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%' and id <> '00000000-0000-0000-0000-0000000000b2';
 
 -- ---------------------------------------------------------------- 0016: submit_for_review
 select is((select count(*) from public.worker_areas), 0::bigint, 'setup: no worker has any area');

@@ -37,9 +37,9 @@ insert into public.profiles (id, role, full_name, email, phone, verification_sta
   ('00000000-0000-0000-0000-0000000000b4', 'worker', 'Incomplete Four', 'w4@test.dev', '03007779999', 'incomplete'),
   ('00000000-0000-0000-0000-0000000000c1', 'admin', 'Staff', 'admin@test.dev', '03009990000', 'approved');
 
-insert into public.worker_details (profile_id) select id from public.profiles where role = 'worker';
-insert into public.worker_categories (worker_id, category_id) select id, 1 from public.profiles where role = 'worker';
-insert into public.worker_areas (worker_id, phase) select id, 6 from public.profiles where role = 'worker';
+insert into public.worker_details (profile_id) select id from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%';
+insert into public.worker_categories (worker_id, category_id) select id, 1 from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%';
+insert into public.worker_areas (worker_id, phase) select id, 6 from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%';
 
 -- One job per resident, driven through the real RPCs up to a given point.
 -- p_stop: 'open', 'quoted' (b1 quoted) or 'scheduled' (b1 accepted).
@@ -224,7 +224,7 @@ select is((select count(*) from storage.objects where bucket_id = 'job-media'), 
 select tests.act('00000000-0000-0000-0000-0000000000a2');
 select is((select count(*) from storage.objects where bucket_id = 'job-media'), 0::bigint, 'another resident cannot read it');
 select tests.act('00000000-0000-0000-0000-0000000000c1');
-select is((select count(*) from storage.objects where bucket_id = 'identity'), 1::bigint, 'staff read identity files');
+select is((select count(*) from storage.objects where bucket_id = 'identity' and name like '00000000-0000-0000-0000-%'), 1::bigint, 'staff read identity files');
 
 select tests.act('00000000-0000-0000-0000-0000000000b4');
 select lives_ok($$insert into storage.objects (bucket_id, name, owner)
