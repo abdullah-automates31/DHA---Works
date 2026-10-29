@@ -3,7 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { TextLink, PrimaryButton } from '@/components/AuthForm';
 import { AppText } from '@/components/AppText';
-import { allowedRoutes, type AppRoute, type ProfileSnapshot } from '@/features/profile/routing';
+import { allowedRoutes, isRouteAllowed, type ProfileSnapshot } from '@/features/profile/routing';
 import { t } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { ProfileProvider, useMyProfile } from '@/lib/profile';
@@ -37,7 +37,7 @@ function ProfileGate() {
   }
 
   const allowed = allowedRoutes(state.profile as ProfileSnapshot | null, state.areas.length);
-  if (!allowed.includes(pathname as AppRoute)) {
+  if (!isRouteAllowed(pathname, allowed)) {
     return <Redirect href={allowed[0] ?? '/about'} />;
   }
 
@@ -51,6 +51,7 @@ function ProfileGate() {
       <Stack.Screen name="areas" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="notifications" />
+      <Stack.Screen name="job/[id]" />
     </Stack>
   );
 }

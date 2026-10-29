@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { allowedRoutes, identityComplete, statusKind, type ProfileSnapshot } from './routing.ts';
+import { allowedRoutes, identityComplete, isRouteAllowed, statusKind, type ProfileSnapshot } from './routing.ts';
 
 const base: ProfileSnapshot = {
   role: 'worker',
@@ -76,4 +76,15 @@ test('identityComplete needs all five fields', () => {
     assert.equal(identityComplete(with_({ [key]: null })), false, key);
     assert.equal(identityComplete(with_({ [key]: '' })), false, key);
   }
+});
+
+test('a job screen is allowed below /job, and nothing else is matched loosely', () => {
+  const tabs = allowedRoutes(with_({ verification_status: 'approved' }), 2);
+  assert.equal(isRouteAllowed('/job/abc-123', tabs), true);
+  assert.equal(isRouteAllowed('/home', tabs), true);
+  assert.equal(isRouteAllowed('/jobs', tabs), false);
+  assert.equal(isRouteAllowed('/jobx/1', tabs), false);
+  assert.equal(isRouteAllowed('/job/', tabs), false);
+  assert.equal(isRouteAllowed('/about', tabs), false);
+  assert.equal(isRouteAllowed('/job/abc', allowedRoutes(with_({ verification_status: 'pending' }), 2)), false);
 });

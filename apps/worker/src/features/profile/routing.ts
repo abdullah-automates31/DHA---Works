@@ -60,3 +60,12 @@ export function allowedRoutes(p: ProfileSnapshot | null, areaCount = 0): AppRout
   // incomplete or needs_changes: identity first; once it is complete, the documents step and those after it.
   return identityComplete(p) ? ['/documents', '/references', '/work', '/about'] : ['/about'];
 }
+
+/**
+ * True when the path is one of the allowed routes. A job screen is /job/<id>: it belongs to the signed-in worker app
+ * (anyone allowed on Open jobs), and nothing else is matched loosely.
+ */
+export function isRouteAllowed(pathname: string, allowed: readonly AppRoute[]): boolean {
+  if (allowed.includes(pathname as AppRoute)) return true;
+  return pathname.startsWith('/job/') && pathname.length > '/job/'.length && allowed.includes('/open-jobs');
+}

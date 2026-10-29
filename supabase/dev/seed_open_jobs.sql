@@ -42,20 +42,26 @@ delete from public.quotes where job_id in (select id from public.jobs where resi
 delete from public.job_interests where job_id in (select id from public.jobs where resident_id = '11111111-1111-4111-8111-111111111111');
 delete from public.job_views where job_id in (select id from public.jobs where resident_id = '11111111-1111-4111-8111-111111111111');
 
--- category ids: 1 Plumbing, 2 Electrical, 3 AC & Refrigeration, 4 Carpentry, 5 Painting
-insert into public.jobs (id, resident_id, category_id, address_id, phase, lane, title, description, urgency, status, posted_at)
+-- category ids: 1 Plumbing, 2 Electrical, 3 AC & Refrigeration, 4 Carpentry, 5 Painting.
+-- Variety on purpose: urgent and scheduled jobs, a voice note, different ages, and one job past the 24 hour window.
+insert into public.jobs (id, resident_id, category_id, address_id, phase, lane, title, description, urgency, preferred_date, window_from, window_to, voice_note_path, status, posted_at)
 values
   ('11111111-1111-4111-8111-1111111111b1', '11111111-1111-4111-8111-111111111111', 1, '11111111-1111-4111-8111-1111111111a1', 6, 'Lane 7',
-   'Kitchen sink leakage', 'Water drips from the pipe under the sink all day.', 'asap', 'open', now()),
+   'Kitchen sink leakage', 'Water drips under the cabinet. Needs fixing this week.', 'asap', null, null, null, '11111111-1111-4111-8111-111111111111/seed-voice.m4a', 'open', now() - interval '12 minutes'),
   ('11111111-1111-4111-8111-1111111111b2', '11111111-1111-4111-8111-111111111111', 3, '11111111-1111-4111-8111-1111111111a1', 6, 'Lane 7',
-   'AC not cooling', 'The split AC runs but the room stays warm.', 'asap', 'open', now()),
+   'AC not cooling', 'The split AC runs but the room stays warm.', 'scheduled', current_date + 1, '11:00', '13:00', null, 'open', now() - interval '3 hours'),
   ('11111111-1111-4111-8111-1111111111b3', '11111111-1111-4111-8111-111111111111', 1, '11111111-1111-4111-8111-1111111111a1', 5, 'Lane 2',
-   'Geyser not heating', 'The gas geyser lights but the water stays cold.', 'asap', 'open', now()),
+   'Geyser not heating', 'Gas geyser pilot goes off after a minute.', 'scheduled', current_date, '16:00', '18:00', null, 'open', now() - interval '1 hour'),
   ('11111111-1111-4111-8111-1111111111b4', '11111111-1111-4111-8111-111111111111', 2, '11111111-1111-4111-8111-1111111111a1', 7, 'Lane 4',
-   'Ceiling fan wobbling', 'The bedroom fan shakes at high speed.', 'asap', 'open', now()),
+   'Ceiling fan wobbling', 'The bedroom fan shakes at high speed.', 'asap', null, null, null, null, 'open', now() - interval '5 hours'),
   ('11111111-1111-4111-8111-1111111111b5', '11111111-1111-4111-8111-111111111111', 4, '11111111-1111-4111-8111-1111111111a1', 6, 'Lane 7',
-   'Wardrobe door off its hinge', 'The sliding door came off the track.', 'asap', 'open', now())
-on conflict (id) do update set status = 'open', posted_at = now(), accepted_worker_id = null, accepted_quote_id = null;
+   'Wardrobe door off its hinge', 'The sliding door came off the track.', 'asap', null, null, null, null, 'open', now() - interval '20 hours'),
+  ('11111111-1111-4111-8111-1111111111b6', '11111111-1111-4111-8111-111111111111', 1, '11111111-1111-4111-8111-1111111111a1', 6, 'Lane 7',
+   'Old leak (expired, must not show)', 'Posted 30 hours ago, so past the 24 hour window.', 'asap', null, null, null, null, 'open', now() - interval '30 hours')
+on conflict (id) do update set category_id = excluded.category_id, phase = excluded.phase, lane = excluded.lane, title = excluded.title,
+  description = excluded.description, urgency = excluded.urgency, preferred_date = excluded.preferred_date,
+  window_from = excluded.window_from, window_to = excluded.window_to, voice_note_path = excluded.voice_note_path,
+  status = 'open', posted_at = excluded.posted_at, accepted_worker_id = null, accepted_quote_id = null;
 
 insert into public.job_private (job_id, plot_no, floor, resident_phone)
 select id, '118-C', 'Ground', '+923000000001' from public.jobs where resident_id = '11111111-1111-4111-8111-111111111111'

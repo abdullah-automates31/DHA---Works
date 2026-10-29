@@ -156,10 +156,23 @@ export const en = {
     notifications: 'Notifications',
     loadFailed: 'Could not load your jobs. Pull down to try again.',
   },
+  // W07 Open jobs (copy from worker/screens/w-open.dc.html)
+  feed: {
+    title: 'Open jobs',
+    where: 'Phase {phase} · {lane}',
+    urgent: 'Urgent',
+    open: 'Open',
+    voiceNote: 'Voice note',
+    photo: 'Job photo',
+    emptyTitle: 'No open jobs right now',
+    emptyBody: 'New jobs in your trades and phases will appear here. Pull down to refresh, or add more phases from your profile.',
+    errorTitle: 'Could not load the jobs',
+    errorBody: 'Check your internet connection and try again.',
+  },
   // Temporary tab and notification screens (not built yet; docs/OPEN-QUESTIONS.md)
   soon: {
-    openJobsTitle: 'Open jobs',
-    openJobsBody: 'The job feed comes next.',
+    jobTitle: 'Job details',
+    jobBody: 'The job details and quote screen come next.',
     myJobsTitle: 'My jobs',
     myJobsBody: 'Your quotes and jobs will be listed here.',
     profileTitle: 'Profile',

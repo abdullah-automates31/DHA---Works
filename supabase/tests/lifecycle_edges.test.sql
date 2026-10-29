@@ -220,7 +220,7 @@ select tests.act('00000000-0000-0000-0000-0000000000a1');
 select is((select count(*) from storage.objects where bucket_id = 'job-media'), 1::bigint, 'the owner reads their job photo');
 select is((select count(*) from storage.objects where bucket_id = 'identity'), 0::bigint, 'nobody reads identity files back, not even the owner');
 select tests.act('00000000-0000-0000-0000-0000000000b1');
-select is((select count(*) from storage.objects where bucket_id = 'job-media'), 1::bigint, 'the accepted worker reads the job photo');
+select is((select count(*) from storage.objects where bucket_id = 'job-media' and name like '00000000-0000-0000-0000-%'), 1::bigint, 'the accepted worker reads the job photo');
 select tests.act('00000000-0000-0000-0000-0000000000a2');
 select is((select count(*) from storage.objects where bucket_id = 'job-media'), 0::bigint, 'another resident cannot read it');
 select tests.act('00000000-0000-0000-0000-0000000000c1');

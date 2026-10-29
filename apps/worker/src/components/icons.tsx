@@ -161,3 +161,53 @@ export const ClockSmallIcon = (p: IconProps) => (
     <Path d="M12 7v5l3 2" />
   </Icon>
 );
+
+// Category icons for the job cards (the wrench and droplet paths are from the approved W07 design).
+export const WrenchIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M14 6a4 4 0 0 0 5 5l-9 9-3-3 9-9a4 4 0 0 0-2-2zM4 4l3 3" />
+  </Icon>
+);
+
+export const FlameIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M12 3s6 6 6 11a6 6 0 0 1-12 0c0-5 6-11 6-11z" />
+  </Icon>
+);
+
+export const BoltIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M13 2L4 14h7l-1 8 9-12h-7z" />
+  </Icon>
+);
+
+export const SnowIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" />
+  </Icon>
+);
+
+export const HammerIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M14 4l6 6-3 3-6-6zM12 9L4 17l3 3 8-8" />
+  </Icon>
+);
+
+export const BrushIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M4 20c3 0 5-1 5-3a3 3 0 0 0-3-3c-2 0-2 3-2 6zM9 14L20 3l1 1L10 15" />
+  </Icon>
+);
+
+export const SparkleIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" />
+  </Icon>
+);
+
+export const ToolIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Circle cx="12" cy="12" r="3" />
+    <Path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+  </Icon>
+);
