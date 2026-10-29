@@ -19,6 +19,7 @@ Updated 27 Oct 2026. From this date the builder (Abdullah) decides the remaining
 - New screens: Request cancellation (C22 resident, W18 worker) and the "cancellation requested, under review" banner.
 - Screen corrections listed in [UI-UX.md](UI-UX.md) section 8: remove "Call, then quote" and the km filter, fix categories and multi-select, reword the reject-quote copy, add expired and Repost, add cash "waiting for confirmation" and "disputed" states, hide helpline buttons until enabled.
 - Shariq cannot yet edit or comment on the design artifacts (the owner must re-invite him as Editor).
+- Sign-in code screen (worker, built 29 Oct): the designs show only W01 (email). Email OTP needs a second step to type the 6-digit code; it was built with the W01 frame and controls, wording is ours. A matching design is needed (customer app too). Also confirm: a worker who signs in with an email that already belongs to a customer account (accounts are separate).
 - The MVP Plan Google Doc is out of date.
 
 ## Technical setup (before M0)
