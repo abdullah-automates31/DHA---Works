@@ -1,0 +1,14 @@
+{
+  "name": "dha-works",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "worker": "npm run start --workspace @dha/worker",
+    "worker:typecheck": "npm run typecheck --workspace @dha/worker",
+    "worker:lint": "npm run lint --workspace @dha/worker",
+    "worker:test": "npm run test --workspace @dha/worker"
+  }
+}

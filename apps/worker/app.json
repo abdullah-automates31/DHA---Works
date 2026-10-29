@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "DHA Works Worker",
+    "slug": "dha-works-worker",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "dhaworksworker",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "pk.dhaworks.worker",
+      "adaptiveIcon": {
+        "backgroundColor": "#0E5A3A",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0E5A3A",
+          "image": "./assets/images/crest.png",
+          "imageWidth": 160
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

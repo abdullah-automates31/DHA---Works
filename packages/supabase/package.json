@@ -1,0 +1,8 @@
+{
+  "name": "@dha/supabase",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Generated database types (supabase gen types typescript). Regenerate, never hand-edit.",
+  "types": "./database.types.ts",
+  "main": "./database.types.ts"
+}

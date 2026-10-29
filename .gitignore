@@ -14,3 +14,4 @@ Thumbs.db
 supabase/.temp/
 .turbo/
 coverage/
+expo-env.d.ts
