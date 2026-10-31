@@ -10,7 +10,7 @@ import { CashIcon, PinIcon, ShieldCheckIcon } from './icons';
 // Green top block of the sign-in screen (W01): crest, brand, headline, body and three chips.
 // Values come from worker/screens/Main.dc.html; the mock's 54px top padding includes a ~40px status bar,
 // so the real safe-area inset replaces that part.
-export function AuthHero() {
+export function AuthHero({ compact = false }: { compact?: boolean }) {
   const insets = useSafeAreaInsets();
   const chips = [
     { Icon: CashIcon, label: t('auth.chipPrice') },
@@ -18,18 +18,32 @@ export function AuthHero() {
     { Icon: PinIcon, label: t('auth.chipPhases') },
   ];
 
+  const brandRow = (
+    <View style={styles.brandRow}>
+      <Crest size={54} />
+      <View>
+        <Text style={styles.brand}>
+          DHA <Text style={styles.gold}>Works</Text>
+        </Text>
+        <Text style={styles.brandSub}>{t('auth.brandSub')}</Text>
+      </View>
+    </View>
+  );
+
+  // Keyboard open: only the brand row, so the form below stays on screen.
+  if (compact) {
+    return (
+      <View style={[styles.hero, { paddingTop: insets.top + 10, paddingBottom: 16 }]}>
+        <View style={styles.ring} />
+        {brandRow}
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.hero, { paddingTop: insets.top + 14, height: 328 + insets.top }]}>
       <View style={styles.ring} />
-      <View style={styles.brandRow}>
-        <Crest size={54} />
-        <View>
-          <Text style={styles.brand}>
-            DHA <Text style={styles.gold}>Works</Text>
-          </Text>
-          <Text style={styles.brandSub}>{t('auth.brandSub')}</Text>
-        </View>
-      </View>
+      {brandRow}
       <Text style={styles.headline}>
         {t('auth.headlineLead')}
         <Text style={styles.gold}>{t('auth.headlineAccent')}</Text>

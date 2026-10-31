@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,15 +11,18 @@ import { AuthHero } from './AuthHero';
 export function AuthScreen({ children }: { children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollViewInstance>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
-  // The hero is tall, so with the keyboard open the field and button sit below the visible area.
-  // Scroll to the bottom once the keyboard shows so the hero moves off and the form stays in view.
+  // The full hero is tall, so with the keyboard open the field and button would sit below the visible
+  // area. While the keyboard is up the hero collapses to the brand row and the whole form fits.
   useEffect(() => {
-    const event = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const sub = Keyboard.addListener(event, () => {
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
-    });
-    return () => sub.remove();
+    const ios = Platform.OS === 'ios';
+    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
   }, []);
 
   return (
@@ -31,7 +34,7 @@ export function AuthScreen({ children }: { children: React.ReactNode }) {
         keyboardDismissMode="on-drag"
         bounces={false}
       >
-        <AuthHero />
+        <AuthHero compact={keyboardOpen} />
         <View style={[styles.body, { paddingBottom: 32 + insets.bottom }]}>
           <View style={styles.form}>{children}</View>
           <Text style={styles.terms}>{t('auth.terms')}</Text>
