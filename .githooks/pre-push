@@ -1,0 +1,16 @@
+#!/bin/sh
+# Safety net, not the main protection (a raw `supabase config push` does not go through git).
+# Enable once per clone: git config core.hooksPath .githooks
+# Checks the commits being pushed (not the working tree) and blocks pushes to main.
+
+refs="$(cat)"
+
+if printf '%s\n' "$refs" | awk '$3 == "refs/heads/main" { found = 1 } END { exit !found }'; then
+  if [ "$DHA_ALLOW_MAIN_PUSH" != "1" ]; then
+    echo "pre-push: blocked. Pushing to main needs the user's explicit go-ahead (set DHA_ALLOW_MAIN_PUSH=1 for that one push)." >&2
+    exit 1
+  fi
+fi
+
+root="$(git rev-parse --show-toplevel)"
+printf '%s\n' "$refs" | (cd "$root" && node scripts/check-pushed-commits.mjs) || exit 1

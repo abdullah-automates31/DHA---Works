@@ -12,6 +12,7 @@ Thumbs.db
 *.keystore
 *.jks
 supabase/.temp/
+.supabase-local/
 .turbo/
 coverage/
 expo-env.d.ts

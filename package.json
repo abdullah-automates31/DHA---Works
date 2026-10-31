@@ -9,6 +9,10 @@
     "worker": "npm run start --workspace @dha/worker",
     "worker:typecheck": "npm run typecheck --workspace @dha/worker",
     "worker:lint": "npm run lint --workspace @dha/worker",
-    "worker:test": "npm run test --workspace @dha/worker"
+    "worker:test": "npm run test --workspace @dha/worker",
+    "db:local": "node scripts/local-supabase.mjs",
+    "safety:supabase": "node scripts/check-supabase-config.mjs",
+    "safety:test": "node --test \"scripts/*.test.mjs\"",
+    "supabase:config-push": "node scripts/supabase-config-push.mjs"
   }
 }
