@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ArrowRightIcon, BellIcon, ClockSmallIcon } from '@/components/icons';
 import { ProgressBar } from '@/components/MyJobParts';
+import { ProfilePhoto } from '@/components/ProfilePhoto';
 import {
   firstName,
   formatHomeDate,
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.root}>
       <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
+        <ProfilePhoto size={44} />
         <View style={{ flex: 1 }}>
           <Text style={styles.date}>{formatHomeDate(now)}</Text>
           <Text style={styles.greeting} numberOfLines={1}>

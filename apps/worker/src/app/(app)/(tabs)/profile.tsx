@@ -4,7 +4,7 @@ import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleS
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
-import { Avatar } from '@/components/MyJobParts';
+import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { ShieldCheckIcon } from '@/components/icons';
 import { FieldError, Pill } from '@/components/onboarding';
 import { formatRupees } from '@/features/home/format';
@@ -73,7 +73,7 @@ export default function ProfileScreen() {
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => void reload()} tintColor={colors.green} />}
       >
         <View style={styles.header}>
-          <Avatar name={profile?.full_name ?? null} size={72} />
+          <ProfilePhoto size={72} />
           <Text style={styles.name}>{profile?.full_name ?? ''}</Text>
           <Text style={styles.sub}>
             {ready ? `${tradeSummary(names)} · ${areaSummary(areas)}` : areaSummary(areas)}

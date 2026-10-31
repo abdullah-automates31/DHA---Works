@@ -18,10 +18,11 @@ export type MyProfile = Pick<
   | 'cnic'
   | 'gender'
   | 'date_of_birth'
+  | 'avatar_path'
 >;
 
 const COLUMNS =
-  'role, verification_status, verification_reason, verification_updated_at, account_status, full_name, phone, cnic, gender, date_of_birth';
+  'role, verification_status, verification_reason, verification_updated_at, account_status, full_name, phone, cnic, gender, date_of_birth, avatar_path';
 
 type ProfileState =
   | { status: 'loading' }

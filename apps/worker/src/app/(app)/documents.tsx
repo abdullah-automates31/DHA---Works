@@ -22,7 +22,7 @@ type Source = 'camera' | 'library' | 'pdf';
 export default function DocumentsScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const { state } = useMyProfile();
+  const { state, refresh: refreshProfile } = useMyProfile();
   const { data, refresh } = useDocuments();
   const [busy, setBusy] = useState<DocType | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +50,11 @@ export default function DocumentsScreen() {
         mime: picked.file.mime,
         bytes: picked.file.bytes,
       });
-      if (result.ok) await refresh();
+      if (result.ok) {
+        await refresh();
+        // The profile holds the picture path used by the home and profile screens.
+        if (type === 'profile_photo') await refreshProfile();
+      }
       else setError(t(result.key));
     }
     setBusy(null);
