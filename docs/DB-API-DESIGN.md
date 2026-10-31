@@ -1,6 +1,6 @@
 # DB and Mobile API Design (draft for Shariq Bhai's review)
 
-Status: **draft, no SQL written yet.** Scope agreed with Shariq on 25 to 26 Oct: design the database and the **mobile-app APIs** first, then build the mobile apps, then the admin portal. This doc supersedes the claim-lock parts of [DATA-MODEL.md](DATA-MODEL.md) and [ARCHITECTURE.md](ARCHITECTURE.md); see [DECISIONS.md](DECISIONS.md). Source for screens: `DHA-Works-UI/` (`SPEC.md` + screenshots), read screen by screen on 26 Oct.
+Status: **design draft; the worker auth change was implemented on 30 Oct 2026.** Scope agreed with Shariq on 25 to 26 Oct: design the database and the **mobile-app APIs** first, then build the mobile apps, then the admin portal. This doc supersedes the claim-lock parts of [DATA-MODEL.md](DATA-MODEL.md) and [ARCHITECTURE.md](ARCHITECTURE.md); see [DECISIONS.md](DECISIONS.md). Source for screens: `DHA-Works-UI/` (`SPEC.md` + screenshots), read screen by screen on 26 Oct.
 
 Conventions: "API" on Supabase means (a) **RPC** = a Postgres function called with `supabase.rpc()` for every write that changes state, and (b) **reads** = PostgREST queries on tables/views, protected by RLS. Apps never update status columns directly.
 
@@ -43,7 +43,7 @@ Every transition function: checks caller role and current status, updates, write
 ### Identity and verification
 | Table | Fields |
 | --- | --- |
-| `profiles` | id (= auth.users.id), role (`resident`, `worker`, `admin`), full_name, email, phone, gender, date_of_birth, cnic, verification_status (`pending`, `approved`, `needs_changes`, `visit_hq`, `rejected`), verification_reason, account_status (`active`, `suspended`), avatar_path, locale. One email = one role (accounts separate). |
+| `profiles` | id (= auth.users.id), role (`resident`, `worker`, `admin`), full_name, email, phone, gender, date_of_birth, cnic, verification_status (`pending`, `approved`, `needs_changes`, `visit_hq`, `rejected`), verification_reason, account_status (`active`, `suspended`), avatar_path, locale. One sign-in identifier = one role (accounts separate). The worker's auth identifier is `auth.users.phone`; `profiles.email` is nullable for phone-only accounts. |
 | `resident_details` | profile_id, default_address_id |
 | `addresses` | id, resident_id, label, phase (1 to 8), lane, plot_no, floor, is_default (design: "My addresses 2") |
 | `worker_details` | profile_id, experience_years, visit_fee, voice_intro_path, available_today, rating_avg, rating_count, jobs_done (maintained by triggers) |
@@ -89,7 +89,7 @@ Reads are RLS-filtered queries; writes are RPCs. Names are proposals.
 ### Shared
 | API | Type | Used by |
 | --- | --- | --- |
-| Sign in with email or Google, sign out | Supabase Auth | C01, W01 |
+| Sign in and sign out | Supabase Auth: worker uses phone + WhatsApp OTP (`signInWithOtp({ channel: 'whatsapp' })`, then `verifyOtp({ type: 'sms' })`); C01 email/Google is planned, not built | C01, W01 |
 | `register_profile(role, fields)` | RPC | C02, W02 |
 | `get_my_profile`, `update_my_profile` | read / RPC | C17, W16 |
 | `upload_verification_document(type)` | Storage signed upload + insert | C03, W03 |
@@ -165,7 +165,7 @@ Unapproved or suspended users can read their own profile and status but cannot p
 
 - Only two free projects: use **local Supabase (Docker)** for development and one hosted project as the shared environment. Prod needs the upgrade.
 - Free projects pause after inactivity and have no point-in-time backups. **We create our own backups (decided 27 Oct):** daily `pg_dump` plus a copy of the storage buckets, encrypted, kept outside Supabase, with a tested restore. Do not hold real resident or CNIC data until the first restore has been tested.
-- Built-in auth email is heavily rate limited: use a custom SMTP provider before inviting testers (Google sign-in avoids it).
+- Built-in auth email is heavily rate limited: use a custom SMTP provider before inviting testers to the resident/admin apps (Google sign-in avoids it). The worker app no longer sends auth email; production worker auth uses Twilio or Twilio Verify with a WhatsApp sender, not an ordinary SMS gateway.
 - Migrations only through `supabase/migrations`; seed data (categories, phases, settings) in `supabase/seed.sql`.
 - Test with pgTAP: each transition, the accept-quote race (two concurrent accepts), cash match/mismatch, and every RLS row above.
 

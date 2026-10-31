@@ -1,6 +1,6 @@
 # Decisions Log
 
-Most recent first within each group. "Confirmed" means agreed with Shariq Bhai; "Proposed" means recommended but awaiting confirmation.
+Most recent first within each group. "Confirmed" means agreed with Shariq Bhai; "Proposed" means recommended but awaiting confirmation. Worker auth was updated to phone + WhatsApp OTP on 30 Oct 2026.
 
 ## Product (22 to 23 October 2026)
 
@@ -9,7 +9,9 @@ Most recent first within each group. "Confirmed" means agreed with Shariq Bhai; 
 | Two mobile apps and one web admin portal | Confirmed |
 | Customer and worker accounts are separate | Confirmed (23 Oct) |
 | Payment is cash only | Confirmed |
-| Sign-in by email and Google first; phone OTP later | Confirmed |
+| Sign-in by email and Google first; phone OTP later | **Superseded 30 Oct for the worker app:** worker sign-in is phone + WhatsApp OTP. Resident/admin sign-in remains email/Google until those apps are built. |
+| Worker app: phone number + WhatsApp OTP, six digits; email sign-in removed from the worker app; local fixed test OTPs only; production provider not configured | Approved by Shariq Bhai (WhatsApp verification and static development OTPs), confirmed by the user, 30 Oct |
+| WhatsApp OTP delivery: Twilio (or Twilio Verify) for the MVP; Meta's WhatsApp Cloud API is a possible later integration, not planned now | Decided by user, 30 Oct |
 | Matching by category plus DHA phase (1 to 8); no GPS | Confirmed |
 | **Competition model:** many workers mark interest and send quotes on a job; the customer compares and accepts one; the others are told "not selected". No claim lock, no discussion timeout. Source: UI designs (`DHA-Works-UI/SPEC.md`) | Confirmed by user, 26 Oct (supersedes the claim-lock rows below) |
 | Worker verification is manual, by DHA staff. Documents per the UI: CNIC, police certificate, photo (supersedes "CNIC only"). Outcomes: Approve / Visit HQ / Reject | Confirmed by Shariq (reported by user, 26 Oct) |
@@ -70,7 +72,7 @@ Most recent first within each group. "Confirmed" means agreed with Shariq Bhai; 
 | Commission is 0% in MVP 1 | Decided by user, 27 Oct |
 | Helpline 1092 is NOT published (buttons and FAQ hidden) until DHA confirms it is correct and authorised; number and an enabled flag live in settings | Decided by user, 27 Oct |
 | Backups: we create our own (daily database dump plus storage copy, encrypted, kept outside Supabase, restore tested) instead of relying on the free tier | Decided by user, 27 Oct |
-| From 27 Oct the builder decides remaining product and technical defaults; Shariq Bhai's confirmation is no longer required unless stated. Helpline 1092 stays hidden behind a setting until DHA approves; authentication stays email and Google | Decided by user, 27 Oct |
+| From 27 Oct the builder decides remaining product and technical defaults; Shariq Bhai's confirmation is no longer required unless stated. Helpline 1092 stays hidden behind a setting until DHA approves. Worker authentication moved to phone + WhatsApp OTP on 30 Oct; resident/admin authentication remains email/Google until those apps are built. | Decided by user, 27 Oct; worker auth updated 30 Oct |
 | A worker can have several categories | Confirmed (WhatsApp, 26 Oct) |
 | Voice notes (resident job voice note, worker voice intro) are in the MVP; supersedes SPEC.md's post-MVP list | Confirmed (WhatsApp, 26 Oct) |
 | Open jobs expire after 24 hours (repost allowed; accepted jobs never expire); accepting a quote goes straight to Scheduled | Decided 26 Oct (user) |
@@ -90,7 +92,7 @@ These were found while assembling these docs. Until resolved, the resolution bel
 | Conflict | Resolution used |
 | --- | --- |
 | PRD scope table says language "English, Sindhi, Urdu"; later decision says English first | **English first**; other languages later |
-| Security draft says phone number is the main identity; PRD and MVP Plan say email and Google first | **Email and Google first** |
+| Security draft says phone number is the main identity; PRD and MVP Plan say email and Google first | **Split by app:** worker app uses phone + WhatsApp OTP (30 Oct); resident/admin apps remain email/Google until built |
 | Product Brief and MVP Plan say two-way ratings; PRD v1.1 says customer rates worker only | **Customer to worker** (PRD, newer). Worker rating of customers is pending |
 | Product Brief mentions licence details for workers; PRD says CNIC only; UI asks CNIC + police certificate + photo | **UI list** (26 Oct), no licence; to confirm with Shariq |
 | PRD / architecture describe claim-lock with a 24h discussion; UI describes competing quotes | **UI** (confirmed by user, 26 Oct). PRD, ARCHITECTURE, USER-FLOWS, DATA-MODEL, TESTING, FEATURES, SECURITY, IDEA, ROADMAP, GLOSSARY, UI-UX and README rewritten on 27 Oct |

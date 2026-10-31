@@ -1,6 +1,6 @@
 # Testing Strategy
 
-CI runs lint, type check and tests on every change. The database comes first (build order: DB and APIs, then mobile apps, then admin), so database tests carry the early weight.
+There is no CI yet; run the checks below locally before each change. The database comes first (build order: DB and APIs, then mobile apps, then admin), so database tests carry the early weight.
 
 ## Layers
 
@@ -11,6 +11,13 @@ CI runs lint, type check and tests on every change. The database comes first (bu
 | Mobile UI | **Jest + React Native Testing Library** | Key screens and forms |
 | Admin web | **Playwright** | Approve a worker, resolve a report |
 | End to end (mobile) | **Maestro** | Post job, interest, quote, accept, complete, cash, rate |
+
+## What runs today (30 Oct)
+
+- Database: `npm run db:local -- test db` (pgTAP, 592 assertions in 16 files), `npm run db:local -- db lint --local`, `bash supabase/proposals/run_proposal_test.sh`.
+- Config safety: `npm run safety:test` (22 tests, including the pre-push commit check against a temporary git repo) and `npm run safety:supabase`. Verified locally on 30 Oct: all five static test OTPs sign in and a wrong code returns 403.
+- Worker app: `npm run worker:typecheck`, `worker:lint`, `worker:test` (194 node:test unit tests of the pure rules and call helpers, including phone/WhatsApp OTP request/verify and error mapping), `npx expo export --platform ios|android`.
+- End-to-end scripts against the local stack drive the real RPCs and storage with the app's own functions (details in [WORKER-APP.md](WORKER-APP.md)). No device or UI-automation tests yet; Android untested on a device.
 
 ## Must-have tests (highest value first)
 
@@ -31,6 +38,7 @@ CI runs lint, type check and tests on every change. The database comes first (bu
 
 - Supabase security advisor: zero warnings.
 - Abuse attempts: guess job IDs, post a job in another phase, read another user's document, request a phone number before acceptance.
+- Worker auth: request a code for each local test number and confirm no WhatsApp/SMS is sent; verify the fixed OTP; a wrong code fails; approved can see the feed; pending, suspended, rejected and no-profile accounts cannot; a no-profile phone account can register a profile with `email = null`.
 - Realistic device: a low-end Android phone on a slow connection; image and voice compression under the free-tier storage limit.
 - Staging full run through the key flow with test accounts.
 

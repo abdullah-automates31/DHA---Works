@@ -1,14 +1,15 @@
 # Session handover
 
-Read this first in a new session. It is the detailed record of where the work stands as of **29 Oct 2026**, so nothing from earlier sessions is lost. The product rules are in [DECISIONS.md](DECISIONS.md); the database design is in [DB-API-DESIGN.md](DB-API-DESIGN.md).
+Read this first in a new session. It is the detailed record of where the work stands as of **30 Oct 2026**, so nothing from earlier sessions is lost. The product rules are in [DECISIONS.md](DECISIONS.md); the database design is in [DB-API-DESIGN.md](DB-API-DESIGN.md).
 
 ## 1. Where we are
 
 - Documentation is complete and rewritten for the competing-quotes model (27 Oct), plus Shariq's 27 Oct feedback.
-- **Database and mobile API:** 15 migrations, **all applied to hosted DEV** (`xiozwoocisesgmegewww`; 0013, 0014 and 0015 on 29 Oct). Local and remote history match; `supabase db lint --linked` is clean.
+- **Database and mobile API:** 18 local migrations. **0001–0015 are applied to hosted DEV** (`xiozwoocisesgmegewww`; 0013, 0014 and 0015 on 29 Oct); **0016, 0017 and 0020 are local only**, so local history is ahead of DEV. `supabase db lint --local` is clean.
+- **Config safety (30 Oct):** the static test OTPs and fake Twilio values are no longer in the tracked `supabase/config.toml`. `npm run db:local -- <cmd>` builds a git-ignored `.supabase-local/` copy with them; `npm run safety:supabase` / `safety:test` guard the tracked file; `npm run supabase:config-push -- <dev|production>` is the only documented hosted config push (check-only without `--run`; not run). The git `pre-push` hook (`.githooks/`, enabled in this clone via `core.hooksPath`) checks the config in each commit being pushed and blocks `main`. Never run a raw `supabase config push` on a hosted project. No hosted command was run. Details: [SECURITY.md](SECURITY.md), [WORKER-APP.md](WORKER-APP.md).
 - **Push Edge Function** `supabase/functions/send-push`: built and tested locally, **NOT deployed**. No secret is set on DEV and no scheduler calls it.
-- **Types:** `packages/supabase/database.types.ts`, generated from DEV after 0013 (0014 and 0015 only change privileges, so the types are unchanged).
-- No app code: no Customer app, Worker app, admin portal, root `package.json` or monorepo yet.
+- **Types:** `packages/supabase/database.types.ts` includes the local `worker_feed.quote_count` from 0017. Regenerate after pushing 0016, 0017 and 0020; 0014 and 0015 only change privileges, so they do not change the types.
+- **Worker app** (`apps/worker`): all screens W01-W08 and W10-W18 built and tested on the LOCAL stack (30 Oct), see [WORKER-APP.md](WORKER-APP.md). W11 onward is uncommitted. Local-only migrations: 0016, 0017, 0020 (hosted DEV is still at 0015). No Customer app or admin portal yet; npm workspace only, no pnpm/Turborepo.
 - **Git:** `https://github.com/abdullah-automates31/DHA---Works.git`. `main` = production (untouched since the first push), `dev` = all work. The linked Supabase project is DEV; no production project exists yet (see SETUP.md). Commit messages end with the `Co-Authored-By` line of the model doing the work.
 
 ## 2. Accounts, projects and environment (do not mix these up)
@@ -47,27 +48,27 @@ Rules: schema changes only as new migration files (never edit an existing one); 
 | 20261028000013 | Shariq's 27 Oct feedback: `jobs.material_bill_path`; `complete_job(job, bill_path)`; cash difference closes the job as `cash_collected` (never `disputed`, no `cash_price` report); `submit_review` below 3 files a system `poor_work` report; `resident_jobs` gains `material_bill_path`; `job_media_read` lets the resident read the bill | yes (29 Oct) |
 | 20261029000014 | send-push grants: column-level privileges for `service_role` only (read push columns of `notifications`, update `push_sent_at`; read `user_id, push_token` of `device_tokens` and delete; read `id, account_status` of `profiles`). Nothing for app users. Hosted grants inspected after push: exact match. | yes (29 Oct) |
 | 20261029000015 | default-privileges cleanup: revokes TRUNCATE, REFERENCES, TRIGGER, MAINTAIN on all public tables and views from `anon`, `authenticated`, `service_role`, and removes them from the `postgres` default privileges in `public`. On hosted DEV such grants went from 388 to 0 and the default became `{postgres=arwdDxtm/postgres}`; a before/after fingerprint showed SELECT/INSERT/UPDATE/DELETE (43), column grants (incl. 0014), owners, RLS, 44 policies, platform-schema ACLs, other defaults and function ACLs unchanged. | yes (29 Oct) |
+| 20261029000016 | `submit_for_review` no longer requires worker areas (chosen after approval); every other check is unchanged. | no (local only) |
+| 20261029000017 | `worker_feed` gains `quote_count` at the end, counting `sent` quotes only. | no (local only) |
+| 20261030000020 | publishes `public.notifications` for Realtime; job tables stay unpublished. | no (local only) |
 
-Verified: `supabase db reset` applies all 15 locally; `supabase db lint --local` clean; hosted history matches local for all 15 and `db lint --linked` reports "No schema errors found".
+Verified: `npm run db:local -- db reset` applies all 18 locally; `npm run db:local -- db lint --local` is clean. Hosted DEV is at 0015; `db lint --linked` was clean there on 29 Oct.
 
 **New tables and views get no app-role privileges by default (since 0015).** Each new migration must grant exactly what is needed.
 
-The planned worker-only cash change (if Shariq confirms) will be **0016**.
+Worker-only cash remains **unbuilt and pending Shariq**; it is not 0016.
 
-## 4. Tests (run locally; last full run 29 Oct on a clean reset of all 15 migrations)
+## 4. Tests (run locally; last full run 30 Oct 2026 on a clean reset of all 18 local migrations)
 
-- **pgTAP, `supabase test db`: 217 assertions in 5 files, all pass.**
-  - `default_privileges.test.sql` (41): no app role holds TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on any public table or view, new tables and views get none by default, intended grants and RLS intact, `authenticated` and `service_role` can no longer truncate or lock, the audit-log guard still fires.
-  - `job_lifecycle.test.sql` (52): draft and post, feed visibility, competing quotes, reject and no re-entry, single accept, privacy, start/complete and bill rules, cash write-once, price mismatch closes the job, review anonymity, low rating report, audit append-only.
-  - `lifecycle_edges.test.sql` (54): resident isolation, direct-write denial, cancellation requests, report rules and 7-day window, expiry, 20 h reminder, stuck-job and rating-reminder sweeps, storage policies.
-  - `notifications_privacy.test.sql` (19): users read only their own notifications, cannot create or edit them, cannot read or plant device tokens; a phone's token moves between accounts, never copies.
-  - `service_role_grants.test.sql` (51): pins 0014's exact privileges and checks app users gained nothing and RLS is still on.
-- **Concurrency:** `bash supabase/tests/concurrency/accept_race.sh` (then `supabase db reset`): two sessions accept different quotes on one job, exactly one wins. PASS.
-- **send-push:** `deno test` in `supabase/functions/send-push`: 23 pass. `bash supabase/functions/send-push/integration/run.sh` (then `supabase db reset`): 12 end-to-end checks against the local database and a mock Expo server, using only the grants from the migrations. PASS.
-- **Checks done on hosted DEV after 0015 (29 Oct, read-only):** `postgres` and `supabase_admin` keep every privilege on all 29 tables (Studio runs as these); catalog reads work (29 tables, 335 columns, 31 public policies); the `supabase_realtime` publication is unchanged with 0 public tables; as `authenticated` (rolled-back transaction) categories are readable (8), RLS still hides jobs, SELECT on notifications is allowed, TRUNCATE and MAINTAIN are refused; cron job `dw-hourly-sweeps` is active as `postgres`.
+- **pgTAP, `npm run db:local -- test db`: 592 assertions in 16 files, all pass.** Files cover default privileges, service-role grants, the job lifecycle and edges, profile registration, notifications/privacy, Realtime publication, worker app prep, feed/open jobs, job detail, my jobs, quotes, work steps, cash/cancel, documents and reports.
+- **Worker app:** `npm run worker:test` 194 pass; `npm run worker:typecheck` and `npm run worker:lint` pass; `npx expo export --platform ios` succeeds.
+- **Local phone-auth smoke test (30 Oct):** static WhatsApp OTP request and verify succeed; approved `+923001234567` sees 2 open jobs; pending worker sees 0; no-profile worker registers a profile with `email = null`; `approve_local_phone_worker.sql` promotes the pending worker.
+- **Concurrency:** `bash supabase/tests/concurrency/accept_race.sh` (then `npm run db:local -- db reset`): two sessions accept different quotes on one job, exactly one wins. PASS when last run.
+- **send-push:** `deno test` in `supabase/functions/send-push`: 23 pass. `bash supabase/functions/send-push/integration/run.sh` (then `npm run db:local -- db reset`): 12 end-to-end checks against the local database and a mock Expo server, using only the grants from the migrations. PASS when last run.
+- **Checks done on hosted DEV after 0015 (29 Oct, read-only):** `postgres` and `supabase_admin` keep every privilege on all 29 tables (Studio runs as these); catalog reads work (29 tables, 335 columns, 31 public policies); the `supabase_realtime` publication has 0 public tables there because 0020 is local only; as `authenticated` (rolled-back transaction) categories are readable (8), RLS still hides jobs, SELECT on notifications is allowed, TRUNCATE and MAINTAIN are refused; cron job `dw-hourly-sweeps` is active as `postgres`.
 - **Outstanding live checks (not done):**
   - First `dw-hourly-sweeps` run after 0015. 0015 was applied about 10:30 UTC on 29 Oct; the last checked runs (08:05, 09:05, 10:05 UTC) were before it and succeeded. Check with: `supabase db query --linked "select start_time, status, return_message from cron.job_run_details d join cron.job j using (jobid) where j.jobname = 'dw-hourly-sweeps' order by start_time desc limit 3"`. Expected `succeeded`, since the sweeps run as `postgres`, which kept all privileges.
-  - A live Realtime subscription and live Data API calls with the project's keys (not run; no public tables are in the Realtime publication yet, and Realtime only needs SELECT, which is intact).
+  - A live Realtime subscription and live Data API calls with the project's keys (not run; no public tables are in the hosted Realtime publication yet, and Realtime only needs SELECT, which is intact).
   - Supabase Studio in the browser (only checked at the privilege level).
 - Not tested yet at all: a real push to a phone, Expo receipts. No `supabase/seed.sql` (reset prints a harmless warning).
 
@@ -79,7 +80,7 @@ The planned worker-only cash change (if Shariq confirms) will be **0016**.
 | Rated below 3 means poor work, added inside reports | **Built.** **Assumed:** mean of the three scores below 3. Confirm. |
 | A price difference is never disputed by itself; complaints are separate or by rating below 3 | **Built.** Job closes as `cash_collected`, `cash_records.matched = false`. |
 | "Cash collected by worker (status should be shown on C13)" and a standalone "Review pending" instead of "Cash paid and review" | **UI only so far.** Written into UI-UX.md section 10. |
-| Possible meaning: cash becomes **worker-only** (customer does not confirm cash; no C20) | **NOT built. Pending Shariq.** If yes: migration 0016 makes `record_cash_worker` close the job directly and retires `confirm_cash_resident`; update tests and docs. |
+| Possible meaning: cash becomes **worker-only** (customer does not confirm cash; no C20) | **NOT built. Pending Shariq.** If yes: a new migration makes `record_cash_worker` close the job directly and retires `confirm_cash_resident`; update tests and docs. |
 | Customer status-variation screen like the worker app | UI task (design owner). Not drawn. |
 | Remove W11 My jobs action buttons; remove the Direct requests screen | UI tasks (design owner). |
 | "v2 need expiry" | **Not understood.** Do not guess; ask Shariq and record the answer in DECISIONS.md. |
@@ -103,7 +104,7 @@ The user's instruction: build what is clear, leave what is unsure, they will con
 
 1. Follow-up, not blocking: check the first cron run after 0015 (section 4) and, when convenient, open Studio and try a Realtime subscription on DEV.
 2. To make push live on DEV: `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, add a scheduler (pg_cron + pg_net, needs a migration). Each needs the user's go-ahead.
-3. When Shariq answers: worker-only cash (0016) if confirmed; adjust bill and rating assumptions; record "v2 need expiry".
+3. When Shariq answers: worker-only cash (new migration) if confirmed; adjust bill and rating assumptions; record "v2 need expiry".
 4. Add `supabase/seed.sql` for dev.
 5. Scaffold the monorepo (pnpm + Turborepo) and start the Customer app. Needs explicit approval first.
 6. Backup routine and a tested restore before any real data.

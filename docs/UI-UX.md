@@ -47,7 +47,7 @@ Mobile: 390 x 844 artboards, card radius 18, button radius 14 (28 pill on sign-i
 
 | # | Screen | Purpose |
 | --- | --- | --- |
-| C01 | Welcome and sign in | Email or Google |
+| C01 | Welcome and sign in | Email or Google (planned; customer app not built) |
 | C02, C03 | Onboarding | About you; home, CNIC photos and utility bill |
 | C04 | Pending review | Waiting for staff |
 | C05 | Home | Categories, Emergency now, your jobs |
@@ -68,7 +68,7 @@ Mobile: 390 x 844 artboards, card radius 18, button radius 14 (28 pill on sign-i
 
 | # | Screen | Purpose |
 | --- | --- | --- |
-| W01 | Sign in | Email |
+| W01 | Sign in | Phone + WhatsApp OTP (built 30 Oct; design still shows email) |
 | W02, W03, W03b | Onboarding | About you; documents; your work |
 | W04 | Application under review | |
 | W05 | Choose your areas | Phases 1 to 8 |
@@ -112,6 +112,7 @@ A01 staff sign-in; A02 dashboard (later); A03 and A04 worker queue and review; A
 - Direct booking, saved workers, helpline log, dashboard and the all-reviews screen are out of MVP 1. Quote revision screens (request and approve) do not exist yet and are MVP 2.
 - Worker "needs changes" wording should become "Visit HQ" to match the admin.
 - **Add Request cancellation screens** (resident C22, worker W18): reason list, optional details, a clear note that the request does not automatically stop work or settle payment, and a "Cancellation requested, under review" banner on job status screens (with Withdraw request).
+- **Worker sign-in:** W01 now uses a Pakistani mobile number and a 6-digit WhatsApp code; email sign-in was removed. The design still shows email, so a matching phone/WhatsApp W01 and code screen are needed. Local test OTPs are fixed; production needs a Twilio/Twilio Verify WhatsApp sender.
 - **Helpline:** the Call 1092 buttons and FAQ lines stay hidden until DHA confirms the number is correct and authorised. Wording and FAQ answers also need Shariq Bhai's approval.
 
 ## 9. Content and tone

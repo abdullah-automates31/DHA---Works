@@ -46,7 +46,7 @@ pnpm dev                 # runs apps through Turborepo
 
 ## Supabase CLI workflow (as used, 28 Oct)
 
-- Windows: Supabase CLI 2.109.1 and Docker Desktop. Local stack: `supabase start`, `supabase db reset` (applies all migrations), `supabase test db` (pgTAP), `supabase db lint --local`.
+- Windows: Supabase CLI 2.109.1 and Docker Desktop. Local stack: `npm run db:local -- start`, `-- db reset` (applies all migrations), `-- test db` (pgTAP), `-- db lint --local` (the wrapper adds the local-only test OTPs; see docs/WORKER-APP.md). The CLI is installed globally; the project is pinned to 2.109.1 in `scripts/supabase-targets.json` and the hosted-config guard fails on any other version. Enable the git hook once per clone: `git config core.hooksPath .githooks`.
 - Hosted project (production-like, free tier): ref `xiozwoocisesgmegewww`, eu-west-1, Postgres 17, account `dhaworks.developments@gmail.com`. The user runs `supabase login`, `supabase link --project-ref xiozwoocisesgmegewww` and `supabase db push` themselves in their own PowerShell. Check with `supabase migration list --linked` and `supabase db lint --linked`.
 - A leftover Relay project (another product, other account) may auto-start in Docker; never touch it. Stop with `supabase stop --project-id Relay`.
 - Concurrency check: `bash supabase/tests/concurrency/accept_race.sh` then `supabase db reset`.
@@ -70,4 +70,4 @@ Rules:
 
 ## Push Edge Function (built 29 Oct, not deployed)
 
-`supabase/functions/send-push`, see its README. Local checks: `cd supabase/functions/send-push && deno test`, and `bash supabase/functions/send-push/integration/run.sh` (then `supabase db reset`). Deploying needs: migration `20261029000014_send_push_grants.sql` applied to the target project (on DEV since 29 Oct), `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, and a scheduler call. Types: `packages/supabase/database.types.ts` was generated from DEV with `supabase gen types typescript --linked`.
+`supabase/functions/send-push`, see its README. Local checks: `cd supabase/functions/send-push && deno test`, and `bash supabase/functions/send-push/integration/run.sh` (then `npm run db:local -- db reset`). Deploying needs: migration `20261029000014_send_push_grants.sql` applied to the target project (on DEV since 29 Oct), `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, and a scheduler call. Types: `packages/supabase/database.types.ts` reflects the local schema, including 0017's `quote_count`; regenerate with `supabase gen types typescript --local`, then from `--linked` after 0016, 0017 and 0020 are pushed.

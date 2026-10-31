@@ -1,6 +1,6 @@
 # Security
 
-Version 2.0 (draft), 27 Oct 2026 (updated for the competing-quotes model). Companion to [PRD.md](PRD.md). Items marked **Pending** need a decision from Shariq Bhai.
+Version 2.0 (draft), 27 Oct 2026 (updated for the competing-quotes model); worker auth updated 30 Oct 2026. Companion to [PRD.md](PRD.md). Items marked **Pending** need a decision from Shariq Bhai.
 
 ## 1. Principles
 
@@ -15,7 +15,7 @@ Version 2.0 (draft), 27 Oct 2026 (updated for the competing-quotes model). Compa
 | --- | --- | --- |
 | CNIC number and photos (workers and residents) | High | Owner and DHA admin only |
 | Utility bill, police certificate | High | Owner and DHA admin only |
-| Phone, email, date of birth, gender | Medium | Owner and admin. **A resident's phone number and a worker's phone number are shown to the other party only after the resident accepts that worker's quote.** |
+| Phone, email, date of birth, gender | Medium | Owner and admin. A worker's phone is also their sign-in identifier but is never shown to residents before acceptance. **A resident's phone number and a worker's phone number are shown to the other party only after the resident accepts that worker's quote.** |
 | Home address (phase, lane, plot, floor) | Medium | Owner and admin. Workers see phase and lane on the job post; **plot and floor only after acceptance** (confirmed by Shariq, 26 Oct). |
 | Job text, job photos, job voice note | Medium | The resident, workers whose category and phase match (while the job is open), the accepted worker and admin |
 | Quotes | Medium | The resident, the worker who wrote it, admin. Competing workers never see each other's quotes. |
@@ -24,13 +24,15 @@ Version 2.0 (draft), 27 Oct 2026 (updated for the competing-quotes model). Compa
 
 ## 3. Authentication
 
-- Supabase Auth. Email and Google first; phone OTP later. **Pending:** OTP via SMS or WhatsApp, and its cost.
-- Resident and worker accounts are separate. One email maps to one role; a person using both roles needs two emails.
+- Supabase Auth. The worker app uses **phone number + WhatsApp OTP** (six digits); email sign-in has been removed from that app. Resident and admin apps are not built; their planned sign-in remains email/Google. See [DECISIONS.md](DECISIONS.md).
+- The worker's phone number is also their sign-in identifier. It is still private profile data: other users see it only under the contact-release rule. It is never exposed in a job feed or notification.
+- **Production WhatsApp is not configured.** It needs Twilio or Twilio Verify with a WhatsApp sender/Messaging Service and the token stored server-side as `SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN`. An ordinary SMS gateway is not a WhatsApp substitute. Local fixed test OTPs must never be enabled on hosted DEV or production: they live only in the generated `.supabase-local/` config (git-ignored), never in `supabase/config.toml`, which is what `supabase config push` sends. `npm run safety:supabase` (also run by `npm run db:local` and `npm run supabase:config-push`; the git pre-push hook checks the config in every commit being pushed) fails on any static test OTP, literal or placeholder Twilio credential. Hosted config is pushed only with `npm run supabase:config-push -- <target>`, which also checks the linked project ref against `scripts/supabase-targets.json`, blocks the Relay and `dha-suite` refs, pins the CLI version and, for production, requires real Twilio credentials in the environment. A raw `supabase config push` bypasses these checks and, because the shared config has Twilio disabled, could switch Twilio off on a hosted project, so it is never run against hosted projects.
+- Resident and worker accounts are separate. One sign-in identifier maps to one role; a person using both roles needs two accounts.
 - Admin portal: email and password with mandatory two-factor authentication. Admin accounts are created by an existing admin only.
 - Rate limits on login and OTP requests; lockout after repeated failures.
 - Short-lived tokens with refresh. Apps store tokens in secure device storage.
 
-> Note: the Security draft describes phone number as the main identity, but the agreed MVP is email and Google. See [DECISIONS.md](DECISIONS.md).
+> Note: the Security draft described phone number as the main identity, while the PRD said email and Google first. The worker app now uses phone + WhatsApp; resident/admin identity is still to be built.
 
 ## 4. Authorization (roles and RLS)
 
@@ -60,7 +62,7 @@ Roles: **customer**, **worker**, **admin**. The role is stored on the server and
 ## 6. Data protection
 
 - HTTPS only. Supabase encrypts data at rest.
-- Secrets (database URL, service key, Expo and Vercel tokens, SMS keys) live in the host's environment settings, never in the repository. Commit `.env.example` files without real values.
+- Secrets (database URL, service key, Expo and Vercel tokens, Twilio/WhatsApp provider token) live in the host's environment settings, never in the repository. Commit `.env.example` files without real values.
 - Separate Supabase projects for development and production with different keys.
 - Backups: the free tier has no point-in-time recovery, so we run our own scheduled backups: a daily `pg_dump` of the database (run from CI or a small scheduled job using a read-only connection string kept as a secret), plus a copy of the Storage buckets (a database dump does not include uploaded files), stored encrypted outside Supabase with limited access, a retention rule for old backups, and a restore test before any real data is held. Backups contain CNIC and bill images, so they get the same protection as the live data (encrypted, access limited to the owner and named staff).
 - Logs must not contain CNIC numbers, phone numbers or free-text report content.
@@ -106,7 +108,7 @@ Append-only: who, what, when, which record, old and new value, reason. Covers wo
 
 | # | Decision | Suggested default |
 | --- | --- | --- |
-| 1 | OTP channel and cost | One provider, measure cost |
+| 1 | Production WhatsApp OTP provider and cost | Twilio or Twilio Verify with a WhatsApp sender; account, sender and cost still to configure. Local test OTPs are not a production substitute. |
 | 2 | Retention of CNIC and bill images | Delete after account closure plus a fixed period |
 | 3 | ~~Address visibility to workers~~ | **Decided:** area before acceptance; phone, plot and floor after (Shariq, 26 Oct) |
 | 4 | ~~Who reviews resident onboarding~~ | **Decided:** DHA staff review CNIC and bill by hand |

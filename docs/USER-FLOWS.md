@@ -24,7 +24,7 @@ Screen numbers (C05, W07, A03 and so on) refer to `DHA-Works-UI/`. Rules are in 
 
 ## 3. Worker: sign-up to first job (W01 to W08, W10)
 
-1. Sign in with email, then **About you** (name, mobile, date of birth, gender, CNIC number).
+1. Sign in with a mobile number and the 6-digit code sent on WhatsApp, then **About you** (name, mobile, date of birth, gender, CNIC number).
 2. **Documents:** CNIC photos, police certificate (or 2 references from DHA residents), profile photo.
 3. **Your work:** trades (several), experience, visit fee, optional voice introduction. Submit.
 4. **Application under review** (usually under 24 hours). Outcomes: approved, **Visit HQ**, or rejected, with a reason.

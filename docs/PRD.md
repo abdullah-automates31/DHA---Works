@@ -1,6 +1,6 @@
 # Product Requirements Document (MVP 1)
 
-Version 2.0, updated 27 October 2026. Replaces v1.1: the job model changed from **claim-lock** to **competing quotes** (confirmed with Shariq Bhai and the UI designs, see [DECISIONS.md](DECISIONS.md)). Detailed database and API rules are in [DB-API-DESIGN.md](DB-API-DESIGN.md). Items marked **Pending** are not yet confirmed.
+Version 2.0, updated 27 October 2026; worker auth updated 30 October 2026. Replaces v1.1: the job model changed from **claim-lock** to **competing quotes** (confirmed with Shariq Bhai and the UI designs, see [DECISIONS.md](DECISIONS.md)). Detailed database and API rules are in [DB-API-DESIGN.md](DB-API-DESIGN.md). Items marked **Pending** are not yet confirmed.
 
 ## 1. Overview
 
@@ -32,13 +32,13 @@ A person's role is set by the system and cannot be changed from the app.
 | Role | Who | App | Can do |
 | --- | --- | --- | --- |
 | Resident | DHA resident | DHA Works | Sign in (email or Google), complete onboarding (CNIC, address, utility bill), wait for approval, post jobs (category, description, photos, optional voice note, time), compare and accept or reject quotes, confirm cash, rate the worker, report a problem |
-| Worker | Plumber, electrician, AC technician etc. | DHA Works - Worker | Register (CNIC, police certificate or references, photo, trades, experience, visit fee, voice introduction), wait for approval, choose DHA phases 1 to 8, see matching jobs, mark interest, send quotes, start and finish jobs, record cash, report a problem |
+| Worker | Plumber, electrician, AC technician etc. | DHA Works - Worker | Sign in with phone + WhatsApp OTP, register (CNIC, police certificate or references, photo, trades, experience, visit fee, voice introduction), wait for approval, choose DHA phases 1 to 8, see matching jobs, mark interest, send quotes, start and finish jobs, record cash, report a problem |
 | DHA Admin | DHA staff | Web portal | Approve, ask for changes, send to HQ or reject residents and workers; manage reports; cancel jobs; suspend and reinstate; manage categories, phases, helpline and report window; view the audit trail |
 
 **Rules for every role**
 
-- Sign-in is email or Google; phone OTP comes later.
-- Residents and workers are separate accounts (one email, one role).
+- The worker app signs in with a phone number and a 6-digit WhatsApp OTP; email sign-in is removed from that app. Resident/admin sign-in remains email or Google until those apps are built.
+- Residents and workers are separate accounts (one sign-in identifier, one role).
 - A resident or worker who is not Approved cannot post, quote or see the job feed.
 - Staff accounts are created by invitation only.
 
@@ -46,7 +46,7 @@ A person's role is set by the system and cannot be changed from the app.
 
 | Area | MVP 1 | MVP 2 or later |
 | --- | --- | --- |
-| Accounts | Email and Google; resident and worker onboarding with documents | Phone OTP |
+| Accounts | Worker phone + WhatsApp OTP; resident/admin email/Google planned; resident and worker onboarding with documents | Phone OTP for the customer app |
 | Matching | Category plus DHA phase 1 to 8 (no GPS, no distance filter) | Distance matching, ranking |
 | Jobs | Post (draft, photos, voice note), interest, quotes, accept, schedule, work, cash, review | Booking a specific worker, recurring jobs |
 | Quotes | Itemised (labour, materials, other), visit window, immutable once sent | **Quote revisions (MVP 2)** |

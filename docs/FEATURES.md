@@ -6,7 +6,7 @@ IDs match the screens in `DHA-Works-UI/` (C = resident app, W = worker app, A = 
 
 | ID | Feature | Detail | Scope |
 | --- | --- | --- | --- |
-| C01 | Welcome and sign in | Email or Google | MVP 1 |
+| C01 | Welcome and sign in | Email or Google (planned; customer app not built) | MVP 1 |
 | C02, C03 | Onboarding | Personal details; DHA phase, lane, plot, floor; CNIC photos; utility bill | MVP 1 |
 | C04 | Pending review | Shown while staff check CNIC and bill | MVP 1 |
 | C05 | Home | Categories (8) with nearby counts, search, Emergency now, your jobs | MVP 1 |
@@ -28,7 +28,7 @@ IDs match the screens in `DHA-Works-UI/` (C = resident app, W = worker app, A = 
 
 | ID | Feature | Detail | Scope |
 | --- | --- | --- | --- |
-| W01 | Sign in | Email | MVP 1 |
+| W01 | Sign in | Phone + WhatsApp OTP | MVP 1 |
 | W02, W03, W03b | Onboarding | About you; documents (CNIC, police certificate or references, photo); your work (trades, experience, visit fee, voice introduction) | MVP 1 |
 | W04 | Application under review | Approved, Visit HQ or rejected | MVP 1 |
 | W05 | Choose your areas | DHA phases 1 to 8 | MVP 1 |
@@ -78,4 +78,4 @@ Plumbing, Electrical, AC & Refrigeration, Carpentry, Painting, Cleaning, Welding
 
 ## Explicitly later
 
-Phone OTP sign-in, distance-based matching, booking a specific worker, chat, quote revisions (MVP 2), recurring or urgent jobs, online payment and commission, automated document checks, Urdu, GPS tracking, worker calendars, in-app calling, multi-city, iOS, customer web app.
+Phone OTP sign-in for the customer app, distance-based matching, booking a specific worker, chat, quote revisions (MVP 2), recurring or urgent jobs, online payment and commission, automated document checks, Urdu, GPS tracking, worker calendars, in-app calling, multi-city, iOS, customer web app.

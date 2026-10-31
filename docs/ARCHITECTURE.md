@@ -82,7 +82,7 @@ Allowed transitions are enforced in the database (one function per transition), 
 
 - **SQL functions (RPC)** for every transition. Each checks the caller's role and the current status, updates, and writes `job_events` and `audit_log` in one transaction.
 - **pg_cron:** hourly sweep to expire open jobs after 24 hours (reminder at 20 hours), flag stuck jobs, send rating reminders. Available on the free tier.
-- **Edge Functions** only for what the database cannot do: send push via Expo, call an SMS or OTP provider later, process images if needed.
+- **Edge Functions** only for what the database cannot do: send push via Expo, process images if needed. Auth OTP delivery is handled by Supabase Auth's Twilio/Twilio Verify WhatsApp provider, not a custom Edge Function.
 - **Database triggers** create notification rows on status changes; an Edge Function sends the matching push.
 - **Quote totals** are computed on the server from labour, materials and other.
 
@@ -129,7 +129,7 @@ See [TESTING.md](TESTING.md).
 
 ## 13. Cost and scale
 
-DHA Karachi is bounded, so load is small. Free tiers of Supabase, Vercel and Expo are enough to start. Free-tier limits that matter: projects pause when idle, no point-in-time backups (we run our own), about 1 GB of storage, limited built-in auth email (use custom SMTP). Plan for: Google Play developer fee (one-time), SMS or WhatsApp OTP, and our own backup job (daily database dump plus a copy of the storage buckets, encrypted and kept outside Supabase, with a tested restore). A Supabase Pro upgrade is still planned once funded.
+DHA Karachi is bounded, so load is small. Free tiers of Supabase, Vercel and Expo are enough to start. Free-tier limits that matter: projects pause when idle, no point-in-time backups (we run our own), about 1 GB of storage, limited built-in auth email (use custom SMTP for resident/admin email login). Plan for: Google Play developer fee (one-time), Twilio or Twilio Verify WhatsApp OTP, and our own backup job (daily database dump plus a copy of the storage buckets, encrypted and kept outside Supabase, with a tested restore). A Supabase Pro upgrade is still planned once funded.
 
 ## 14. Open architecture decisions
 
@@ -138,6 +138,6 @@ DHA Karachi is bounded, so load is small. Free tiers of Supabase, Vercel and Exp
 | 1 | Approve this architecture | Approve, then start M0 |
 | 2 | Test device | Real Android phone with Expo Go |
 | 3 | Stuck-job definition and automated call | Admin alert first; automated call later |
-| 4 | OTP provider | Decide with Security item 1 |
+| 4 | WhatsApp OTP provider | Twilio or Twilio Verify with a WhatsApp sender; account, sender and cost still to configure |
 | 5 | App names and store accounts | Create the Google Play developer account near M11 |
 | 6 | iOS | Later; no Mac available |
