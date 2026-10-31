@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+
+import { useLiveRefresh } from '@/features/live/useLiveRefresh';
 
 import { isSameDay } from './format';
 import { supabase } from '@/lib/supabase';
@@ -53,19 +56,24 @@ async function fetchHome(now: Date): Promise<HomeData> {
 export function useHome(): { data: HomeData; refresh: () => Promise<void> } {
   const [data, setData] = useState<HomeData>({ status: 'loading' });
 
-  useEffect(() => {
-    let active = true;
-    void fetchHome(new Date()).then((next) => {
-      if (active) setData(next);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Loads when the tab opens and each time it is shown again (the bell dot and today's list stay current).
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void fetchHome(new Date()).then((next) => {
+        if (active) setData((current) => (next.status === 'error' && current.status === 'ready' ? current : next));
+      });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   const refresh = useCallback(async () => {
-    setData(await fetchHome(new Date()));
+    const next = await fetchHome(new Date());
+    setData((current) => (next.status === 'error' && current.status === 'ready' ? current : next));
   }, []);
+  useLiveRefresh(() => void refresh());
 
   return { data, refresh };
 }

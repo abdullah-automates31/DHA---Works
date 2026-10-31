@@ -1,17 +1,127 @@
 import { useRouter } from 'expo-router';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TempScreen } from '@/components/TempScreen';
+import { PrimaryButton } from '@/components/AuthForm';
+import { BellIcon, CheckIcon, ChevronLeftIcon } from '@/components/icons';
+import { statusHref } from '@/features/job/routes';
+import { ago, describe, groupNotices, unreadIds, type Notice, type NoticeIcon } from '@/features/notifications/rules';
+import { useNotifications } from '@/features/notifications/useNotifications';
 import { t } from '@/i18n';
+import { colors, fontFamily } from '@/theme';
 
-// Temporary: notifications (W15) are not built yet.
-export default function NotificationsPlaceholder() {
+// W15 Notifications (worker/screens/w-notifs.dc.html): Today and Earlier, unread rows marked with a dot, a "Mark all
+// read" link. Tapping a row marks it read and opens the job. The "New booking request" type of the mock is gone with
+// direct requests. New notifications arrive live (Realtime) and the list reloads when the screen is shown.
+export default function NotificationsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { data, reload, markRead } = useNotifications();
+  const now = new Date();
+  const notices = data.status === 'ready' ? data.notices : [];
+  const unread = unreadIds(notices);
+  const groups = groupNotices(notices, now);
+
+  function open(n: Notice) {
+    if (n.readAt === null) void markRead([n.id]);
+    if (n.jobId && describe(n, now).opensJob) router.push(statusHref(n.jobId));
+  }
+
   return (
-    <TempScreen
-      title={t('soon.notificationsTitle')}
-      body={t('soon.notificationsBody')}
-      action={{ label: t('common.back'), onPress: () => router.back() }}
-      noSignOut
-    />
+    <View style={styles.root}>
+      <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))} style={styles.back}>
+          <ChevronLeftIcon size={22} color={colors.greenDark} />
+        </Pressable>
+        <Text style={styles.topTitle}>{t('notices.title')}</Text>
+        <Pressable accessibilityRole="button" disabled={unread.length === 0} onPress={() => void markRead()} style={styles.markAll}>
+          <Text style={[styles.markAllText, unread.length === 0 && { color: colors.muted }]}>{unread.length === 0 ? t('notices.allRead') : t('notices.markAll')}</Text>
+        </Pressable>
+      </View>
+
+      {data.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 48 }} /> : null}
+
+      {data.status === 'error' ? (
+        <View style={styles.message}>
+          <Text style={styles.messageTitle}>{t('notices.errorTitle')}</Text>
+          <Text style={styles.messageBody}>{t('notices.errorBody')}</Text>
+          <PrimaryButton label={t('common.retry')} onPress={() => void reload()} showArrow={false} />
+        </View>
+      ) : null}
+
+      {data.status === 'ready' ? (
+        <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={false} onRefresh={() => void reload()} tintColor={colors.green} />}>
+          {groups.length === 0 ? (
+            <View style={styles.empty}>
+              <BellIcon size={28} color={colors.green} />
+              <Text style={styles.emptyTitle}>{t('notices.emptyTitle')}</Text>
+              <Text style={styles.emptyBody}>{t('notices.emptyBody')}</Text>
+            </View>
+          ) : null}
+          {groups.map((group) => (
+            <View key={group.key} style={{ gap: 8 }}>
+              <Text style={styles.groupLabel}>{t(group.key === 'today' ? 'notices.today' : 'notices.earlier')}</Text>
+              <View style={styles.card}>
+                {group.items.map((n, index) => {
+                  const view = describe(n, now);
+                  return (
+                    <Pressable
+                      key={n.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${view.title}. ${view.body}`}
+                      onPress={() => open(n)}
+                      style={[styles.row, index < group.items.length - 1 && styles.divider]}
+                    >
+                      <View style={[styles.icon, n.readAt === null && { backgroundColor: colors.mint }]}>
+                        <Glyph kind={view.icon} />
+                      </View>
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <Text style={[styles.rowTitle, n.readAt !== null && { fontFamily: fontFamily.bold }]}>{view.title}</Text>
+                        <Text style={styles.rowBody}>{view.body}</Text>
+                      </View>
+                      <View style={styles.meta}>
+                        <Text style={styles.time}>{ago(n, now)}</Text>
+                        {n.readAt === null ? <View style={styles.dot} /> : null}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
+    </View>
   );
 }
+
+function Glyph({ kind }: { kind: NoticeIcon }) {
+  if (kind === 'check') return <CheckIcon size={18} color={colors.greenDark} strokeWidth={3} />;
+  return <BellIcon size={18} color={kind === 'alert' ? colors.chip.declined.fg : colors.greenDark} />;
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 12 },
+  back: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  topTitle: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: 20, color: colors.ink },
+  markAll: { paddingVertical: 10, paddingHorizontal: 4 },
+  markAllText: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.green },
+  content: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 32, gap: 16 },
+  groupLabel: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.muted },
+  card: { backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 14 },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 14 },
+  divider: { borderBottomWidth: 1.5, borderBottomColor: '#E2ECE6' },
+  icon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EEF4F1', alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { fontFamily: fontFamily.extrabold, fontSize: 14, color: colors.ink },
+  rowBody: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 19, color: colors.muted },
+  meta: { alignItems: 'flex-end', gap: 6 },
+  time: { fontFamily: fontFamily.semibold, fontSize: 11, color: colors.muted },
+  dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.gold },
+  empty: { alignItems: 'center', gap: 8, paddingVertical: 48 },
+  emptyTitle: { fontFamily: fontFamily.extrabold, fontSize: 16, color: colors.ink },
+  emptyBody: { fontFamily: fontFamily.semibold, fontSize: 13, color: colors.muted, textAlign: 'center' },
+  message: { margin: 20, backgroundColor: colors.mint, borderRadius: 18, padding: 16, gap: 10 },
+  messageTitle: { fontFamily: fontFamily.extrabold, fontSize: 16, color: colors.greenDark },
+  messageBody: { fontFamily: fontFamily.semibold, fontSize: 13, lineHeight: 19, color: colors.muted },
+});

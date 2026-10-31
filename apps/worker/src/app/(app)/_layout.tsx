@@ -53,6 +53,11 @@ function ProfileGate() {
       <Stack.Screen name="notifications" />
       <Stack.Screen name="job/[id]/index" />
       <Stack.Screen name="job/[id]/quote" />
+      <Stack.Screen name="job/[id]/status" />
+      <Stack.Screen name="job/[id]/cash" />
+      <Stack.Screen name="job/[id]/cancel" />
+      <Stack.Screen name="job/[id]/report" />
+      <Stack.Screen name="help" />
     </Stack>
   );
 }

@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ArrowRightIcon, BellIcon, ClockSmallIcon } from '@/components/icons';
+import { ProgressBar } from '@/components/MyJobParts';
 import {
   firstName,
   formatHomeDate,
@@ -15,6 +16,8 @@ import {
   timeWindow,
 } from '@/features/home/format';
 import { useHome, type TodayJob } from '@/features/home/useHome';
+import { statusHref } from '@/features/job/routes';
+import { jobKind } from '@/features/myjobs/rules';
 import { t } from '@/i18n';
 import { useMyProfile } from '@/lib/profile';
 import { colors, fontFamily } from '@/theme';
@@ -82,7 +85,7 @@ export default function HomeScreen() {
                 <Text style={styles.emptyText}>{t('home.noneToday')}</Text>
               </View>
             ) : (
-              data.today.map((job, index) => <JobCard key={job.id} job={job} tint={index % 2 === 0 ? 'y' : 'b'} />)
+              data.today.map((job, index) => <JobCard key={job.id} job={job} tint={index % 2 === 0 ? 'y' : 'b'} onPress={() => router.push(statusHref(job.id))} />)
             )}
           </>
         ) : null}
@@ -91,14 +94,14 @@ export default function HomeScreen() {
   );
 }
 
-function JobCard({ job, tint }: { job: TodayJob; tint: 'y' | 'b' }) {
+function JobCard({ job, tint, onPress }: { job: TodayJob; tint: 'y' | 'b'; onPress: () => void }) {
   const chip = job.status === 'in_progress' ? colors.chip.inProgress : colors.chip.scheduled;
   const label = job.status === 'in_progress' ? t('home.inProgress') : t('home.scheduled');
   const place = `Phase ${job.phase}, ${job.lane}`;
   const who = job.residentName ? `${shortName(job.residentName)} · ${place}` : place;
   const avatar = tint === 'y' ? { bg: '#F6E7B4', fg: '#5C4300' } : { bg: '#D6E6F7', fg: '#17406B' };
   return (
-    <View style={styles.card}>
+    <Pressable accessibilityRole="button" accessibilityLabel={job.title} onPress={onPress} style={styles.card}>
       <View style={styles.cardTop}>
         <View style={styles.time}>
           <ClockSmallIcon size={18} color={colors.muted} />
@@ -118,7 +121,8 @@ function JobCard({ job, tint }: { job: TodayJob; tint: 'y' | 'b' }) {
         </Text>
         <Text style={styles.price}>{formatRupees(job.total)}</Text>
       </View>
-    </View>
+      <ProgressBar kind={jobKind({ status: job.status, isMine: true, myQuoteStatus: 'accepted' })} />
+    </Pressable>
   );
 }
 

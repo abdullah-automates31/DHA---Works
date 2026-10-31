@@ -159,12 +159,15 @@ export function BottomBar({
   loading,
   disabled,
   hideArrow,
+  soft,
 }: {
   label: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
   hideArrow?: boolean;
+  /** mint button (.btn.soft) for actions that wait or go back, instead of the green main button */
+  soft?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const inactive = disabled || loading;
@@ -174,9 +177,9 @@ export function BottomBar({
         accessibilityRole="button"
         accessibilityState={{ disabled: inactive, busy: loading }}
         onPress={inactive ? undefined : onPress}
-        style={({ pressed }) => [styles.btn, (inactive || pressed) && { opacity: 0.6 }]}
+        style={({ pressed }) => [styles.btn, soft && { backgroundColor: colors.mint }, (inactive || pressed) && { opacity: 0.6 }]}
       >
-        <Text style={styles.btnText}>{loading ? t('about.saving') : label}</Text>
+        <Text style={[styles.btnText, soft && { color: colors.greenDark }]}>{loading ? t('about.saving') : label}</Text>
         {loading || hideArrow ? null : <ArrowRightIcon size={22} color="#fff" />}
       </Pressable>
     </View>

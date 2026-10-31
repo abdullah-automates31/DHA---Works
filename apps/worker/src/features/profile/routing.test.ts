@@ -38,7 +38,7 @@ test('approved without areas must choose areas first; with areas goes home and m
   const approved = with_({ verification_status: 'approved' });
   assert.deepEqual(allowedRoutes(approved), ['/areas']);
   assert.deepEqual(allowedRoutes(approved, 0), ['/areas']);
-  assert.deepEqual(allowedRoutes(approved, 3), ['/home', '/open-jobs', '/my-jobs', '/profile', '/notifications', '/areas']);
+  assert.deepEqual(allowedRoutes(approved, 3), ['/home', '/open-jobs', '/my-jobs', '/profile', '/notifications', '/areas', '/help']);
 });
 
 test('areas do not matter before approval', () => {

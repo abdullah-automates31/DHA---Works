@@ -63,7 +63,7 @@ export default function AreasScreen() {
     }
     await refresh();
     setSaving(false);
-    router.replace('/home');
+    router.replace(firstTime ? '/home' : '/profile');
   }
 
   return (
