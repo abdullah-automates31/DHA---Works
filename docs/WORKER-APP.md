@@ -1,13 +1,15 @@
 # Worker app (apps/worker): build record
 
-Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the **local** Supabase stack. W09 (Direct requests) is out of the MVP. W01 now uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. Nothing from W11 onward is committed yet; it waits for the user's review. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
+Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the **local** Supabase stack. W09 (Direct requests) is out of the MVP. W01 now uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. All of it is committed to `dev`. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack and layout
 
 - Expo SDK 58, Expo Router, TypeScript, React Native 0.8x, minimal npm workspace (no pnpm yet) with `packages/supabase` (generated `database.types.ts`).
 - `apps/worker/src/app`: routes. `features/<area>`: pure rules (`rules.ts`, unit tested with `node --test`) plus hooks and injectable-client calls. `components`: shared UI. `i18n/en.ts`: all text (English first). `lib`: auth, profile context, Supabase client.
 - Business rules stay in the database. The app prepares requests, maps refusals to friendly messages and shows state.
-- Known open item: two copies of React (19.3.0 in the app, 19.3.1 at the root); fix before the first real build. Android is untested on a device.
+- One React copy: the app pins `react` and `react-dom` 19.3.0 (what Expo SDK 58 expects) and the root `package.json` has `overrides` so nothing installs 19.3.1 next to it (31 Oct). If `npm ls react` ever shows two versions or "invalid", fix that before building. Android is untested on a device.
+- Profile picture: `components/ProfilePhoto.tsx` shows the worker's `profiles.avatar_path` (private `worker-media` bucket, short-lived signed URL cached in memory, initials until it loads or when there is none) on Home and Profile; Documents refreshes the profile after a new picture is uploaded. Not yet on every screen.
+- W04 and the other status screens (visit HQ, rejected, suspended) have a "Check my status" button that reloads the profile; the route gate then moves an approved worker on without signing out. Real-time push of the decision comes with the notification work.
 
 ## Screens and the backend each uses
 
@@ -82,6 +84,17 @@ Hosted DEV is still at 0015. Two proposals are unapplied in `supabase/proposals/
 | `+923561234567` | `778899` | no profile (starts at W02) |
 
 These numbers are accepted by Auth without a provider call because `npm run db:local` adds them as `[auth.sms.test_otp]` to the generated local config (list in `scripts/lib/local-config.mjs`). They are not in `supabase/config.toml` and must never be enabled on hosted DEV or production.
+
+### Real SMS on the local stack (optional, with a Twilio trial account)
+
+To see a real code arrive on your own phone while developing:
+
+1. In Twilio: note the Account SID and Auth Token, create a Verify service (Verify > Services, Service SID starts with `VA`), and verify your own phone number (a trial account can only text verified numbers; check SMS geo permissions allow Pakistan).
+2. Fill the three values in `.env.twilio.local` at the repo root (git-ignored through `.env.*`; a fresh clone must create it with `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`; `TWILIO_MESSAGING_SERVICE_SID` is the alternative to Verify). Never paste them in chat or commit them.
+3. `npm run db:local -- stop`, then `npm run db:local -- start`. It prints "real SMS through Twilio". The values reach Supabase only through the process environment (`env(...)` in the generated config); nothing is written to a file.
+4. In `apps/worker/.env` set `EXPO_PUBLIC_OTP_CHANNEL=sms` (default `whatsapp`) and restart Metro with `npx expo start --lan -c`. Sign in with your own real number: Twilio sends the code. The five fixed numbers above still skip sending. A new number has no profile yet: finish onboarding, then approve it with `approve_local_phone_worker.sql -v phone=+92...`.
+
+The SMS channel is for development. WhatsApp stays the product channel; its production setup (Twilio plus a Meta-approved sender) is in HANDOVER.md. Verified 31 Oct with dummy values: Auth reaches Twilio and returns Twilio's authentication error, and fixed test numbers keep working.
 
 ## Checks (last run 30 Oct, all green except two known script checks)
 

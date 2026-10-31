@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { AuthPhoneField, ErrorText, FieldLabel, FormTitle, PrimaryButton } from '@/components/AuthForm';
 import { AuthScreen } from '@/components/AuthScreen';
+import { OTP_CHANNEL } from '@/features/auth/channel';
 import { requestPhoneOtp } from '@/features/auth/otp';
 import { formatNational, normalizePhone, sanitizeNationalInput } from '@/features/auth/validation';
 import { t } from '@/i18n';
@@ -29,7 +30,7 @@ export default function SignInScreen() {
     }
     setError(null);
     setLoading(true);
-    const result = await requestPhoneOtp(supabase.auth, phone);
+    const result = await requestPhoneOtp(supabase.auth, phone, OTP_CHANNEL);
     setLoading(false);
     if (!result.ok) {
       setError(t(result.key));

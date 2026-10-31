@@ -5,10 +5,11 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { checkRepo, root } from './check-supabase-config.mjs';
-import { buildLocalConfig, checkLocalArgs } from './lib/local-config.mjs';
+import { buildLocalConfig, checkLocalArgs, parseEnvFile, twilioFromEnv } from './lib/local-config.mjs';
 
 const COPIED = ['migrations', 'tests', 'functions', 'templates', 'dev'];
 const workdir = join(root, '.supabase-local');
+const twilioEnvFile = join(root, '.env.twilio.local'); // git-ignored (.env.*); the user's own Twilio test credentials
 const args = process.argv.slice(2);
 
 const problem = checkLocalArgs(args);
@@ -41,8 +42,16 @@ for (const name of PINS) {
   const from = join(root, 'supabase', '.temp', name);
   if (existsSync(from)) cpSync(from, join(workdir, 'supabase', '.temp', name));
 }
-writeFileSync(join(workdir, 'supabase', 'config.toml'), buildLocalConfig(readFileSync(join(root, 'supabase', 'config.toml'), 'utf8')));
+// Optional real SMS for local testing: with Twilio values in .env.twilio.local (or the environment) numbers that are
+// not one of the fixed test numbers get a real code. The values reach the Supabase CLI only through the child
+// process environment (env(...) references in the generated config); nothing is written to disk by this script.
+const fileEnv = existsSync(twilioEnvFile) ? parseEnvFile(readFileSync(twilioEnvFile, 'utf8')) : {};
+const twilio = twilioFromEnv({ ...fileEnv, ...process.env });
+if (args[0] === 'start') {
+  console.log(twilio ? `Local Auth: real SMS through Twilio (${twilio.provider}). Fixed test numbers still skip sending.` : 'Local Auth: fixed test codes only, no SMS is sent (fill .env.twilio.local for real SMS).');
+}
+writeFileSync(join(workdir, 'supabase', 'config.toml'), buildLocalConfig(readFileSync(join(root, 'supabase', 'config.toml'), 'utf8'), twilio));
 
 // Relative path on purpose: the repo path contains a space and the CLI shim runs through a shell on Windows.
-const result = spawnSync('supabase', ['--workdir', '.supabase-local', ...args], { cwd: root, stdio: 'inherit', shell: true });
+const result = spawnSync('supabase', ['--workdir', '.supabase-local', ...args], { cwd: root, stdio: 'inherit', shell: true, env: { ...process.env, ...(twilio?.vars ?? {}) } });
 process.exit(result.status ?? 1);

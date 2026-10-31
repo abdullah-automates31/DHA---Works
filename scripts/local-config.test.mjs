@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { checkSharedConfig, parseTables } from './lib/config-guard.mjs';
-import { buildLocalConfig, checkLocalArgs, LOCAL_TEST_OTPS, removeTable } from './lib/local-config.mjs';
+import { buildLocalConfig, checkLocalArgs, LOCAL_TEST_OTPS, parseEnvFile, removeTable, twilioFromEnv } from './lib/local-config.mjs';
 
 const SHARED = `[auth.sms]
 enable_signup = true
@@ -44,4 +44,30 @@ test('the local wrapper allows local commands and blocks anything that can reach
   for (const bad of [[], ['config', 'push'], ['db', 'push'], ['link'], ['secrets', 'set'], ['db', 'lint', '--linked'], ['db', 'reset', '--db-url=x'], ['start', '--workdir', 'supabase'], ['migration', 'new', 'x'], ['db']]) {
     assert.notEqual(checkLocalArgs(bad), null, bad.join(' '));
   }
+});
+
+test('parseEnvFile reads KEY=value lines, skips comments and strips matching quotes', () => {
+  const env = parseEnvFile('# note\n\nTWILIO_ACCOUNT_SID=ACabc\nTWILIO_AUTH_TOKEN="tok"\nEMPTY=\n  SPACED = x y \n');
+  assert.deepEqual(env, { TWILIO_ACCOUNT_SID: 'ACabc', TWILIO_AUTH_TOKEN: 'tok', EMPTY: '', SPACED: 'x y' });
+});
+
+test('twilioFromEnv needs the account, the token and one service; Verify wins over Messaging', () => {
+  assert.equal(twilioFromEnv({}), null);
+  assert.equal(twilioFromEnv({ TWILIO_ACCOUNT_SID: 'AC1', TWILIO_AUTH_TOKEN: 't' }), null);
+  assert.equal(twilioFromEnv({ TWILIO_ACCOUNT_SID: 'AC1', TWILIO_VERIFY_SERVICE_SID: 'VA1' }), null);
+  const verify = twilioFromEnv({ TWILIO_ACCOUNT_SID: 'AC1', TWILIO_AUTH_TOKEN: 't', TWILIO_VERIFY_SERVICE_SID: 'VA1', TWILIO_MESSAGING_SERVICE_SID: 'MG1' });
+  assert.equal(verify.provider, 'twilio_verify');
+  assert.equal(verify.vars.LOCAL_TWILIO_SERVICE_SID, 'VA1');
+  assert.equal(twilioFromEnv({ TWILIO_ACCOUNT_SID: 'AC1', TWILIO_AUTH_TOKEN: 't', TWILIO_MESSAGING_SERVICE_SID: 'MG1' }).provider, 'twilio');
+});
+
+test('with Twilio values the local config enables the real provider through env() and writes no secret', () => {
+  const twilio = twilioFromEnv({ TWILIO_ACCOUNT_SID: 'ACsecret1', TWILIO_AUTH_TOKEN: 'tokensecret2', TWILIO_VERIFY_SERVICE_SID: 'VAsecret3' });
+  const text = buildLocalConfig(SHARED, twilio);
+  const tables = parseTables(text);
+  assert.equal(tables['auth.sms.twilio_verify'].enabled, 'true');
+  assert.equal(tables['auth.sms.twilio'], undefined);
+  assert.deepEqual(tables['auth.sms.test_otp'], LOCAL_TEST_OTPS);
+  for (const secret of ['ACsecret1', 'tokensecret2', 'VAsecret3']) assert.ok(!text.includes(secret));
+  assert.equal(buildLocalConfig(text, twilio), text);
 });

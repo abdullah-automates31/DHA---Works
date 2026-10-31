@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { PendingReview } from '@/components/PendingReview';
 import { TempScreen } from '@/components/TempScreen';
 import { statusKind, type StatusKind } from '@/features/profile/routing';
@@ -15,10 +17,23 @@ const COPY: Record<StatusKind, { title: Parameters<typeof t>[0]; body: Parameter
 // Temporary stand-in for the W04 variants (pending, visit HQ, rejected) and for states with no design
 // (suspended, a customer or staff account). Shows the staff reason when there is one.
 export default function StatusScreen() {
-  const { state } = useMyProfile();
+  const { state, refresh } = useMyProfile();
+  const [checking, setChecking] = useState(false);
   const profile = state.status === 'ready' ? state.profile : null;
   const kind = statusKind(profile) ?? 'pending';
-  if (kind === 'pending') return <PendingReview sentAt={profile?.verification_updated_at ?? null} />;
+
+  // Staff decide in their own time; this reloads the profile so a decision shows without signing out and in.
+  // When the status changes, the route gate in (app)/_layout moves the worker on by itself.
+  async function check() {
+    if (checking) return;
+    setChecking(true);
+    await refresh();
+    setChecking(false);
+  }
+
+  if (kind === 'pending') {
+    return <PendingReview sentAt={profile?.verification_updated_at ?? null} checking={checking} onCheck={() => void check()} />;
+  }
   const showReason = kind === 'visit_hq' || kind === 'rejected';
   return (
     <TempScreen
@@ -26,6 +41,7 @@ export default function StatusScreen() {
       body={t(COPY[kind].body)}
       reason={showReason ? profile?.verification_reason : null}
       reasonLabel={t('temp.status.reasonLabel')}
+      action={kind === 'wrong_role' ? undefined : { label: t('temp.status.refresh'), onPress: () => void check(), loading: checking }}
     />
   );
 }

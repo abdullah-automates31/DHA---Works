@@ -5,6 +5,10 @@
     "apps/*",
     "packages/*"
   ],
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
   "scripts": {
     "worker": "npm run start --workspace @dha/worker",
     "worker:typecheck": "npm run typecheck --workspace @dha/worker",

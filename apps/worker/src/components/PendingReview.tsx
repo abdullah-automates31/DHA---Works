@@ -1,7 +1,7 @@
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TextLink } from '@/components/AuthForm';
+import { PrimaryButton, TextLink } from '@/components/AuthForm';
 import { formatSent } from '@/features/profile/sent';
 import { useHelpline } from '@/features/profile/useHelpline';
 import { t } from '@/i18n';
@@ -12,7 +12,7 @@ import { CheckIcon, ClockIcon, PhoneIcon } from './icons';
 
 // W04 Application under review (worker/screens/w-pending.dc.html). The helpline card is part of the design but
 // stays hidden until DHA approves the number (app_settings), as decided. Sign out is our addition.
-export function PendingReview({ sentAt }: { sentAt: string | null }) {
+export function PendingReview({ sentAt, checking, onCheck }: { sentAt: string | null; checking: boolean; onCheck: () => void }) {
   const insets = useSafeAreaInsets();
   const helpline = useHelpline();
   const sent = formatSent(sentAt);
@@ -49,7 +49,8 @@ export function PendingReview({ sentAt }: { sentAt: string | null }) {
         </Pressable>
       ) : null}
 
-      <View style={{ marginTop: 'auto', paddingBottom: insets.bottom + 24 }}>
+      <View style={{ marginTop: 'auto', paddingBottom: insets.bottom + 24, gap: 16 }}>
+        <PrimaryButton label={t('temp.status.refresh')} onPress={onCheck} loading={checking} showArrow={false} />
         <TextLink label={t('temp.signOut')} onPress={() => void supabase.auth.signOut()} />
       </View>
     </View>

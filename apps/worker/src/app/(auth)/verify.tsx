@@ -4,6 +4,7 @@ import { StyleSheet, Text } from 'react-native';
 
 import { ErrorText, Field, FieldLabel, FormTitle, PrimaryButton, TextLink } from '@/components/AuthForm';
 import { AuthScreen } from '@/components/AuthScreen';
+import { OTP_CHANNEL, OTP_CHANNEL_NAME } from '@/features/auth/channel';
 import { requestPhoneOtp, verifyPhoneOtp } from '@/features/auth/otp';
 import { isCompleteOtp, maskPhone, normalizePhone, OTP_LENGTH, sanitizeOtp } from '@/features/auth/validation';
 import { t } from '@/i18n';
@@ -40,7 +41,7 @@ export default function VerifyScreen() {
   async function verify(value: string) {
     if (!phone || verifying) return;
     if (!isCompleteOtp(value)) {
-      setError(t('auth.errors.invalidCode'));
+      setError(t('auth.errors.invalidCode', { channel: OTP_CHANNEL_NAME }));
       return;
     }
     setError(null);
@@ -57,18 +58,18 @@ export default function VerifyScreen() {
     setError(null);
     setNotice(null);
     setCooldown(RESEND_SECONDS);
-    const result = await requestPhoneOtp(supabase.auth, phone);
+    const result = await requestPhoneOtp(supabase.auth, phone, OTP_CHANNEL);
     if (!result.ok) {
       setError(t(result.key));
       return;
     }
-    setNotice(t('auth.resent'));
+    setNotice(t('auth.resent', { channel: OTP_CHANNEL_NAME }));
   }
 
   return (
     <AuthScreen>
       <FormTitle>{t('auth.codeTitle')}</FormTitle>
-      <Text style={styles.sent}>{t('auth.codeSent', { phone: maskPhone(phone ?? '') })}</Text>
+      <Text style={styles.sent}>{t('auth.codeSent', { phone: maskPhone(phone ?? ''), channel: OTP_CHANNEL_NAME })}</Text>
       <FieldLabel>{t('auth.codeLabel')}</FieldLabel>
       <Field
         value={code}

@@ -29,6 +29,21 @@ test('requestPhoneOtp asks for a WhatsApp code and creates a user', async () => 
   assert.equal(seen?.options.channel, 'whatsapp');
 });
 
+test('requestPhoneOtp can ask for the code by SMS', async () => {
+  let seen: Parameters<OtpClient['signInWithOtp']>[0] | undefined;
+  await requestPhoneOtp(
+    client({
+      signInWithOtp: async (credentials) => {
+        seen = credentials;
+        return { error: null };
+      },
+    }),
+    '+923214567890',
+    'sms',
+  );
+  assert.equal(seen?.options.channel, 'sms');
+});
+
 test('verifyPhoneOtp verifies a phone OTP with type sms', async () => {
   let seen: Parameters<OtpClient['verifyOtp']>[0] | undefined;
   const result = await verifyPhoneOtp(

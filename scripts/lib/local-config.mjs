@@ -24,23 +24,77 @@ export function removeTable(text, name) {
   return out.join('\n');
 }
 
-/** Shared config + the local-only OTP table and a fake-credential Twilio table (needed for Auth to accept test numbers). */
-export function buildLocalConfig(sharedText) {
+/** Parses KEY=value lines (comments and blank lines ignored, matching quotes stripped). Never logs values. */
+export function parseEnvFile(text) {
+  const out = {};
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq < 1) continue;
+    let value = line.slice(eq + 1).trim();
+    if (value.length >= 2 && (value[0] === '"' || value[0] === "'") && value.at(-1) === value[0]) value = value.slice(1, -1);
+    out[line.slice(0, eq).trim()] = value;
+  }
+  return out;
+}
+
+/**
+ * Real SMS for local testing. Needs TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and one of TWILIO_VERIFY_SERVICE_SID
+ * (Twilio Verify, preferred) or TWILIO_MESSAGING_SERVICE_SID. Returns null when a needed value is empty, otherwise the
+ * provider plus the environment variables the Supabase CLI substitutes into env(...) in the generated config.
+ * The values live only in the child process environment; they are never written into any generated file.
+ */
+export function twilioFromEnv(env) {
+  const sid = (env.TWILIO_ACCOUNT_SID ?? '').trim();
+  const token = (env.TWILIO_AUTH_TOKEN ?? '').trim();
+  const verify = (env.TWILIO_VERIFY_SERVICE_SID ?? '').trim();
+  const messaging = (env.TWILIO_MESSAGING_SERVICE_SID ?? '').trim();
+  if (!sid || !token || !(verify || messaging)) return null;
+  return {
+    provider: verify ? 'twilio_verify' : 'twilio',
+    vars: {
+      LOCAL_TWILIO_ACCOUNT_SID: sid,
+      LOCAL_TWILIO_AUTH_TOKEN: token,
+      LOCAL_TWILIO_SERVICE_SID: verify || messaging,
+    },
+  };
+}
+
+const FAKE_TABLE = `[auth.sms.twilio]
+enabled = true
+account_sid = "local-fake"
+message_service_sid = "local-fake"
+auth_token = "local-fake"
+`;
+
+function realTable(provider) {
+  return `[auth.sms.${provider}]
+enabled = true
+account_sid = "env(LOCAL_TWILIO_ACCOUNT_SID)"
+message_service_sid = "env(LOCAL_TWILIO_SERVICE_SID)"
+auth_token = "env(LOCAL_TWILIO_AUTH_TOKEN)"
+`;
+}
+
+/**
+ * Shared config + the local-only OTP table. Without `twilio` a fake-credential Twilio table is added (Auth needs an
+ * enabled provider to accept the test numbers; nothing is sent). With `twilio` (from twilioFromEnv) the real provider
+ * is enabled through env(...) references, so real numbers get a real SMS and the test numbers still skip sending.
+ */
+export function buildLocalConfig(sharedText, twilio = null) {
   const marker = sharedText.indexOf(LOCAL_MARKER);
   const shared = marker === -1 ? sharedText : sharedText.slice(0, marker);
-  const base = removeTable(removeTable(shared, 'auth.sms.test_otp'), 'auth.sms.twilio').replace(/\s+$/, '\n');
+  const base = ['auth.sms.test_otp', 'auth.sms.twilio', 'auth.sms.twilio_verify']
+    .reduce((text, name) => removeTable(text, name), shared)
+    .replace(/\s+$/, '\n');
   const otps = Object.entries(LOCAL_TEST_OTPS).map(([phone, code]) => `${phone} = "${code}"`).join('\n');
   return `${base}
 ${LOCAL_MARKER}
 [auth.sms.test_otp]
 ${otps}
 
-[auth.sms.twilio]
-enabled = true
-account_sid = "local-fake"
-message_service_sid = "local-fake"
-auth_token = "local-fake"
-`;
+${twilio ? realTable(twilio.provider) : FAKE_TABLE}`;
 }
 
 const ALLOWED = {
