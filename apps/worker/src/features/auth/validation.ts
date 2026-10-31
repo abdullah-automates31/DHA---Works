@@ -1,16 +1,34 @@
 // Pure input helpers for sign-in (unit tested with node --test).
 
-/** Trims and lower-cases; Supabase treats emails case-insensitively. */
-export function normalizeEmail(raw: string): string {
-  return raw.trim().toLowerCase();
+import {
+  formatNational,
+  normalizePkMobile,
+  sanitizeNationalInput,
+  storedPhoneToField,
+} from '../profile/validation.ts';
+
+export { formatNational, sanitizeNationalInput, storedPhoneToField };
+
+/** Any common way of writing a Pakistani mobile -> "+923214567890", or null. */
+export function normalizePhone(raw: string): string | null {
+  return normalizePkMobile(raw);
 }
 
-// Deliberately simple: one @, no spaces, a dot in the domain. The server decides the rest.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export function isValidPhone(raw: string): boolean {
+  return normalizePhone(raw) !== null;
+}
 
-export function isValidEmail(raw: string): boolean {
-  const email = normalizeEmail(raw);
-  return email.length <= 254 && EMAIL_PATTERN.test(email);
+/** "+923214567890" -> "+92 321 4567890" for display. */
+export function formatPhoneDisplay(phone: string): string {
+  const match = /^\+92(3\d{2})(\d{7})$/.exec(phone);
+  return match ? `+92 ${match[1]} ${match[2]}` : phone;
+}
+
+/** "+923214567890" or "923214567890" -> "+92 321 ***7890": enough to recognise, not enough to copy in full. */
+export function maskPhone(phone: string): string {
+  const normalized = normalizePhone(phone) ?? phone;
+  const match = /^\+92(3\d{2})(\d{3})(\d{4})$/.exec(normalized);
+  return match ? `+92 ${match[1]} ***${match[3]}` : normalized;
 }
 
 export const OTP_LENGTH = 6;

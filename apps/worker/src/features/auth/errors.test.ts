@@ -4,9 +4,13 @@ import { test } from 'node:test';
 import { authErrorKey, isSessionGone } from './errors.ts';
 
 test('rate limits map to tooManyRequests', () => {
-  assert.equal(authErrorKey({ code: 'over_email_send_rate_limit', status: 429 }), 'auth.errors.tooManyRequests');
+  assert.equal(authErrorKey({ code: 'over_sms_send_rate_limit', status: 429 }), 'auth.errors.tooManyRequests');
   assert.equal(authErrorKey({ status: 429 }), 'auth.errors.tooManyRequests');
   assert.equal(authErrorKey({ code: 'over_request_rate_limit' }), 'auth.errors.tooManyRequests');
+});
+
+test('a provider failure maps to sendFailed', () => {
+  assert.equal(authErrorKey({ code: 'sms_send_failed', status: 500 }), 'auth.errors.sendFailed');
 });
 
 test('a wrong or expired code maps to wrongOrExpiredCode', () => {

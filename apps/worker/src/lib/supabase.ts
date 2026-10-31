@@ -15,7 +15,7 @@ export const supabase = createClient<Database>(
       storage: secureStorage,
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false, // email OTP codes, no deep-link sessions
+      detectSessionInUrl: false, // phone OTP codes, no deep-link sessions
     },
   },
 );

@@ -29,6 +29,23 @@ export function Field({ icon, hasError, style, ...rest }: FieldProps) {
   );
 }
 
+type PhoneFieldProps = TextInputProps & { prefix: string; hasError?: boolean };
+
+export function AuthPhoneField({ prefix, hasError, style, ...rest }: PhoneFieldProps) {
+  return (
+    <View style={[styles.field, hasError && styles.fieldError]}>
+      <Text style={styles.prefix}>{prefix}</Text>
+      <View style={styles.divider} />
+      <TextInput
+        placeholderTextColor="#8A978F"
+        keyboardType="phone-pad"
+        {...rest}
+        style={[styles.input, style]}
+      />
+    </View>
+  );
+}
+
 export function PrimaryButton({
   label,
   onPress,
@@ -100,6 +117,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   fieldError: { borderColor: colors.chip.declined.fg },
+  prefix: { fontFamily: fontFamily.extrabold, fontSize: 15, color: colors.greenDark },
+  divider: { width: 1, height: 24, backgroundColor: colors.signIn.fieldBorder },
   input: {
     flex: 1,
     minWidth: 0,

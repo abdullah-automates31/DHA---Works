@@ -4,21 +4,21 @@ import { StyleSheet, Text } from 'react-native';
 
 import { ErrorText, Field, FieldLabel, FormTitle, PrimaryButton, TextLink } from '@/components/AuthForm';
 import { AuthScreen } from '@/components/AuthScreen';
-import { authErrorKey } from '@/features/auth/errors';
-import { isCompleteOtp, normalizeEmail, OTP_LENGTH, sanitizeOtp } from '@/features/auth/validation';
+import { requestPhoneOtp, verifyPhoneOtp } from '@/features/auth/otp';
+import { isCompleteOtp, maskPhone, normalizePhone, OTP_LENGTH, sanitizeOtp } from '@/features/auth/validation';
 import { t } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { colors, fontFamily } from '@/theme';
 
 const RESEND_SECONDS = 60;
 
-// Step 2 of sign-in: the six-digit code from the email. This screen is not in the approved designs;
+// Step 2 of sign-in: the six-digit code sent on WhatsApp. This screen is not in the approved designs;
 // it reuses the W01 frame and controls (see docs/OPEN-QUESTIONS.md). A good code creates the session and the
 // root layout then moves to the signed-in area.
 export default function VerifyScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ email?: string }>();
-  const email = normalizeEmail(params.email ?? '');
+  const params = useLocalSearchParams<{ phone?: string }>();
+  const phone = normalizePhone(params.phone ?? '');
 
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -32,13 +32,13 @@ export default function VerifyScreen() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  // Opened without an email (e.g. a stale deep link): back to the start.
+  // Opened without a phone (e.g. a stale deep link): back to the start.
   useEffect(() => {
-    if (!email) router.replace('/sign-in');
-  }, [email, router]);
+    if (!phone) router.replace('/sign-in');
+  }, [phone, router]);
 
   async function verify(value: string) {
-    if (verifying) return;
+    if (!phone || verifying) return;
     if (!isCompleteOtp(value)) {
       setError(t('auth.errors.invalidCode'));
       return;
@@ -46,20 +46,20 @@ export default function VerifyScreen() {
     setError(null);
     setNotice(null);
     setVerifying(true);
-    const { error: verifyError } = await supabase.auth.verifyOtp({ email, token: value, type: 'email' });
+    const result = await verifyPhoneOtp(supabase.auth, phone, value);
     setVerifying(false);
-    if (verifyError) setError(t(authErrorKey(verifyError)));
+    if (!result.ok) setError(t(result.key));
     // On success onAuthStateChange stores the session and the layout switches screens.
   }
 
   async function resend() {
-    if (cooldown > 0) return;
+    if (!phone || cooldown > 0) return;
     setError(null);
     setNotice(null);
     setCooldown(RESEND_SECONDS);
-    const { error: sendError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-    if (sendError) {
-      setError(t(authErrorKey(sendError)));
+    const result = await requestPhoneOtp(supabase.auth, phone);
+    if (!result.ok) {
+      setError(t(result.key));
       return;
     }
     setNotice(t('auth.resent'));
@@ -68,7 +68,7 @@ export default function VerifyScreen() {
   return (
     <AuthScreen>
       <FormTitle>{t('auth.codeTitle')}</FormTitle>
-      <Text style={styles.sent}>{t('auth.codeSent', { email })}</Text>
+      <Text style={styles.sent}>{t('auth.codeSent', { phone: maskPhone(phone ?? '') })}</Text>
       <FieldLabel>{t('auth.codeLabel')}</FieldLabel>
       <Field
         value={code}
@@ -96,7 +96,7 @@ export default function VerifyScreen() {
         onPress={() => void resend()}
         disabled={cooldown > 0}
       />
-      <TextLink label={t('auth.changeEmail')} onPress={() => router.back()} />
+      <TextLink label={t('auth.changePhone')} onPress={() => router.back()} />
     </AuthScreen>
   );
 }

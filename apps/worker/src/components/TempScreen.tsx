@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/AppText';
 import { PrimaryButton, TextLink } from '@/components/AuthForm';
 import { Crest } from '@/components/Crest';
+import { maskPhone } from '@/features/auth/validation';
 import { t } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +29,7 @@ export function TempScreen({
 }) {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
+  const phone = session?.user.phone ?? '';
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom + 24 }]}>
       <Crest size={96} />
@@ -48,7 +50,7 @@ export function TempScreen({
         </View>
       ) : null}
       <AppText variant="caption" color={colors.signIn.footnote} style={styles.center}>
-        {t('temp.signedInAs', { email: session?.user.email ?? '' })}
+        {t('temp.signedInAs', { phone: phone ? maskPhone(phone) : '' })}
       </AppText>
       <View style={styles.buttons}>
         {action ? <PrimaryButton label={action.label} onPress={action.onPress} showArrow={false} /> : null}

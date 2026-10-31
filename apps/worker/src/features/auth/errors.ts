@@ -3,6 +3,7 @@
 export type AuthErrorKey =
   | 'auth.errors.tooManyRequests'
   | 'auth.errors.wrongOrExpiredCode'
+  | 'auth.errors.sendFailed'
   | 'auth.errors.network'
   | 'auth.errors.generic';
 
@@ -13,9 +14,10 @@ export function authErrorKey(error: ErrorLike): AuthErrorKey {
   const code = error.code ?? '';
   const message = (error.message ?? '').toLowerCase();
 
-  if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit' || error.status === 429) {
+  if (code === 'over_sms_send_rate_limit' || code === 'over_request_rate_limit' || error.status === 429) {
     return 'auth.errors.tooManyRequests';
   }
+  if (code === 'sms_send_failed') return 'auth.errors.sendFailed';
   // Supabase returns otp_expired for both a wrong and an expired code.
   if (code === 'otp_expired' || code === 'otp_disabled' || message.includes('token has expired or is invalid')) {
     return 'auth.errors.wrongOrExpiredCode';

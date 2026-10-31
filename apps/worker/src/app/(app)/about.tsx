@@ -23,6 +23,7 @@ import {
   type Gender,
 } from '@/features/profile/validation';
 import { t } from '@/i18n';
+import { useAuth } from '@/lib/auth';
 import { useMyProfile } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 import { colors, fontFamily } from '@/theme';
@@ -35,11 +36,12 @@ type FieldErrors = Partial<Record<'name' | 'mobile' | 'dob' | 'gender' | 'cnic',
 // (only sent to register_profile / update_my_profile), and autofill and suggestions are switched off for them.
 export default function AboutScreen() {
   const router = useRouter();
+  const { session } = useAuth();
   const { state, refresh } = useMyProfile();
   const existing = state.status === 'ready' ? state.profile : null;
 
   const [name, setName] = useState(existing?.full_name ?? '');
-  const [mobile, setMobile] = useState(storedPhoneToField(existing?.phone));
+  const [mobile, setMobile] = useState(storedPhoneToField(existing?.phone ?? session?.user.phone));
   const [dob, setDob] = useState(isoToDobField(existing?.date_of_birth));
   const [gender, setGender] = useState<Gender | null>(existing?.gender === 'male' || existing?.gender === 'female' ? existing.gender : null);
   const [cnic, setCnic] = useState(existing?.cnic ?? '');
