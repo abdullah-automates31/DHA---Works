@@ -5,11 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
 import { Avatar, StatusChip, TimelineCard, whoLine } from '@/components/MyJobParts';
-import { ChevronLeftIcon, PhoneIcon } from '@/components/icons';
+import { ChevronLeftIcon, ChevronRightIcon, PhoneIcon, UserIcon } from '@/components/icons';
 import { BottomBar, FieldError } from '@/components/onboarding';
 import { formatRupees } from '@/features/home/format';
 import { withdrawCancellation } from '@/features/cancel/rules';
-import { cancelHref, cashHref, quoteHref, reportHref } from '@/features/job/routes';
+import { cancelHref, cashHref, jobDetailsHref, quoteHref, reportHref } from '@/features/job/routes';
 import { pickImage } from '@/features/documents/pick';
 import { buildBillPath, completeJob, startJob, type ActionClient, type Bill } from '@/features/myjobs/actions';
 import { canReport, canRequestCancellation, dialable, jobKind, noteFor, primaryAction, timeline, type JobKind } from '@/features/myjobs/rules';
@@ -98,7 +98,7 @@ export default function JobStatusScreen() {
   const kind: JobKind | null = job ? jobKind(job) : null;
   const action = kind && job ? primaryAction(kind, job.cashRecorded === true) : null;
   const now = new Date();
-  const phone = job && ['scheduled', 'in_progress', 'completed'].includes(kind ?? '') ? dialable(job.residentPhone) : null;
+  const phone = job && ['scheduled', 'in_progress'].includes(kind ?? '') ? dialable(job.residentPhone) : null;
 
   function confirmWithdraw(requestId: string) {
     Alert.alert(t('myjobs.withdrawConfirmTitle'), t('myjobs.withdrawConfirmBody'), [
@@ -192,9 +192,23 @@ export default function JobStatusScreen() {
                   {job.myQuoteTotal !== null && kind !== 'not_chosen' ? formatRupees(job.myQuoteTotal) : kind === 'interested' ? t('myjobs.noQuoteYet') : ''}
                 </Text>
               </View>
-              <Text style={styles.title}>{job.title}</Text>
+              <Pressable accessibilityRole="link" onPress={() => router.push(jobDetailsHref(job.id))} style={styles.titleRow}>
+                <Text style={styles.title} numberOfLines={2}>
+                  {job.title}
+                </Text>
+                <View style={styles.detailsLink}>
+                  <Text style={styles.detailsText}>{t('myjobs.jobDetails')}</Text>
+                  <ChevronRightIcon size={16} color={colors.green} />
+                </View>
+              </Pressable>
               <View style={styles.who}>
-                <Avatar name={job.residentName} />
+                {job.residentName ? (
+                  <Avatar name={job.residentName} />
+                ) : (
+                  <View style={styles.genericAvatar}>
+                    <UserIcon size={18} color="#5C4300" />
+                  </View>
+                )}
                 <Text style={styles.whoText} numberOfLines={1}>
                   {whoLine(job)}
                 </Text>
@@ -285,7 +299,11 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 20, padding: 16, gap: 10 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   price: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.green },
-  title: { fontFamily: fontFamily.extrabold, fontSize: 18, color: colors.ink },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  title: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: 18, color: colors.ink },
+  detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  detailsText: { fontFamily: fontFamily.bold, fontSize: 12, color: colors.green },
+  genericAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F6E7B4', alignItems: 'center', justifyContent: 'center' },
   who: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   whoText: { flex: 1, fontFamily: fontFamily.bold, fontSize: 13, color: colors.ink },
   call: { height: 38, paddingHorizontal: 14, borderRadius: 12, backgroundColor: colors.mint, flexDirection: 'row', alignItems: 'center', gap: 6 },

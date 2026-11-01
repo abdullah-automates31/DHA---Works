@@ -1,6 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
+import { jobKind, type JobKind } from '@/features/myjobs/rules';
 import { supabase } from '@/lib/supabase';
 
 import { standingFromMyJob, type Standing } from './detail';
@@ -21,6 +22,7 @@ export type JobDetail = {
   others: number | null; // other workers interested (only known for jobs this worker has not engaged with)
   quotes: number | null;
   standing: Standing;
+  kind: JobKind | null; // the worker's own stage on the job (null for a job not engaged with yet)
 };
 
 export type JobState =
@@ -58,12 +60,13 @@ async function fetchJob(id: string): Promise<JobState> {
       others: feed.data.interest_count ?? 0,
       quotes: feed.data.quote_count ?? 0,
       standing: 'none',
+      kind: null,
     };
   } else {
     // 2) A job this worker already engaged with (interest or quote): worker_jobs.
     const mine = await supabase
       .from('worker_jobs')
-      .select('id, code, title, description, category_name, phase, lane, urgency, posted_at, voice_note_path, status, my_quote_status')
+      .select('id, code, title, description, category_name, phase, lane, urgency, posted_at, voice_note_path, status, my_quote_status, is_mine')
       .eq('id', id)
       .maybeSingle();
     if (mine.error) return { status: 'error' };
@@ -83,6 +86,7 @@ async function fetchJob(id: string): Promise<JobState> {
       others: null,
       quotes: null,
       standing: standingFromMyJob({ status: mine.data.status ?? '', myQuoteStatus: mine.data.my_quote_status }),
+      kind: jobKind({ status: mine.data.status ?? '', isMine: mine.data.is_mine, myQuoteStatus: mine.data.my_quote_status }),
     };
   }
 

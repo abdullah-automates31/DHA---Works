@@ -65,7 +65,13 @@ export const ChevronLeftIcon = (p: IconProps) => (
   </Icon>
 );
 
-export const LockIcon = (p: IconProps) => (
+export const ChevronRightIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d='M9 5l7 7-7 7' />
+  </Icon>
+);
+
+export const LockIcon =(p: IconProps) => (
   <Icon {...p}>
     <Rect x='5' y='11' width='14' height='9' rx='2' />
     <Path d='M8 11V8a4 4 0 0 1 8 0v3' />

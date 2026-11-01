@@ -17,7 +17,7 @@ import { formatRupees } from '@/features/home/format';
 import { t } from '@/i18n';
 import { colors, fontFamily } from '@/theme';
 
-import { CheckIcon } from './icons';
+import { CheckIcon, UserIcon } from './icons';
 
 // Pieces shared by W06 Home, W11 My jobs and W12 Job status (worker/screens/w-jobs.dc.html, w-status.dc.html).
 
@@ -52,15 +52,20 @@ export function Avatar({ name, index = 0, size = 32 }: { name: string | null; in
   const tint = TINTS[index % 2] ?? TINTS[0]!;
   return (
     <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, backgroundColor: tint.bg }]}>
-      <Text style={[styles.avatarText, { color: tint.fg, fontSize: size > 40 ? 14 : 11 }]}>{initials(name)}</Text>
+      {name ? (
+        <Text style={[styles.avatarText, { color: tint.fg, fontSize: size > 40 ? 14 : 11 }]}>{initials(name)}</Text>
+      ) : (
+        <UserIcon size={Math.round(size * 0.55)} color={tint.fg} />
+      )}
     </View>
   );
 }
 
-/** "Hira F. · Phase 6" once the quote was accepted; "Phase 5 · Lane 2" before (no name is ever sent earlier). */
+/** "Hira F. · Phase 6" once the quote was accepted; "Customer · Phase 5" before (no name or lane is ever shown earlier). */
 export function whoLine(job: MyJob): string {
-  const place = t('feed.where', { phase: job.phase, lane: job.lane });
-  return job.residentName ? `${shortName(job.residentName)} · ${t('myjobs.phaseOnly', { phase: job.phase })}` : place;
+  return job.residentName
+    ? `${shortName(job.residentName)} · ${t('myjobs.phaseOnly', { phase: job.phase })}`
+    : t('myjobs.customerPhase', { phase: job.phase });
 }
 
 /** One card of W11. The whole card opens the job; the gold button on an "interested" job and "Record cash" go straight to their screens. */

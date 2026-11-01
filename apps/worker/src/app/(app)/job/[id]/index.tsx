@@ -5,11 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
 import { InfoCard, InterestCard, PhotoRow, ResidentCard, VoiceMessage } from '@/components/JobDetailParts';
+import { StatusChip } from '@/components/MyJobParts';
 import { BoltIcon, ChevronLeftIcon } from '@/components/icons';
 import { BottomBar, FieldError } from '@/components/onboarding';
 import { timeAgo } from '@/features/feed/format';
 import { interestBanner, jobChip, postedText, startQuote } from '@/features/job/detail';
-import { quoteHref } from '@/features/job/routes';
+import { quoteHref, statusHref } from '@/features/job/routes';
 import { expressInterest, recordJobView, useJob, type JobDetail } from '@/features/job/useJob';
 import { t } from '@/i18n';
 import { colors, fontFamily } from '@/theme';
@@ -20,7 +21,8 @@ import { colors, fontFamily } from '@/theme';
 export default function JobDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  const fromStatus = from === 'status'; // W08b: opened from the job status screen
   const { state, reload } = useJob(id ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export default function JobDetailScreen() {
     if (id && standing === 'none') void recordJobView(id);
   }, [id, standing]);
 
-  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/open-jobs'));
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace(fromStatus ? statusHref(id ?? '') : '/open-jobs'));
   const openQuote = (jobId: string) => router.push(quoteHref(jobId));
 
   async function onQuote(detail: JobDetail) {
@@ -84,9 +86,9 @@ export default function JobDetailScreen() {
 
       {job ? (
         <>
-          <ScrollView contentContainerStyle={[styles.content, { paddingBottom: job.standing === 'closed' ? 32 : 112 }]}>
+          <ScrollView contentContainerStyle={[styles.content, { paddingBottom: job.standing === 'closed' && !fromStatus ? 32 : 112 }]}>
             <View style={styles.chipRow}>
-              <Chip kind={jobChip(job.urgency, job.postedAt)} />
+              {fromStatus && job.kind ? <StatusChip kind={job.kind} /> : <Chip kind={jobChip(job.urgency, job.postedAt)} />}
               <Text style={styles.posted}>{postedText(timeAgo(job.postedAt))}</Text>
             </View>
             <Text style={styles.title}>{job.title}</Text>
@@ -108,7 +110,7 @@ export default function JobDetailScreen() {
 
             <ResidentCard phase={job.phase} />
 
-            {job.standing === 'closed' ? (
+            {job.standing === 'closed' && !fromStatus ? (
               <View style={styles.closed}>
                 <Text style={styles.closedTitle}>{t('job.closedTitle')}</Text>
                 <Text style={styles.closedBody}>{t('job.closedBody')}</Text>
@@ -117,7 +119,19 @@ export default function JobDetailScreen() {
             {error ? <FieldError>{error}</FieldError> : null}
           </ScrollView>
 
-          {job.standing !== 'closed' ? (
+          {fromStatus ? (
+            // W08b: never "I will quote this job". "Create quote" only while the worker can still send one.
+            job.standing === 'interested' ? (
+              <BottomBar
+                hideArrow
+                label={t('myjobs.createQuote')}
+                onPress={() => openQuote(job.id)}
+                secondary={{ label: t('job.backToStatus'), onPress: goBack }}
+              />
+            ) : (
+              <BottomBar hideArrow soft label={t('job.backToStatus')} onPress={goBack} />
+            )
+          ) : job.standing !== 'closed' ? (
             <BottomBar
               hideArrow
               label={job.standing === 'quoted' ? t('job.quoteSent') : job.standing === 'interested' ? t('job.createQuote') : t('job.quoteThisJob')}

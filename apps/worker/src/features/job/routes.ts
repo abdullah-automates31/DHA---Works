@@ -10,6 +10,8 @@ function safe(id: string, path: (id: string) => string): Href {
 
 /** W08 Job detail (a job the worker has not won). */
 export const jobHref = (id: string): Href => safe(id, (i) => `/job/${i}`);
+/** W08b Job details, opened from W12 (same screen as W08 with the worker's own status and a back-to-status bar). */
+export const jobDetailsHref = (id: string): Href => safe(id, (i) => `/job/${i}?from=status`);
 /** W10 Create quote. */
 export const quoteHref = (id: string): Href => safe(id, (i) => `/job/${i}/quote`);
 /** W12 Job status (the worker's own job). */

@@ -24,7 +24,7 @@ test('each worker-facing type has its own words', () => {
   assert.equal(title('cash_disputed'), 'Cash amounts differ');
   assert.equal(title('job_stuck'), 'Job needs an update');
   assert.equal(title('cancellation_requested'), 'Cancellation requested');
-  assert.match(describe(n({ type: 'quote_not_selected' }), now).body, /Another worker was chosen for Bathroom flush tank leak\. Find more jobs\./);
+  assert.match(describe(n({ type: 'quote_not_selected' }), now).body, /The customer chose another worker for Bathroom flush tank leak\. Find more jobs\./);
 });
 
 test('a missing title is replaced by a neutral phrase, an unknown type still shows something', () => {

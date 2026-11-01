@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
 import { StatusChip } from '@/components/MyJobParts';
 import { ChevronLeftIcon, PhoneIcon, PlusIcon } from '@/components/icons';
-import { BottomBar, FieldError, Pill } from '@/components/onboarding';
+import { FieldError, Pill } from '@/components/onboarding';
 import { pickImage } from '@/features/documents/pick';
 import { statusHref } from '@/features/job/routes';
 import { canReport, jobKind } from '@/features/myjobs/rules';
@@ -99,7 +99,7 @@ export default function ReportProblemScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={styles.root}>
       <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
         <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={goBack} style={styles.back}>
           <ChevronLeftIcon size={22} color={colors.greenDark} />
@@ -124,7 +124,7 @@ export default function ReportProblemScreen() {
 
       {ready && job && kind && allowed ? (
         <>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
             {helpline ? (
               <View style={styles.helpline}>
                 <Text style={styles.helplineText}>{t('report.helplineLead')}</Text>
@@ -186,9 +186,8 @@ export default function ReportProblemScreen() {
             </View>
 
             {error ? <FieldError>{error}</FieldError> : null}
+            <PrimaryButton label={t('report.send')} onPress={() => void submit()} loading={busy} showArrow={false} />
           </ScrollView>
-
-          <BottomBar hideArrow label={t('report.send')} onPress={() => void submit()} loading={busy} />
         </>
       ) : null}
     </KeyboardAvoidingView>
@@ -210,7 +209,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 12 },
   back: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, textAlign: 'center', fontFamily: fontFamily.extrabold, fontSize: 18, color: colors.ink },
-  content: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 24, gap: 12 },
+  content: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 40, gap: 12 },
   helpline: { backgroundColor: colors.chip.declined.bg, borderRadius: 18, padding: 14, gap: 10 },
   helplineText: { fontFamily: fontFamily.bold, fontSize: 13, lineHeight: 19, color: colors.chip.declined.fg },
   helplineBtn: { height: 44, borderRadius: 12, backgroundColor: colors.chip.declined.fg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },

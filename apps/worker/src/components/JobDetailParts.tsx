@@ -116,7 +116,7 @@ export function ResidentCard({ phase }: { phase: number }) {
         <UserIcon size={22} color="#5C4300" />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.cardTitle}>{t('job.verifiedResident')}</Text>
+        <Text style={styles.cardTitle}>{t('job.customer')}</Text>
         <Text style={styles.sub}>{t('job.residentPhase', { phase })}</Text>
       </View>
       <View style={styles.verified}>

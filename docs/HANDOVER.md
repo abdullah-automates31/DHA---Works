@@ -61,7 +61,7 @@ Worker-only cash remains **unbuilt and pending Shariq**; it is not 0016.
 ## 4. Tests (run locally; last full run 30 Oct 2026 on a clean reset of all 18 local migrations)
 
 - **pgTAP, `npm run db:local -- test db`: 592 assertions in 16 files, all pass.** Files cover default privileges, service-role grants, the job lifecycle and edges, profile registration, notifications/privacy, Realtime publication, worker app prep, feed/open jobs, job detail, my jobs, quotes, work steps, cash/cancel, documents and reports.
-- **Worker app:** `npm run worker:test` 194 pass; `npm run worker:typecheck` and `npm run worker:lint` pass; `npx expo export --platform ios` succeeds.
+- **Worker app:** `npm run worker:test` 196 pass (1 Nov, after the v74 privacy changes and the Report picker); `npm run worker:typecheck` and `npm run worker:lint` pass; `npx expo export --platform ios` succeeds.
 - **Local phone-auth smoke test (30 Oct):** static WhatsApp OTP request and verify succeed; approved `+923001234567` sees 2 open jobs; pending worker sees 0; no-profile worker registers a profile with `email = null`; `approve_local_phone_worker.sql` promotes the pending worker.
 - **Concurrency:** `bash supabase/tests/concurrency/accept_race.sh` (then `npm run db:local -- db reset`): two sessions accept different quotes on one job, exactly one wins. PASS when last run.
 - **send-push:** `deno test` in `supabase/functions/send-push`: 23 pass. `bash supabase/functions/send-push/integration/run.sh` (then `npm run db:local -- db reset`): 12 end-to-end checks against the local database and a mock Expo server, using only the grants from the migrations. PASS when last run.

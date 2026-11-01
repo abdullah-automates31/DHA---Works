@@ -1,5 +1,5 @@
-import { Fragment } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Fragment, useEffect, useState } from 'react';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { t } from '@/i18n';
@@ -153,6 +153,19 @@ export function InfoNote({ children }: { children: string }) {
 }
 
 /** White bar fixed at the bottom with the main button (.cta + .btn). */
+function useKeyboardOpen(): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setOpen(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return open;
+}
+
 export function BottomBar({
   label,
   onPress,
@@ -160,6 +173,7 @@ export function BottomBar({
   disabled,
   hideArrow,
   soft,
+  secondary,
 }: {
   label: string;
   onPress: () => void;
@@ -168,16 +182,29 @@ export function BottomBar({
   hideArrow?: boolean;
   /** mint button (.btn.soft) for actions that wait or go back, instead of the green main button */
   soft?: boolean;
+  /** a second, mint button on the left of the main one (for example "Back to job status") */
+  secondary?: { label: string; onPress: () => void };
 }) {
   const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
   const inactive = disabled || loading;
   return (
-    <View style={[styles.cta, { paddingBottom: Math.max(22, insets.bottom) }]}>
+    // The home-indicator space is not needed while the keyboard covers it.
+    <View style={[styles.cta, { paddingBottom: keyboardOpen ? 12 : Math.max(22, insets.bottom) }, secondary && { flexDirection: 'row', gap: 10 }]}>
+      {secondary ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={secondary.onPress}
+          style={({ pressed }) => [styles.btn, { backgroundColor: colors.mint, flex: 1 }, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={[styles.btnText, { color: colors.greenDark }]}>{secondary.label}</Text>
+        </Pressable>
+      ) : null}
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ disabled: inactive, busy: loading }}
         onPress={inactive ? undefined : onPress}
-        style={({ pressed }) => [styles.btn, soft && { backgroundColor: colors.mint }, (inactive || pressed) && { opacity: 0.6 }]}
+        style={({ pressed }) => [styles.btn, secondary && { flex: 1.3 }, soft && { backgroundColor: colors.mint }, (inactive || pressed) && { opacity: 0.6 }]}
       >
         <Text style={[styles.btnText, soft && { color: colors.greenDark }]}>{loading ? t('about.saving') : label}</Text>
         {loading || hideArrow ? null : <ArrowRightIcon size={22} color="#fff" />}

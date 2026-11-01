@@ -13,6 +13,7 @@ import {
   noteFor,
   primaryAction,
   progressSegments,
+  reportableJobs,
   shortName,
   sortJobs,
   stamp,
@@ -33,6 +34,17 @@ const base: MyJob = {
   residentName: 'Hira Farooq', residentPhone: '+923215550148', plotNo: '118-C', floor: null, cancellationPending: false,
 };
 const j = (patch: Partial<MyJob>): MyJob => ({ ...base, ...patch });
+
+test('reportableJobs keeps started jobs and drops completed ones older than 7 days', () => {
+  const jobs = [
+    j({ id: 'a', status: 'scheduled' }),
+    j({ id: 'b', status: 'in_progress' }),
+    j({ id: 'c', status: 'completed', completedAt: at(20, 10) }),
+    j({ id: 'd', status: 'completed', completedAt: at(10, 10) }),
+    j({ id: 'e', status: 'quoted', isMine: false, myQuoteStatus: 'sent' }),
+  ];
+  assert.deepEqual(reportableJobs(jobs, now).map((x) => x.id), ['b', 'c']);
+});
 
 test('the kind of a job comes from its status, my quote and whether I won it', () => {
   assert.equal(jobKind(j({ status: 'open', isMine: null, myQuoteStatus: null })), 'interested');

@@ -78,6 +78,15 @@ Most recent first within each group. "Confirmed" means agreed with Shariq Bhai; 
 | Open jobs expire after 24 hours (repost allowed; accepted jobs never expire); accepting a quote goes straight to Scheduled | Decided 26 Oct (user) |
 | Resident phone and plot number visible only after a quote is accepted; before that, only the area (phase and lane) is shown | Confirmed by Shariq (WhatsApp, 26 Oct, 11:33 PM: "No after they accept it. Only area will be shown.") |
 
+## 1 Nov 2026 (Shariq Bhai, design v74)
+
+| Decision | Status |
+| --- | --- |
+| The competition model stays as built (workers quote, the customer accepts one, the job locks to that worker). "In discussion" in Shariq's document is only his label for `accepted`, which stays unused | Shariq said "keep it what we have currently, dont change it" on 1 Nov, then later the same day described a claim-and-lock flow (next row). **Conflict: pending Shariq's final answer; nothing changed in the build** |
+| Proposed by Shariq, 1 Nov (later message): when a job is open any worker can accept it and the job locks to that worker (the worker may then quote); the customer can cancel the job or "Replace worker", which asks for a reason and sends the job back to Open. This is the old claim-lock model that the competition model replaced | Pending: not built; needs a decision because it changes the state machine, RPCs, tests and both apps (see OPEN-QUESTIONS.md) |
+| Before acceptance the worker sees "Customer · Phase N" only: no name, no lane, no Call. Call only on Scheduled and In progress | Design v74; can workers call before acceptance is still pending (OPEN-QUESTIONS.md) |
+| Help and support "Report a problem" opens a job picker, then the per-job report form (reports stay per job) | Built 1 Nov |
+
 ## Direct booking and chat
 
 | Decision | Status |

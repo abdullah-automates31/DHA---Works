@@ -21,6 +21,7 @@ Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are buil
 | W06 Home | `(tabs)/home` | `worker_feed` (count), `worker_jobs`, `notifications` (unread dot) |
 | W07 Open jobs | `(tabs)/open-jobs` | `worker_feed` |
 | W08 Job detail | `job/[id]` | `worker_feed`, `record_job_view`, `express_interest` |
+| W08b Job details (from W12 "Job details >") | `job/[id]?from=status` | same screen as W08; shows the worker's status chip, bar "Back to job status" + "Create quote" while still quotable, never "I will quote this job" |
 | W10 Create quote | `job/[id]/quote` | `submit_quote` |
 | W11 My jobs (Active / Completed / All) | `(tabs)/my-jobs` | `worker_jobs`, `cash_records` |
 | W12 Job status | `job/[id]/status` | `worker_jobs`, `job_interests`, `quotes`, `cash_records`, `cancellation_requests`, `start_job`, `complete_job` (+ bill photo to `job-media`) |
@@ -30,11 +31,12 @@ Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are buil
 | W15 Notifications | `notifications` | `notifications`, `mark_notifications_read` |
 | W16 Profile | `(tabs)/profile` | `get_my_earnings`, `set_available_today`, `set_my_categories`, sign out |
 | W17 Help and support | `help` | `app_settings` (helpline hidden until `helpline_enabled`) |
+| Report a problem (from W17) | `report` | `worker_jobs`: "Which job is this about?" lists jobs that can be reported (started, up to 7 days after completion) and opens W14 for the chosen one |
 | Live updates | hook `features/live/useLiveRefresh.ts` | Realtime on `notifications` (migration 0020) |
 
 ## Decisions applied (see OPEN-QUESTIONS.md for the ones to confirm)
 
-- Privacy: before a quote is accepted a worker never sees a resident's name, phone, plot or address; notifications never contain them. Helpline 1092 is hidden until DHA approves it.
+- Privacy: before a quote is accepted a worker never sees a resident's name, phone, plot, address or lane; the customer shows as "Customer · Phase N" (design v74, 1 Nov). Call appears only on Scheduled and In progress. Notifications never contain these details (quote not selected: "The customer chose another worker for {job}."). The open-jobs views still return `lane`; it is hidden in the UI only. Helpline 1092 is hidden until DHA approves it.
 - No distance filter, no "Nearest", no Requests tab (4 tabs), no "Call, then quote". A rejected worker cannot re-quote. Phone stored as +92 plus 10 digits.
 - Cash: both sides enter amounts. After the worker records, the job stays `completed` ("Cash recorded, waiting for the customer") until the customer confirms. A mismatch still closes as `cash_collected`. Worker-only cash is pending Shariq.
 - Material bill photo required to complete a job whose accepted quote has materials above 0.
@@ -98,7 +100,7 @@ The SMS channel is for development. WhatsApp stays the product channel; its prod
 
 ## Checks (last run 30 Oct, all green except two known script checks)
 
-- `npm run worker:typecheck`, `worker:lint`, `worker:test` (194 unit tests).
+- `npm run worker:typecheck`, `worker:lint`, `worker:test` (196 unit tests).
 - `supabase test db`: 592 assertions in 16 files (worker files: `worker_app_prep`, `worker_documents`, `worker_feed_open_jobs`, `worker_job_detail`, `worker_quote`, `worker_work_step`, `worker_my_jobs`, `worker_cash_cancel`, `worker_report`, `realtime_publication`). `supabase db lint --local`.
 - Local phone auth smoke test (30 Oct): `signInWithOtp({ channel: 'whatsapp' })` and `verifyOtp({ type: 'sms' })` succeeded for the seeded approved number without a provider call; the approved worker saw the feed; pending returned no feed; the no-profile number registered a profile with `email = null`.
 - `npx expo export --platform ios|android` bundles.

@@ -161,7 +161,7 @@ export const en = {
   // W07 Open jobs (copy from worker/screens/w-open.dc.html)
   feed: {
     title: 'Open jobs',
-    where: 'Phase {phase} · {lane}',
+    where: 'Phase {phase}',
     urgent: 'Urgent',
     open: 'Open',
     voiceNote: 'Voice note',
@@ -189,8 +189,10 @@ export const en = {
       sub: 'Send a clear quote to get chosen.',
       subQuoted: '{quoted} already sent a quote. Send a clear quote to get chosen.',
     },
+    customer: 'Customer',
     verifiedResident: 'Verified resident',
-    residentPhase: 'Phase {phase}',
+    residentPhase: 'Verified resident · Phase {phase}',
+    backToStatus: 'Back to job status',
     verified: 'Verified',
     quoteThisJob: 'I will quote this job',
     createQuote: 'Create your quote',
@@ -257,6 +259,8 @@ export const en = {
     tabCompleted: 'Completed',
     tabAll: 'All',
     phaseOnly: 'Phase {phase}',
+    customerPhase: 'Customer · Phase {phase}',
+    jobDetails: 'Job details',
     createQuote: 'Create quote',
     startJob: 'Start job',
     markComplete: 'Mark complete',
@@ -361,6 +365,9 @@ export const en = {
     helplineLead: 'Feel unsafe right now? Call the DHA helpline first. Report after.',
     callHelpline: 'Call {number}',
     note: 'DHA staff will read this. You can report from job start until 7 days after it is completed.',
+    pickJob: 'Which job is this about?',
+    noJobsTitle: 'No job to report yet',
+    noJobsBody: 'You can report a problem from the moment a job starts until 7 days after it is completed.',
     aboutJob: 'About job',
     what: 'What happened?',
     tellMore: 'Tell us more',
@@ -395,7 +402,7 @@ export const en = {
     callHelpline: 'Call DHA helpline {number}',
     common: 'Common questions',
     report: 'Report a problem',
-    reportBody: 'Open the job from My jobs, then tap Report a problem.',
+    reportBody: 'Tell DHA about a problem with a job.',
   },
   // Temporary screens for the next stages (docs/OPEN-QUESTIONS.md)
   later: {

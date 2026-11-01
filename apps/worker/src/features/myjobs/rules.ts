@@ -186,6 +186,17 @@ export function canReport(kind: JobKind): boolean {
   return kind === 'in_progress' || kind === 'completed' || kind === 'cash_collected' || kind === 'reviewed' || kind === 'disputed';
 }
 
+const REPORT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** The worker's jobs that can still be reported: reportable status and, once completed, within 7 days of completion. */
+export function reportableJobs(jobs: readonly MyJob[], now: Date): MyJob[] {
+  return jobs.filter((job) => {
+    if (!canReport(jobKind(job))) return false;
+    if (!job.completedAt) return true;
+    return now.getTime() - new Date(job.completedAt).getTime() <= REPORT_WINDOW_MS;
+  });
+}
+
 /** A cancellation request can be filed on an accepted job that has not finished (docs/FEATURES.md, W18). */
 export function canRequestCancellation(kind: JobKind, pending: boolean): boolean {
   return !pending && (kind === 'scheduled' || kind === 'in_progress');
