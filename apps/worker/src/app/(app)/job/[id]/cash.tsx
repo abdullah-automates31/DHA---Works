@@ -63,7 +63,7 @@ export default function RecordCashScreen() {
       void reload();
       return;
     }
-    router.replace(statusHref(job.id));
+    router.dismissTo(statusHref(job.id)); // pops back to the status screen already in the stack (no second copy)
   }
 
   const failed = state.status === 'error';

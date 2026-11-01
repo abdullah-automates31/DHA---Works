@@ -5,11 +5,11 @@ Read this first in a new session. It is the detailed record of where the work st
 ## 1. Where we are
 
 - Documentation is complete and rewritten for the competing-quotes model (27 Oct), plus Shariq's 27 Oct feedback.
-- **Database and mobile API:** 18 local migrations. **0001–0015 are applied to hosted DEV** (`xiozwoocisesgmegewww`; 0013, 0014 and 0015 on 29 Oct); **0016, 0017 and 0020 are local only**, so local history is ahead of DEV. `supabase db lint --local` is clean.
+- **Database and mobile API:** 18 local migrations. **all 18 are applied to hosted DEV** (`xiozwoocisesgmegewww`; 0013 to 0015 on 29 Oct, 0016, 0017 and 0020 on 31 Oct; checked with `supabase migration list --linked` on 1 Nov, local and remote match). `supabase db lint --local` is clean.
 - **Config safety (30 Oct):** the static test OTPs and fake Twilio values are no longer in the tracked `supabase/config.toml`. `npm run db:local -- <cmd>` builds a git-ignored `.supabase-local/` copy with them; `npm run safety:supabase` / `safety:test` guard the tracked file; `npm run supabase:config-push -- <dev|production>` is the only documented hosted config push (check-only without `--run`; not run). The git `pre-push` hook (`.githooks/`, enabled in this clone via `core.hooksPath`) checks the config in each commit being pushed and blocks `main`. Never run a raw `supabase config push` on a hosted project. No hosted command was run. Details: [SECURITY.md](SECURITY.md), [WORKER-APP.md](WORKER-APP.md).
 - **Push Edge Function** `supabase/functions/send-push`: built and tested locally, **NOT deployed**. No secret is set on DEV and no scheduler calls it.
 - **Types:** `packages/supabase/database.types.ts` includes the local `worker_feed.quote_count` from 0017. Regenerate after pushing 0016, 0017 and 0020; 0014 and 0015 only change privileges, so they do not change the types.
-- **Worker app** (`apps/worker`): all screens W01-W08 and W10-W18 built and tested on the LOCAL stack (30 Oct), see [WORKER-APP.md](WORKER-APP.md). W11 onward is uncommitted. Local-only migrations: 0016, 0017, 0020 (hosted DEV is still at 0015). No Customer app or admin portal yet; npm workspace only, no pnpm/Turborepo.
+- **Worker app** (`apps/worker`): all screens W01-W08 and W10-W18 built and tested on the LOCAL stack (30 Oct), see [WORKER-APP.md](WORKER-APP.md). W11-W18 are committed to `dev`; the 1 Nov changes (v74 privacy, Job details, Report picker, layout and navigation fixes) are not committed yet. Hosted DEV is at 0020. No Customer app or admin portal yet; npm workspace only, no pnpm/Turborepo.
 - **Git:** `https://github.com/abdullah-automates31/DHA---Works.git`. `main` = production (untouched since the first push), `dev` = all work. The linked Supabase project is DEV; no production project exists yet (see SETUP.md). Commit messages end with the `Co-Authored-By` line of the model doing the work.
 
 ## 2. Accounts, projects and environment (do not mix these up)
@@ -48,11 +48,11 @@ Rules: schema changes only as new migration files (never edit an existing one); 
 | 20261028000013 | Shariq's 27 Oct feedback: `jobs.material_bill_path`; `complete_job(job, bill_path)`; cash difference closes the job as `cash_collected` (never `disputed`, no `cash_price` report); `submit_review` below 3 files a system `poor_work` report; `resident_jobs` gains `material_bill_path`; `job_media_read` lets the resident read the bill | yes (29 Oct) |
 | 20261029000014 | send-push grants: column-level privileges for `service_role` only (read push columns of `notifications`, update `push_sent_at`; read `user_id, push_token` of `device_tokens` and delete; read `id, account_status` of `profiles`). Nothing for app users. Hosted grants inspected after push: exact match. | yes (29 Oct) |
 | 20261029000015 | default-privileges cleanup: revokes TRUNCATE, REFERENCES, TRIGGER, MAINTAIN on all public tables and views from `anon`, `authenticated`, `service_role`, and removes them from the `postgres` default privileges in `public`. On hosted DEV such grants went from 388 to 0 and the default became `{postgres=arwdDxtm/postgres}`; a before/after fingerprint showed SELECT/INSERT/UPDATE/DELETE (43), column grants (incl. 0014), owners, RLS, 44 policies, platform-schema ACLs, other defaults and function ACLs unchanged. | yes (29 Oct) |
-| 20261029000016 | `submit_for_review` no longer requires worker areas (chosen after approval); every other check is unchanged. | no (local only) |
-| 20261029000017 | `worker_feed` gains `quote_count` at the end, counting `sent` quotes only. | no (local only) |
-| 20261030000020 | publishes `public.notifications` for Realtime; job tables stay unpublished. | no (local only) |
+| 20261029000016 | `submit_for_review` no longer requires worker areas (chosen after approval); every other check is unchanged. | yes (31 Oct) |
+| 20261029000017 | `worker_feed` gains `quote_count` at the end, counting `sent` quotes only. | yes (31 Oct) |
+| 20261030000020 | publishes `public.notifications` for Realtime; job tables stay unpublished. | yes (31 Oct) |
 
-Verified: `npm run db:local -- db reset` applies all 18 locally; `npm run db:local -- db lint --local` is clean. Hosted DEV is at 0015; `db lint --linked` was clean there on 29 Oct.
+Verified: `npm run db:local -- db reset` applies all 18 locally; `npm run db:local -- db lint --local` is clean. Hosted DEV is at 0020 (all 18 applied); `db lint --linked` was clean there on 29 Oct (at 0015; not re-run since).
 
 **New tables and views get no app-role privileges by default (since 0015).** Each new migration must grant exactly what is needed.
 

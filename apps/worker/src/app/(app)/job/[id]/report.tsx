@@ -95,7 +95,7 @@ export default function ReportProblemScreen() {
       void reload();
       return;
     }
-    Alert.alert(t('report.sentTitle'), t('report.sentBody'), [{ text: t('common.ok'), onPress: () => router.replace(statusHref(job.id)) }]);
+    Alert.alert(t('report.sentTitle'), t('report.sentBody'), [{ text: t('common.ok'), onPress: () => router.dismissTo(statusHref(job.id)) }]);
   }
 
   return (

@@ -86,7 +86,7 @@ export default function QuoteScreen() {
         </Notice>
       ) : null}
 
-      {job && job.standing === 'interested' ? <QuoteForm jobId={job.id} onSent={() => router.replace(jobHref(job.id))} /> : null}
+      {job && job.standing === 'interested' ? <QuoteForm jobId={job.id} onSent={() => (router.canGoBack() ? router.back() : router.replace(jobHref(job.id)))} /> : null}
     </View>
   );
 }

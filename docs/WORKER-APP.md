@@ -61,7 +61,7 @@ Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are buil
 | 20261029000017 | `worker_feed.quote_count` |
 | 20261030000020 | adds `public.notifications` to the `supabase_realtime` publication |
 
-Hosted DEV is still at 0015. Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
+Hosted DEV is at 0020 (0016, 0017 and 0020 were pushed on 31 Oct). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
 
 ## Run it locally
 
@@ -109,6 +109,6 @@ The SMS channel is for development. WhatsApp stays the product channel; its prod
 ## Open items
 
 - UI movement ("the layout moves here and there"): not reproduced; waiting for a screen recording or a description of the screen and motion.
-- Commit and push of Stage A to D when the user has reviewed; push of 0016, 0017, 0020 to DEV only on explicit request.
+- Commit the 1 Nov changes when the user approves. The claim-and-lock job flow (final per the user, 1 Nov) is not built yet; it waits on Shariq's answers (docs/OPEN-QUESTIONS.md). Any later migration goes to DEV only on explicit request.
 - Decisions: the two proposals, W09 revisit, native vs designed tab bar, public repo, account email named in HANDOVER and SETUP.
 - Not built: customer app, admin portal and the staff write RPCs (approve/reject, resolve reports, cancellation decisions, suspend).

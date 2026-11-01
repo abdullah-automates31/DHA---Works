@@ -135,13 +135,13 @@ export default function JobStatusScreen() {
         router.push(cashHref(job.id));
         break;
       case 'find_jobs':
-        router.replace('/open-jobs');
+        router.navigate('/open-jobs');
         break;
       case 'help':
         router.push('/help');
         break;
       default:
-        router.replace('/my-jobs');
+        router.navigate('/my-jobs');
     }
   }
 
