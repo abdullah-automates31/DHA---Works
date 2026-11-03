@@ -1,15 +1,15 @@
 # Session handover
 
-Read this first in a new session. It is the detailed record of where the work stands as of **30 Oct 2026**, so nothing from earlier sessions is lost. The product rules are in [DECISIONS.md](DECISIONS.md); the database design is in [DB-API-DESIGN.md](DB-API-DESIGN.md).
+Read this first in a new session. It is the detailed record of where the work stands as of **3 Nov 2026**, so nothing from earlier sessions is lost. The product rules are in [DECISIONS.md](DECISIONS.md); the database design is in [DB-API-DESIGN.md](DB-API-DESIGN.md).
 
 ## 1. Where we are
 
 - Documentation is complete and rewritten for the competing-quotes model (27 Oct), plus Shariq's 27 Oct feedback.
-- **Database and mobile API:** 18 local migrations. **all 18 are applied to hosted DEV** (`xiozwoocisesgmegewww`; 0013 to 0015 on 29 Oct, 0016, 0017 and 0020 on 31 Oct; checked with `supabase migration list --linked` on 1 Nov, local and remote match). `supabase db lint --local` is clean.
+- **Database and mobile API:** 24 migrations (0001 to 0017, 0020 to 0026; 0018 and 0019 are unapplied proposals in `supabase/proposals/`). **All 24 are applied to hosted DEV** (`xiozwoocisesgmegewww`; 0013 to 0015 on 29 Oct, 0016, 0017 and 0020 on 31 Oct, 0021 to 0026 on 3 Nov; checked with `supabase migration list --linked` on 3 Nov, local and remote match). `supabase db lint --local` is clean apart from the intended unused `p_visit_start`/`p_visit_end` warning on `submit_quote`.
 - **Config safety (30 Oct):** the static test OTPs and fake Twilio values are no longer in the tracked `supabase/config.toml`. `npm run db:local -- <cmd>` builds a git-ignored `.supabase-local/` copy with them; `npm run safety:supabase` / `safety:test` guard the tracked file; `npm run supabase:config-push -- <dev|production>` is the only documented hosted config push (check-only without `--run`; not run). The git `pre-push` hook (`.githooks/`, enabled in this clone via `core.hooksPath`) checks the config in each commit being pushed and blocks `main`. Never run a raw `supabase config push` on a hosted project. No hosted command was run. Details: [SECURITY.md](SECURITY.md), [WORKER-APP.md](WORKER-APP.md).
 - **Push Edge Function** `supabase/functions/send-push`: built and tested locally, **NOT deployed**. No secret is set on DEV and no scheduler calls it.
 - **Types:** `packages/supabase/database.types.ts` includes the local `worker_feed.quote_count` from 0017. Regenerate after pushing 0016, 0017 and 0020; 0014 and 0015 only change privileges, so they do not change the types.
-- **Worker app** (`apps/worker`): all screens W01-W08 and W10-W18 built and tested on the LOCAL stack (30 Oct), see [WORKER-APP.md](WORKER-APP.md). W11-W18 are committed to `dev`; the 1 Nov changes (v74 privacy, Job details, Report picker, layout and navigation fixes) are not committed yet. Hosted DEV is at 0020. No Customer app or admin portal yet; npm workspace only, no pnpm/Turborepo.
+- **Worker app** (`apps/worker`): all screens W01-W08 and W10-W18 built (see [WORKER-APP.md](WORKER-APP.md)), plus the 3 Nov work from the mentor's improvement document and Shariq's answers: Introduction/about, materials toggle with itemised list, "Rejected" label, customer-controlled schedule, hidden rejected and cancelled jobs, bill at job completion. Committed to `dev` up to `895c237`; the 0026 migration and its app, test and doc changes are committed locally only after the user approves. Not yet tried on a real phone: quote toggle, Complete Job bill photo, Rejected card, Introduction, status timeline, voice. The Customer app is Shariq's; the admin portal is not started (the user, 3 Nov: start it next week or the week after; focus on worker and customer apps first). npm workspace only, no pnpm/Turborepo.
 - **Git:** `https://github.com/abdullah-automates31/DHA---Works.git`. `main` = production (untouched since the first push), `dev` = all work. The linked Supabase project is DEV; no production project exists yet (see SETUP.md). Commit messages end with the `Co-Authored-By` line of the model doing the work.
 
 ## 2. Accounts, projects and environment (do not mix these up)
@@ -53,20 +53,21 @@ Rules: schema changes only as new migration files (never edit an existing one); 
 | 20261030000020 | publishes `public.notifications` for Realtime; job tables stay unpublished. | yes (31 Oct) |
 | 20261102000021 | Shariq 2 Nov: `worker_details.about` (text, max 500); `update_worker_details` gets a 4th argument `p_about` (null = unchanged, blank = clear); `resident_quotes` gains `worker_about` at the end. | yes (pushed 3 Nov) |
 | 20261103000022 | `replace_worker(p_job_id, p_reason)`: a resident drops the worker of a scheduled job; the job reopens, the worker's quote becomes `rejected` (cannot re-quote), they get `quote_rejected`. From Shariq's draft 0018 (grants also revoke anon). Tests: `replace_worker_profile.test.sql`. | yes (pushed 3 Nov) |
-| 20261103000024 | The material bill is uploaded with the quote (3 Nov, mentor): `quotes.material_bill_path`; `submit_quote` gets a last argument `p_material_bill_path` (required when materials > 0); `complete_job` skips the bill when the accepted quote has one (older quotes still need it); the job's resident can read a quote's bill; `resident_quotes` gains `material_bill_path`. | yes (pushed 3 Nov) |
+| 20261103000024 | The material bill is uploaded with the quote (3 Nov, mentor): `quotes.material_bill_path`; `submit_quote` gets a last argument `p_material_bill_path`; the job's resident can read a quote's bill; `resident_quotes` gains `material_bill_path`. **The bill-required rules were superseded by 0026**; the columns stay, unused. | yes (pushed 3 Nov) |
 | 20261103000025 | Worker-app improvement document, points 4 and 6: the customer controls the schedule (`quotes.visit_*` optional and ignored by `submit_quote`; `accept_quote` takes the time from the job's `preferred_date` and window; `worker_jobs` gains `preferred_date`, `window_from`, `window_to`); rejected and cancelled jobs are hidden from workers (`worker_may_see_job`, `worker_is_rejected_on`, `can_view_job`, `jobs_read`, `job_private_read`, `worker_jobs` masks a rejected job to one bare row, `private.notify` stops updates to a rejected worker). Tests: `schedule_and_hidden_jobs.test.sql`. | yes (pushed 3 Nov) |
 | 20261103000023 | `worker_public_profile(p_worker_id)`: trades, areas, about, completion rate, verified date and the last 10 anonymised reviews of a worker who quoted one of the caller's jobs. From Shariq's draft 0019, fixed against the real schema (`about` not `bio`, `profile_id`, no `cancelled_before_start` status, anon revoked). | yes (pushed 3 Nov) |
+| 20261103000026 | The material bill goes back to job completion (Shariq, 3 Nov): `submit_quote` no longer requires a bill with materials (its last argument stays, optional and unused); `complete_job` requires the actual bill whenever the accepted quote has materials above 0, for every quote, with no fallback to a quote bill. Replaces the 0024 rule. | yes (pushed 3 Nov, verified: `complete_job` has the 0026 rule, `submit_quote` has none) |
 
-Verified: `npm run db:local -- db reset` applies all 18 locally; `npm run db:local -- db lint --local` is clean. Hosted DEV is at 0020 (all 18 applied); `db lint --linked` was clean there on 29 Oct (at 0015; not re-run since).
+Verified: `npm run db:local -- db reset` applies all 24 locally; `npm run db:local -- db lint --local` shows only the intended unused-argument warning. Hosted DEV is at 0026 (all 24 applied, 3 Nov). `db push` prints a harmless pg-delta "certificate file" error after it finishes. `db lint --linked` was last run on 29 Oct (at 0015).
 
 **New tables and views get no app-role privileges by default (since 0015).** Each new migration must grant exactly what is needed.
 
 Worker-only cash remains **unbuilt and pending Shariq**; it is not 0016.
 
-## 4. Tests (run locally; last full run 30 Oct 2026 on a clean reset of all 18 local migrations)
+## 4. Tests (run locally; last full run 3 Nov 2026 on all 24 local migrations)
 
-- **pgTAP, `npm run db:local -- test db`: 592 assertions in 16 files, all pass.** Files cover default privileges, service-role grants, the job lifecycle and edges, profile registration, notifications/privacy, Realtime publication, worker app prep, feed/open jobs, job detail, my jobs, quotes, work steps, cash/cancel, documents and reports.
-- **Worker app:** `npm run worker:test` 196 pass (1 Nov, after the v74 privacy changes and the Report picker); `npm run worker:typecheck` and `npm run worker:lint` pass; `npx expo export --platform ios` succeeds.
+- **pgTAP, `npm run db:local -- test db`: 676 assertions in 18 files, all pass.** Files cover default privileges, service-role grants, the job lifecycle and edges, profile registration, notifications/privacy, Realtime publication, worker app prep, feed/open jobs, job detail, my jobs, quotes, work steps, cash/cancel, documents and reports, plus `replace_worker_profile` and `schedule_and_hidden_jobs` (3 Nov).
+- **Worker app:** `npm run worker:test` 202 pass (3 Nov); `npm run worker:typecheck` and `npm run worker:lint` pass; `npx expo export --platform ios` succeeded earlier in the week.
 - **Local phone-auth smoke test (30 Oct):** static WhatsApp OTP request and verify succeed; approved `+923001234567` sees 2 open jobs; pending worker sees 0; no-profile worker registers a profile with `email = null`; `approve_local_phone_worker.sql` promotes the pending worker.
 - **Concurrency:** `bash supabase/tests/concurrency/accept_race.sh` (then `npm run db:local -- db reset`): two sessions accept different quotes on one job, exactly one wins. PASS when last run.
 - **send-push:** `deno test` in `supabase/functions/send-push`: 23 pass. `bash supabase/functions/send-push/integration/run.sh` (then `npm run db:local -- db reset`): 12 end-to-end checks against the local database and a mock Expo server, using only the grants from the migrations. PASS when last run.
@@ -81,7 +82,7 @@ Worker-only cash remains **unbuilt and pending Shariq**; it is not 0016.
 
 | Note | Status |
 | --- | --- |
-| Worker app needs a mandatory material bill upload; typing the materials list is optional | **Built** in 0013. **Assumed:** bill required only when the accepted quote has materials above 0. Confirm. |
+| Worker app needs a mandatory material bill upload; typing the materials list is optional | **Built** in 0013; changed 3 Nov: the quote now carries an itemised materials list and estimated cost (no bill), and the actual bill is required at Complete Job when the quote has materials above 0 (0026, confirmed by Shariq). |
 | Rated below 3 means poor work, added inside reports | **Built.** **Assumed:** mean of the three scores below 3. Confirm. |
 | A price difference is never disputed by itself; complaints are separate or by rating below 3 | **Built.** Job closes as `cash_collected`, `cash_records.matched = false`. |
 | "Cash collected by worker (status should be shown on C13)" and a standalone "Review pending" instead of "Cash paid and review" | **UI only so far.** Written into UI-UX.md section 10. |
@@ -107,6 +108,7 @@ The user's instruction: build what is clear, leave what is unsure, they will con
 
 ## 8. Next steps, in order
 
+0. **3 Nov:** test the new worker screens on a phone (quote with and without materials, bill photo at Complete Job, Rejected card, Introduction, status timeline, voice); run `supabase/dev/hosted_dev_fake_open_jobs.sql` in the DEV SQL Editor for 4 fake open jobs; wait for Shariq on the customer-app items (show "Rejected", drop the quote visit window, require a date and time for every job incl. ASAP), the claim-lock model, whether a worker who lost to another worker may quote again on a reopened job, and worker-only cash. The admin portal starts next week or the week after (the user, 3 Nov), not before.
 1. Follow-up, not blocking: check the first cron run after 0015 (section 4) and, when convenient, open Studio and try a Realtime subscription on DEV.
 2. To make push live on DEV: `supabase secrets set PUSH_DISPATCH_SECRET=...`, `supabase functions deploy send-push`, add a scheduler (pg_cron + pg_net, needs a migration). Each needs the user's go-ahead.
 3. When Shariq answers: worker-only cash (new migration) if confirmed; adjust bill and rating assumptions; record "v2 need expiry".

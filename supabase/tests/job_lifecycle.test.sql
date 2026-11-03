@@ -79,7 +79,7 @@ select throws_ok($$
     0, null, 500, null, null)$$, null, null, 'extra charge without a note is refused');
 select lives_ok($$
   select public.submit_quote((select id from t_job), 3000, now() + interval '1 day', now() + interval '1 day 2 hours',
-    500, 'washer', 0, null, 'bring own tools', '00000000-0000-0000-0000-0000000000b1/bill.jpg')$$, 'worker 1 sends a quote');
+    500, 'washer', 0, null, 'bring own tools')$$, 'worker 1 sends a quote');
 select is((select total from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b1'), 3500, 'total is computed by the database');
 select throws_ok($$
   select public.submit_quote((select id from t_job), 1000, now() + interval '1 day', now() + interval '1 day 2 hours')$$,
@@ -121,9 +121,6 @@ select tests.act('00000000-0000-0000-0000-0000000000b2');
 select is((select count(*) from public.job_private), 0::bigint, 'other workers still see nothing private');
 
 -- ---------------------------------------------------------------- execute and cash
--- A quote sent before migration 0024 has no bill: the old rule (bill at completion) still applies to it.
-select tests.back();
-update public.quotes set material_bill_path = null where worker_id = '00000000-0000-0000-0000-0000000000b1';
 select tests.act('00000000-0000-0000-0000-0000000000b1');
 select throws_ok($$select public.complete_job((select id from t_job))$$, null, null, 'cannot complete before starting');
 select lives_ok($$select public.start_job((select id from t_job))$$, 'worker starts the job');

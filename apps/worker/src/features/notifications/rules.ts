@@ -38,7 +38,7 @@ export function describe(n: Notice, now: Date = new Date()): NoticeView {
     case 'quote_rejected':
       return { title: 'Quote rejected', body: `The customer rejected your quote for ${job}.`, icon: 'info', opensJob: false };
     case 'job_cancelled':
-      return { title: 'Job cancelled', body: `${capitalize(job)} was cancelled by the customer. Nothing is owed.`, icon: 'alert', opensJob: false };
+      return { title: 'Job cancelled', body: "This job has been cancelled. Do not travel to the customer's address.", icon: 'alert', opensJob: false };
     case 'job_expired':
       return { title: 'Job expired', body: `${capitalize(job)} expired before a worker was chosen.`, icon: 'info', opensJob: true };
     case 'cash_collected':

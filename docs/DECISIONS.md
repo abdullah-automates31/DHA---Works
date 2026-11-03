@@ -19,7 +19,9 @@ Most recent first within each group. "Confirmed" means agreed with Shariq Bhai; 
 | Job statuses: open, interested, quoted, accepted, scheduled, in_progress, completed, cash_collected, reviewed; side states disputed and cancelled | Per UI design (SPEC.md) |
 | Cash: worker records the amount, resident confirms; ~~a mismatch moves the job to disputed~~ | **Superseded 27 Oct**: a price difference never disputes a job (next rows) |
 | A price difference never disputes a job by itself; the resident complains separately or rates below 3. A rating below 3 adds a `poor_work` report automatically | Shariq, 27 Oct (reported by user, 28 Oct) |
-| Worker must upload a material bill (mandatory); typing a materials list is optional | Shariq, 27 Oct (reported by user, 28 Oct); exact trigger pending |
+| Worker must upload a material bill (mandatory); typing a materials list is optional | Shariq, 27 Oct (reported by user, 28 Oct). **Changed 3 Nov (Shariq):** the quote carries an itemised materials list and estimated cost (toggle With/Without materials, no "Other" line); the actual bill is uploaded at Complete Job, only when the quote has materials above 0. |
+| The customer controls the job schedule; workers cannot set or change it; a worker told late must call the customer | Shariq, 3 Nov (the mentor's improvement document) |
+| Rejected (including "customer chose another worker") and cancelled jobs disappear from the worker; a rejected job shows as one bare "Rejected" card; cancel notice: "This job has been cancelled. Do not travel to the customer's address." | Shariq, 3 Nov |
 | Safety: "Report a problem" and "I feel unsafe" in both apps; helpline 1092; staff see both phone numbers | Per UI design; helpline wording to confirm |
 | **MVP 2 (not MVP 1, per Shariq 26 Oct):** quote revisions: max 2 per job; allowed before work starts; after start only for unexpected extra work with explanation and itemised prices; resident must approve explicitly; all versions kept | Decided by user, 26 Oct |
 | ~~Discussion timeout is 24 hours~~ | Superseded by the competition model |

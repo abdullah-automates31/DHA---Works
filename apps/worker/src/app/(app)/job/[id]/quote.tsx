@@ -1,13 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
 import { ChevronLeftIcon } from '@/components/icons';
 import { BottomBar, FieldError, LabeledInput } from '@/components/onboarding';
 import { formatRupees } from '@/features/home/format';
-import { pickImage } from '@/features/documents/pick';
 import { jobHref } from '@/features/job/routes';
 import { useJob } from '@/features/job/useJob';
 import {
@@ -23,10 +22,8 @@ import {
   type MaterialItem,
   type QuoteInput,
 } from '@/features/quote/rules';
-import { buildBillPath, type Bill } from '@/features/myjobs/actions';
 import { sendQuote } from '@/features/quote/submit';
 import { t } from '@/i18n';
-import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { colors, fontFamily } from '@/theme';
 
@@ -92,16 +89,12 @@ export default function QuoteScreen() {
 }
 
 function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSent: () => void }) {
-  const { session } = useAuth();
-  const userId = session?.user.id ?? '';
-  const [typed, setInput] = useState<Omit<QuoteInput, 'hasBill'>>({ labour: '', withMaterials: false, items: [{ name: '', price: '' }] });
-  const [bill, setBill] = useState<Bill | null>(null);
-  const input: QuoteInput = { ...typed, hasBill: bill !== null };
+  const [input, setInput] = useState<QuoteInput>({ labour: '', withMaterials: false, items: [{ name: '', price: '' }] });
   const [touched, setTouched] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (patch: Partial<Omit<QuoteInput, 'hasBill'>>) => {
+  const set = (patch: Partial<QuoteInput>) => {
     setInput((current) => ({ ...current, ...patch }));
     if (error) setError(null);
   };
@@ -120,42 +113,13 @@ function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSen
     set({ items: rest.length > 0 ? rest : [{ name: '', price: '' }] });
   };
 
-  async function takeBill(source: 'camera' | 'library') {
-    const picked = await pickImage(source);
-    if (picked.status === 'ok') {
-      setBill({ bytes: picked.file.bytes, mime: picked.file.mime });
-      if (error) setError(null);
-    } else if (picked.status === 'denied') setError(t('documents.errors.permission'));
-    else if (picked.status === 'error') setError(t('documents.errors.pickFailed'));
-  }
-
-  function chooseBill() {
-    Alert.alert(t('quote.billTitle'), undefined, [
-      { text: t('quote.billTake'), onPress: () => void takeBill('camera') },
-      { text: t('quote.billChoose'), onPress: () => void takeBill('library') },
-      { text: t('common.cancel'), style: 'cancel' },
-    ]);
-  }
-
   async function onSend() {
     if (sending) return;
     setTouched(true);
     if (!valid) return;
     setError(null);
     setSending(true);
-    const result = await sendQuote(
-      {
-        submitQuote: (args) => supabase.rpc('submit_quote', args),
-        uploadBill: async (bytes, mime, extension) => {
-          const path = buildBillPath(userId, extension, Date.now(), Math.random().toString(16).slice(2, 10));
-          const { error: uploadError } = await supabase.storage.from('job-media').upload(path, bytes, { contentType: mime, upsert: false });
-          return { path: uploadError ? null : path, error: uploadError };
-        },
-        deleteBill: (path) => supabase.storage.from('job-media').remove([path]),
-      },
-      buildSubmitArgs(jobId, input),
-      input.withMaterials ? bill : null,
-    );
+    const result = await sendQuote({ submitQuote: (args) => supabase.rpc('submit_quote', args) }, buildSubmitArgs(jobId, input));
     setSending(false);
     if (result.ok || result.key === 'quote.errors.alreadySent') {
       onSent(); // the quote exists either way; the job screen shows "Quote sent"
@@ -227,28 +191,7 @@ function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSen
               </View>
               {touched && errors.items ? <FieldError>{t('quote.errors.itemsHint')}</FieldError> : null}
 
-              <View style={styles.billBox}>
-                <Text style={styles.label}>{t('quote.billTitle')}</Text>
-                {bill ? (
-                  <View style={styles.billRow}>
-                    <Text style={styles.billOk}>{'\u2713 ' + t('quote.billAttached')}</Text>
-                    <Pressable accessibilityRole="button" onPress={chooseBill}>
-                      <Text style={styles.billLink}>{t('quote.billChange')}</Text>
-                    </Pressable>
-                    <Pressable accessibilityRole="button" onPress={() => setBill(null)}>
-                      <Text style={styles.billLink}>{t('quote.billRemove')}</Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  <>
-                    <Text style={styles.billHint}>{t('quote.billHint')}</Text>
-                    <Pressable accessibilityRole="button" onPress={chooseBill} style={styles.addItem}>
-                      <Text style={styles.addItemText}>{t('quote.billTitle')}</Text>
-                    </Pressable>
-                  </>
-                )}
-                {touched && errors.bill ? <FieldError>{t('quote.errors.billHint')}</FieldError> : null}
-              </View>
+              <Text style={styles.billHint}>{t('quote.billLater')}</Text>
             </View>
           ) : null}
 
@@ -333,10 +276,6 @@ const styles = StyleSheet.create({
   addItemText: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.greenDark },
   visitBox: { backgroundColor: colors.mint, borderRadius: 14, padding: 12, gap: 4 },
   visitFixed: { fontFamily: fontFamily.extrabold, fontSize: 14, color: colors.greenDark },
-  billBox: { gap: 8, marginTop: 4 },
-  billRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  billOk: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.greenDark },
-  billLink: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.green },
   billHint: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 17, color: colors.muted },
   itemsTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   itemsTotalValue: { fontFamily: fontFamily.extrabold, fontSize: 14, color: colors.ink },

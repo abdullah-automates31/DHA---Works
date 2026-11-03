@@ -28,7 +28,7 @@ draft -> open -> interested -> quoted -> accepted -> scheduled -> in_progress ->
 | (revision, **MVP 2**) | `approve_revision`, `reject_revision` | owning resident | revision pending | approve: new quote becomes the agreed one, old one `superseded`, `cash_records.agreed_amount` updated; reject: original quote stands (rejected revision still counts toward the limit) |
 | (withdraw) | `withdraw_quote`, `withdraw_interest` | worker | before accepted | recompute stage |
 | scheduled -> in_progress | `start_job` | accepted worker | | |
-| in_progress -> completed | `complete_job(job, bill_path)` | accepted worker | | material bill photo required when the accepted quote has materials above 0 (ASSUMED, see OPEN-QUESTIONS); prompts both for cash |
+| in_progress -> completed | `complete_job(job, bill_path)` | accepted worker | | material bill photo required when the accepted quote has materials above 0 (confirmed by Shariq, 3 Nov; the quote itself carries only the itemised list and estimate); prompts both for cash |
 | (cash) | `record_cash_worker`, `confirm_cash_resident` | worker / resident | job completed; either side may go first | when both present -> `cash_collected` always. Worker/resident gap and gap against the quote stay on `cash_records`. A price difference never disputes a job (Shariq, 27 Oct) |
 | cash_collected -> reviewed | `submit_review` | resident | one per job | updates worker rating; mean score below 3 also files a system-generated `poor_work` report |
 | -> cancelled | `cancel_job` | resident before accept; staff later (admin phase) | reason | notify workers who quoted |

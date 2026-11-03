@@ -39,7 +39,7 @@ insert into public.job_private (job_id, plot_no, floor, resident_phone) select i
 -- ---------------------------------------------------------------- the flow up to scheduled (real RPCs)
 select tests.act('00000000-0000-0000-0000-0000000000b1');
 select lives_ok($$select public.express_interest('00000000-0000-0000-0000-00000000a001')$$, 'w1 shows interest in the job with materials');
-select lives_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000a001', 1500, now() + interval '2 hours', now() + interval '4 hours', 1450, 'Pipe and washers', 250, 'Fittings', null, '00000000-0000-0000-0000-0000000000b1/bill.jpg')$$, 'w1 quotes Rs 3,200 with materials');
+select lives_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000a001', 1500, now() + interval '2 hours', now() + interval '4 hours', 1450, 'Pipe and washers', 250, 'Fittings')$$, 'w1 quotes Rs 3,200 with materials');
 select lives_ok($$select public.express_interest('00000000-0000-0000-0000-00000000a002')$$, 'w1 shows interest in the labour-only job');
 select lives_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000a002', 900, now() + interval '2 hours', now() + interval '4 hours')$$, 'and quotes Rs 900');
 select lives_ok($$select public.express_interest('00000000-0000-0000-0000-00000000a003')$$, 'w1 shows interest in a third job');
@@ -101,9 +101,6 @@ select tests.back();
 select is((select count(*) from public.notifications where user_id = '00000000-0000-0000-0000-0000000000a1' and type = 'job_started'), 1::bigint, 'the resident was told, once');
 
 -- ---------------------------------------------------------------- complete_job and the material bill
--- A quote sent before migration 0024 has no bill: the old rule (bill at completion) still applies to it.
-select tests.back();
-update public.quotes set material_bill_path = null where id = (select accepted_quote_id from public.jobs where id = '00000000-0000-0000-0000-00000000a001');
 select tests.act('00000000-0000-0000-0000-0000000000b1');
 select throws_ok($$select public.complete_job('00000000-0000-0000-0000-00000000a001')$$, null, 'upload the material bill', 'materials in the quote: no bill, no completion');
 select throws_ok($$select public.complete_job('00000000-0000-0000-0000-00000000a001', '  ')$$, null, 'upload the material bill', 'a blank bill path does not count');

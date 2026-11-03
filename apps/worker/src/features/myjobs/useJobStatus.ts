@@ -33,7 +33,7 @@ async function fetchStatus(id: string): Promise<JobStatusState> {
   // The worker's own interest, quote and cash row (row-level security lets them read only their own).
   const [interest, quote, cash, cancel] = await Promise.all([
     supabase.from('job_interests').select('created_at').eq('job_id', id).maybeSingle(),
-    supabase.from('quotes').select('created_at, total, materials, status, material_bill_path').eq('job_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('quotes').select('created_at, total, materials, status').eq('job_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('cash_records').select('worker_amount, agreed_amount').eq('job_id', id).maybeSingle(),
     supabase.from('cancellation_requests').select('id, requester_role').eq('job_id', id).eq('status', 'pending').maybeSingle(),
   ]);
@@ -45,8 +45,7 @@ async function fetchStatus(id: string): Promise<JobStatusState> {
       interestAt: interest.data?.created_at ?? null,
       quoteAt: quote.data?.created_at ?? null,
       quoteTotal: quote.data?.total ?? null,
-      // The bill now travels with the quote; only an older quote (sent without one) still needs it at completion.
-      materials: quote.data?.material_bill_path ? 0 : (quote.data?.materials ?? 0),
+      materials: quote.data?.materials ?? 0,
       cashAmount: cash.data?.worker_amount ?? null,
       cashDue: cash.data?.agreed_amount ?? job.myQuoteTotal,
       cancelRequestId: cancel.data?.requester_role === 'worker' ? cancel.data.id : null,

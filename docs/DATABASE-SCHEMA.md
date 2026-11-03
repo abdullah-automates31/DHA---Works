@@ -18,12 +18,12 @@ Size: 29 tables, 5 views, 33 functions the apps can call (listed in section 8), 
 
 | Environment | State |
 |---|---|
-| **Migration files in the repo** | 18 (0001 to 0017 and 0020) |
-| **Local (Docker) database** | All 18 applied; `supabase test db` passed 592 assertions in 16 files on 30 Oct 2026. |
-| **Hosted DEV** (Supabase free tier) | Migrations **0001 to 0015** are applied. **0016, 0017 and 0020 are not yet applied.** So hosted DEV is slightly behind the local schema. |
+| **Migration files in the repo** | 24 (0001 to 0017 and 0020 to 0026) |
+| **Local (Docker) database** | All 24 applied; `supabase test db` passed 676 assertions in 18 files on 3 Nov 2026. |
+| **Hosted DEV** (Supabase free tier) | All 24 migrations are applied (0021 to 0026 on 3 Nov). Local and DEV match. |
 | **Production** | Does not exist. No production Supabase project has been created. |
 
-The hosted-DEV status comes from the project notes and the 29 Oct check; re-check it with `supabase migration list --linked` before pushing. `docs/HANDOVER.md` and `README.md` now carry the same 18-migration status.
+The hosted-DEV status was checked with `supabase migration list --linked` on 3 Nov; re-check it before pushing. `docs/HANDOVER.md` and `README.md` carry the same 24-migration status. (Counts of tables, views and functions in this document were written on 30 Oct and do not yet include the 3 Nov functions `replace_worker`, `worker_public_profile`, `worker_may_see_job` and `worker_is_rejected_on`.)
 
 What 0016, 0017 and 0020 change, in short: a worker no longer needs to pick service areas before submitting for review (0016), the worker's job list shows how many quotes a job has (0017), and `public.notifications` is added to the Realtime publication (0020). None changes a table's columns.
 
@@ -118,7 +118,7 @@ Job statuses: `draft`, `open`, `interested`, `quoted`, `accepted` (kept but **un
 4. **Posting a job.** The resident saves a draft (`save_job_draft`) and posts it (`post_job`): needs at least one photo, a description of 10+ characters and a date if scheduled. The job becomes `open`, the 24-hour clock starts, and every approved worker matching the category and phase is notified.
 5. **Interest and quotes.** A matching worker marks interest (`express_interest`), then sends a quote (`submit_quote`). The job moves to `interested`, then `quoted`. A sent quote cannot be edited; the worker can withdraw it and send a new one. A worker the resident rejected cannot quote that job again.
 6. **Acceptance.** `accept_quote` does everything at once: accepts the chosen quote, marks the others `not_selected`, moves the job to `scheduled`, creates the `cash_records` row, and releases the phone and plot to that one worker. It can only happen once per job. Before acceptance a resident can also `reject_quote` or `cancel_job`.
-7. **The work.** The worker calls `start_job` (`in_progress`), then `complete_job` (`completed`). If the accepted quote included materials, the worker must attach a material bill (0013).
+7. **The work.** The worker calls `start_job` (`in_progress`), then `complete_job` (`completed`). If the accepted quote included materials, the worker must attach the actual material bill when completing (0013, 0026).
 8. **Cash.** Both sides enter the amount (`record_cash_worker`, `confirm_cash_resident`); each amount is write-once. When both are in, the job becomes `cash_collected` and the worker's `jobs_done` goes up. **A price difference no longer creates a dispute** (0013): it is kept on `cash_records` (`matched = false`, `quote_difference`) for staff. A worker who charges a different amount from the quote must give a reason.
 9. **Review.** Within 7 days of completion the resident calls `submit_review`. The job becomes `reviewed` and the worker's average is recalculated. A rating whose average of the three scores is **below 3** automatically files a `poor_work` report for staff (0013).
 10. **Reports.** Either side can `file_report` from `scheduled` until 7 days after completion. Safety and price reports also flag the job for staff without changing its status.
@@ -174,7 +174,7 @@ Job statuses: `draft`, `open`, `interested`, `quoted`, `accepted` (kept but **un
 | `categories_with_counts` | Category tiles with "pros nearby" for the resident's default phase. |
 | `resident_jobs` | A resident's own jobs with interest, quote and view counts, lowest quote, expiry time. |
 | `resident_quotes` | Quotes on a resident's jobs plus the worker's public profile. |
-| `worker_feed` | Open jobs matching the worker, excluding ones already engaged; phase and lane only. Has `quote_count` from 0017 (local only). |
+| `worker_feed` | Open jobs matching the worker, excluding ones already engaged; phase and lane only. Has `quote_count` from 0017. |
 | `worker_jobs` | The worker's own jobs. Resident name, phone, plot and floor appear only on jobs the worker won. |
 
 These views deliberately run with the database owner's rights so they can join data the caller cannot read directly. Each filters on the signed-in user itself. Supabase's security advisor flags this pattern; the migration notes the warning is expected.
@@ -211,17 +211,24 @@ A **migration** is a numbered SQL file that changes the database structure. File
 | 0010 | The five read views and `get_my_earnings`. |
 | 0011 | Hourly scheduled sweeps (expiry, stuck jobs, rating reminders). |
 | 0012 | Four private storage buckets and their access rules. |
-| 0013 | Shariq's 28 Oct feedback: material bill required when the quote has materials; a price difference no longer disputes a job; a rating below 3 files a `poor_work` report. |
+| 0013 | Shariq's 28 Oct feedback: material bill required at completion when the quote has materials; a price difference no longer disputes a job; a rating below 3 files a `poor_work` report. |
 | 0014 | Minimum column-level rights for the push-notification service. Function not deployed yet. |
 | 0015 | Removed unneeded table rights (TRUNCATE, TRIGGER, REFERENCES, MAINTAIN) from app roles, now and for future tables. |
-| 0016 | `submit_for_review` no longer requires service areas; workers choose phases after approval. **Local only.** |
-| 0017 | Adds `quote_count` to `worker_feed`. **Local only.** |
+| 0016 | `submit_for_review` no longer requires service areas; workers choose phases after approval. |
+| 0017 | Adds `quote_count` to `worker_feed`. |
+| 0020 | Publishes `notifications` for Realtime so screens refresh when a notice arrives. |
+| 0021 | Worker "about" text (max 500) on the worker profile; shown to the customer with the quote. |
+| 0022 | `replace_worker`: the customer drops the worker of a scheduled job; the job reopens and that worker's quote becomes rejected. |
+| 0023 | `worker_public_profile`: trades, areas, about, completion rate, verified date and the last 10 anonymised reviews of a worker who quoted the caller's job. |
+| 0024 | Material bill column on quotes. Its "bill with the quote" rules were replaced by 0026; the column is unused. |
+| 0025 | The customer controls the schedule (the quote's visit time is optional and ignored); rejected and cancelled jobs are hidden from workers. |
+| 0026 | The actual material bill is uploaded when the job is completed, and only when the quote has materials above 0. |
 
 Two further files, `supabase/proposals/20261029000018` and `...019` (lock identity details during review; let owners delete their own identity files), are **proposals, not migrations**, and are not applied anywhere.
 
 ## 10. Limitations and pending items
 
-**Not yet applied to hosted DEV:** migrations 0016 and 0017. Production does not exist.
+**Not yet applied to hosted DEV:** none. Production does not exist.
 
 **Not built yet (no tables or functions for them):**
 - **Staff actions.** There are no functions yet for approving or rejecting workers and residents, deciding cancellation requests, resolving reports, suspending accounts, or inviting staff. Policies let staff *read*, but the admin portal's write functions belong to the admin phase. Until then, the `verification_decisions` and `reports` workflows cannot be completed from the apps.

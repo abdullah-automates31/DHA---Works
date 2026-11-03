@@ -19,6 +19,12 @@ test('each worker-facing type has its own words', () => {
   assert.equal(title('quote_not_selected'), 'Quote rejected');
   assert.equal(title('quote_rejected'), 'Quote rejected');
   assert.equal(title('job_cancelled'), 'Job cancelled');
+  // A cancelled job is invisible to the worker, so its notice says so plainly and opens nothing.
+  const cancelled = describe(n({ type: 'job_cancelled' }), now);
+  assert.equal(cancelled.body, "This job has been cancelled. Do not travel to the customer's address.");
+  assert.equal(cancelled.opensJob, false);
+  assert.equal(describe(n({ type: 'quote_rejected' }), now).opensJob, false);
+  assert.equal(describe(n({ type: 'quote_not_selected' }), now).opensJob, false);
   assert.equal(title('job_expired'), 'Job expired');
   assert.equal(title('cash_collected'), 'Job closed');
   assert.equal(title('cash_disputed'), 'Cash amounts differ');

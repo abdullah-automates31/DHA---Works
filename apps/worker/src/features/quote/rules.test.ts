@@ -12,7 +12,7 @@ import {
   type QuoteInput,
 } from './rules.ts';
 
-const empty: QuoteInput = { labour: '', withMaterials: false, items: [], hasBill: false };
+const empty: QuoteInput = { labour: '', withMaterials: false, items: [] };
 const design: QuoteInput = {
   labour: '1500',
   withMaterials: true,
@@ -20,7 +20,6 @@ const design: QuoteInput = {
     { name: 'Trap pipe', price: '900' },
     { name: 'Flexible hose', price: '550' },
   ],
-  hasBill: true,
 };
 
 test('amounts keep digits only, at most seven', () => {
@@ -44,12 +43,11 @@ test('validation: total above zero, and a complete item list when materials are 
   assert.deepEqual(validateQuote(empty), { total: true });
   assert.deepEqual(validateQuote(design), {});
   assert.deepEqual(validateQuote({ ...design, withMaterials: false }), {}); // items are ignored when off
-  assert.deepEqual(validateQuote({ labour: '500', withMaterials: true, items: [], hasBill: true }), { items: true });
-  assert.deepEqual(validateQuote({ ...design, hasBill: false }), { bill: true }); // materials need the bill photo
-  assert.deepEqual(validateQuote({ ...design, withMaterials: false, hasBill: false }), {}); // without materials no bill is asked
+  assert.deepEqual(validateQuote({ labour: '500', withMaterials: true, items: [] }), { items: true });
+  assert.deepEqual(validateQuote({ ...design, withMaterials: false }), {}); // without materials nothing about materials is checked
   assert.deepEqual(validateQuote({ ...design, items: [...design.items, { name: 'Tape', price: '' }] }), { items: true });
   assert.deepEqual(validateQuote({ ...design, items: [...design.items, { name: '', price: '40' }] }), { items: true });
-  assert.equal(isQuoteValid({ labour: '', withMaterials: true, items: [{ name: 'Pipe', price: '500' }], hasBill: true }), true); // labour 0 is fine while the total is above zero
+  assert.equal(isQuoteValid({ labour: '', withMaterials: true, items: [{ name: 'Pipe', price: '500' }] }), true); // labour 0 is fine while the total is above zero
   assert.equal(isQuoteValid(empty), false);
 });
 
@@ -71,8 +69,7 @@ test('without materials nothing about materials is sent; item names are tidied',
   const off = buildSubmitArgs('j', { ...design, withMaterials: false });
   assert.equal(off.p_materials, 0);
   assert.equal(off.p_materials_note, undefined);
-  assert.equal(buildSubmitArgs('j', { ...design, withMaterials: false }, 'u/bill.jpg').p_material_bill_path, undefined); // no bill path without materials
-  assert.equal(buildSubmitArgs('j', design, 'u/bill.jpg').p_material_bill_path, 'u/bill.jpg');
-  const spaced = buildSubmitArgs('j', { labour: '0', withMaterials: true, items: [{ name: '  Trap   pipe ', price: '500' }], hasBill: true });
+  assert.ok(!('p_material_bill_path' in buildSubmitArgs('j', design))); // the bill is uploaded at completion, never with the quote
+  const spaced = buildSubmitArgs('j', { labour: '0', withMaterials: true, items: [{ name: '  Trap   pipe ', price: '500' }] });
   assert.equal(spaced.p_materials_note, 'Trap pipe Rs 500');
 });

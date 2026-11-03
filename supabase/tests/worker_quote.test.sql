@@ -64,14 +64,12 @@ select throws_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c
   'a negative amount is refused');
 select is((select count(*) from public.quotes where job_id = '00000000-0000-0000-0000-00000000c001'), 0::bigint, 'none of the refused attempts left a quote behind');
 
-select throws_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c001', 1500, now() + interval '1 day', now() + interval '1 day 2 hours', 500, 'pipe', 0, null)$$, null, 'upload the material bill', 'materials without a bill are refused');
-select throws_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c001', 1500, now() + interval '1 day', now() + interval '1 day 2 hours', 500, 'pipe', 0, null, null, '  ')$$, null, 'upload the material bill', 'a blank bill path does not count');
 select throws_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c001', 1500, now() + interval '1 day', now() + interval '1 day 2 hours', 500, 'pipe', 0, null, null, '00000000-0000-0000-0000-0000000000b2/bill.jpg')$$, null, 'invalid bill path', 'a bill in someone else folder is refused');
 select lives_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c001', 1500, now() + interval '1 day', now() + interval '1 day 2 hours',
-  1450, 'Trap pipe, flexible hose, washers', 250, 'Fittings and washers', null, '00000000-0000-0000-0000-0000000000b1/bill.jpg')$$, 'a full quote is sent (labour, materials with a list, other with a reason)');
+  1450, 'Trap pipe, flexible hose, washers', 250, 'Fittings and washers')$$, 'a full quote is sent (labour, materials with a list, other with a reason)');
 select is((select total from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b1' and job_id = '00000000-0000-0000-0000-00000000c001'), 3200,
   'the database computes the total: 1500 + 1450 + 250 = 3200');
-select is((select material_bill_path from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b1' and job_id = '00000000-0000-0000-0000-00000000c001'), '00000000-0000-0000-0000-0000000000b1/bill.jpg', 'the bill path is stored with the quote');
+select ok((select material_bill_path is null from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b1' and job_id = '00000000-0000-0000-0000-00000000c001'), 'the quote carries the materials list and cost but no bill: the bill is uploaded when the job is completed');
 select is((select materials_note from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b1'), 'Trap pipe, flexible hose, washers', 'the materials list is stored');
 select is((select other_note from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b1'), 'Fittings and washers', 'and the reason for the extra cost');
 select is((select status::text from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b1'), 'sent', 'the quote is sent');
@@ -122,7 +120,7 @@ select throws_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c
 -- ---------------------------------------------------------------- big amounts and a resident
 select tests.back();
 select tests.act('00000000-0000-0000-0000-0000000000b2');
-select lives_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c001', 9999999, now() + interval '1 day', now() + interval '1 day 2 hours', 9999999, null, 0, null, null, '00000000-0000-0000-0000-0000000000b2/bill.jpg')$$, 'a very large amount is accepted (the app limits input to seven digits)');
+select lives_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c001', 9999999, now() + interval '1 day', now() + interval '1 day 2 hours', 9999999, null, 0, null)$$, 'a very large amount is accepted (the app limits input to seven digits)');
 select is((select total from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b2'), 19999998, 'and the total adds up');
 select tests.act('00000000-0000-0000-0000-0000000000a1');
 select throws_ok($$select public.submit_quote('00000000-0000-0000-0000-00000000c001', 1000, now() + interval '1 day', now() + interval '1 day 2 hours')$$, null,

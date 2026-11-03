@@ -24,7 +24,6 @@ export type QuoteInput = {
   labour: string;
   withMaterials: boolean;
   items: MaterialItem[];
-  hasBill: boolean; // a photo of the material bill is attached (kept outside this type; it is a file, not text)
 };
 
 const itemUsed = (item: MaterialItem) => item.name.trim() !== '' || parseAmount(item.price) > 0;
@@ -47,7 +46,6 @@ export function computeTotal(input: Pick<QuoteInput, 'labour' | 'withMaterials' 
 export type QuoteErrors = {
   total?: true; // nothing entered: the total must be above zero
   items?: true; // "With materials" needs at least one item, and every started row needs a name and a price
-  bill?: true; // "With materials" also needs the photo of the bill
 };
 
 /** Mirrors the table rule (total above zero) plus the form rule for the materials list. */
@@ -57,14 +55,13 @@ export function validateQuote(input: QuoteInput): QuoteErrors {
   if (input.withMaterials) {
     const used = usedItems(input);
     if (used.length === 0 || !used.every(itemComplete)) errors.items = true;
-    if (!input.hasBill) errors.bill = true;
   }
   return errors;
 }
 
 export function isQuoteValid(input: QuoteInput): boolean {
   const errors = validateQuote(input);
-  return !errors.total && !errors.items && !errors.bill;
+  return !errors.total && !errors.items;
 }
 
 // ---------------------------------------------------------------- the request
@@ -76,15 +73,14 @@ export type SubmitQuoteArgs = {
   p_other_amount: number;
   p_other_note: string | undefined;
   p_note: undefined;
-  p_material_bill_path: string | undefined;
 };
 
 /**
  * The materials amount is the sum of the item prices and the list goes in the note ("Pipe Rs 500; Tape Rs 50").
  * "Other" charges are no longer part of a quote: they are always sent as 0. No total is ever sent, and no visit date or
- * time either: the customer chooses the schedule.
+ * time either (the customer chooses the schedule), and no bill: the actual bill is uploaded when the job is completed.
  */
-export function buildSubmitArgs(jobId: string, input: QuoteInput, billPath?: string): SubmitQuoteArgs {
+export function buildSubmitArgs(jobId: string, input: QuoteInput): SubmitQuoteArgs {
   const materials = materialsTotal(input);
   const collapse = (text: string) => text.replace(/\s+/g, ' ').trim();
   const list = usedItems(input)
@@ -98,6 +94,5 @@ export function buildSubmitArgs(jobId: string, input: QuoteInput, billPath?: str
     p_other_amount: 0,
     p_other_note: undefined,
     p_note: undefined,
-    p_material_bill_path: materials > 0 ? billPath : undefined,
   };
 }

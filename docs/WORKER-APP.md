@@ -1,6 +1,6 @@
 # Worker app (apps/worker): build record
 
-Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the **local** Supabase stack. W09 (Direct requests) is out of the MVP. W01 now uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. All of it is committed to `dev`. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
+Status at **3 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the local Supabase stack; hosted DEV has all 24 migrations (0001 to 0026), so the app also works against DEV. W09 (Direct requests) is out of the MVP. W01 uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. Committed to `dev` up to `895c237`; the bill-at-completion change (0026 and its app, test and doc edits) is not committed yet. The 3 Nov screens (quote toggle, Complete Job bill, Rejected card, Introduction, status timeline) have unit and database tests but are **not yet tried on a real phone**. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack and layout
 
@@ -20,9 +20,9 @@ Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are buil
 | W05 Areas | `areas` | `set_my_areas` |
 | W06 Home | `(tabs)/home` | `worker_feed` (count), `worker_jobs`, `notifications` (unread dot) |
 | W07 Open jobs | `(tabs)/open-jobs` | `worker_feed` |
-| W08 Job detail | `job/[id]` | `worker_feed`, `record_job_view`, `express_interest` |
+| W08 Job detail | `job/[id]` | `worker_feed`, `record_job_view`, `express_interest`; shows "When the customer wants you" (`worker_jobs.preferred_date`, `window_from`, `window_to`). A rejected or cancelled job cannot be opened (the database hides it). |
 | W08b Job details (from W12 "Job details >") | `job/[id]?from=status` | same screen as W08; shows the worker's status chip, bar "Back to job status" + "Create quote" while still quotable, never "I will quote this job" |
-| W10 Create quote | `job/[id]/quote` | `submit_quote` |
+| W10 Create quote | `job/[id]/quote` | `submit_quote`: labour; With/Without materials toggle; with materials an itemised list (name + price, max 10) whose sum is the automatic "Material cost" (sent as `p_materials` and `p_materials_note`); no "Other" line; no bill and no visit time (a fixed box shows the customer's chosen time; the bill is uploaded at Complete Job) |
 | W11 My jobs (Active / Completed / All) | `(tabs)/my-jobs` | `worker_jobs`, `cash_records` |
 | W12 Job status | `job/[id]/status` | `worker_jobs`, `job_interests`, `quotes`, `cash_records`, `cancellation_requests`, `start_job`, `complete_job` (+ bill photo to `job-media`) |
 | W13 Record cash | `job/[id]/cash` | `record_cash_worker` |
@@ -46,7 +46,10 @@ Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are buil
 - Privacy: before a quote is accepted a worker never sees a resident's name, phone, plot, address or lane; the customer shows as "Customer · Phase N" (design v74, 1 Nov). Call appears only on Scheduled and In progress. Notifications never contain these details (quote not selected: "The customer chose another worker for {job}."). The open-jobs views still return `lane`; it is hidden in the UI only. Helpline 1092 is hidden until DHA approves it.
 - No distance filter, no "Nearest", no Requests tab (4 tabs), no "Call, then quote". A rejected worker cannot re-quote. Phone stored as +92 plus 10 digits.
 - Cash: both sides enter amounts. After the worker records, the job stays `completed` ("Cash recorded, waiting for the customer") until the customer confirms. A mismatch still closes as `cash_collected`. Worker-only cash is pending Shariq.
-- Material bill photo required to complete a job whose accepted quote has materials above 0.
+- Material bill photo required to complete a job whose accepted quote has materials above 0 (at Complete Job, never with the quote; 0026).
+- Schedule: the customer chooses it. The worker cannot set or change it; the Scheduled screen says "Running late? Call the customer and tell them when you will arrive." An ASAP job has no time yet, so the worker is told to call the customer.
+- "Not chosen" is shown as "Rejected" everywhere (card, chip, timeline, notice "Quote rejected"). A rejected job is a bare card that cannot be opened; a cancelled job is invisible and its notice reads "This job has been cancelled. Do not travel to the customer's address."
+- The status timeline marks Completed green with a tick; Review stays pending until the customer reviews.
 - Cancellation after acceptance is a request that staff decide (scheduled or in progress only).
 - Reports: five worker reasons map to `rude_damage`, `unsafe`, `no_show`, `cash_price`, `other`; up to 3 photos; allowed from job start.
 - Live updates use notifications as the trigger; job tables are not published to Realtime.
@@ -60,15 +63,20 @@ Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are buil
 - Production is not configured: it needs a real Twilio or Twilio Verify account with a WhatsApp sender/Messaging Service and the token stored as `SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN` on the server. Do not use an ordinary SMS gateway as a substitute for WhatsApp.
 - Worker approval is unchanged: phone sign-in only creates the auth session; `verification_status` and `account_status` still gate the feed, quotes and tabs.
 
-## Migrations added for the worker app (local only unless stated)
+## Migrations added for the worker app (all on hosted DEV)
 
 | File | Content |
 | --- | --- |
 | 20261029000016 | `submit_for_review` no longer needs areas (areas are chosen after approval) |
 | 20261029000017 | `worker_feed.quote_count` |
 | 20261030000020 | adds `public.notifications` to the `supabase_realtime` publication |
+| 20261102000021 | `worker_details.about` and `update_worker_details(p_about)` (Introduction) |
+| 20261103000022 / 23 | `replace_worker`, `worker_public_profile` (Shariq's drafts, fixed) |
+| 20261103000024 | quote material bill column (superseded by 0026, unused) |
+| 20261103000025 | customer-controlled schedule; rejected and cancelled jobs hidden from workers |
+| 20261103000026 | actual material bill required at `complete_job` when the quote has materials |
 
-Hosted DEV is at 0020 (0016, 0017 and 0020 were pushed on 31 Oct). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
+Hosted DEV is at 0026 (0016, 0017 and 0020 pushed on 31 Oct; 0021 to 0026 on 3 Nov). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
 
 ## Run it locally
 
@@ -105,10 +113,10 @@ To see a real code arrive on your own phone while developing:
 
 The SMS channel is for development. WhatsApp stays the product channel; its production setup (Twilio plus a Meta-approved sender) is in HANDOVER.md. Verified 31 Oct with dummy values: Auth reaches Twilio and returns Twilio's authentication error, and fixed test numbers keep working.
 
-## Checks (last run 30 Oct, all green except two known script checks)
+## Checks (last run 3 Nov, all green; the end-to-end scripts below are from 30 Oct)
 
-- `npm run worker:typecheck`, `worker:lint`, `worker:test` (196 unit tests).
-- `supabase test db`: 592 assertions in 16 files (worker files: `worker_app_prep`, `worker_documents`, `worker_feed_open_jobs`, `worker_job_detail`, `worker_quote`, `worker_work_step`, `worker_my_jobs`, `worker_cash_cancel`, `worker_report`, `realtime_publication`). `supabase db lint --local`.
+- `npm run worker:typecheck`, `worker:lint`, `worker:test` (202 unit tests).
+- `supabase test db`: 676 assertions in 18 files, including `replace_worker_profile` and `schedule_and_hidden_jobs` (worker files: `worker_app_prep`, `worker_documents`, `worker_feed_open_jobs`, `worker_job_detail`, `worker_quote`, `worker_work_step`, `worker_my_jobs`, `worker_cash_cancel`, `worker_report`, `realtime_publication`). `supabase db lint --local`.
 - Local phone auth smoke test (30 Oct): `signInWithOtp({ channel: 'whatsapp' })` and `verifyOtp({ type: 'sms' })` succeeded for the seeded approved number without a provider call; the approved worker saw the feed; pending returned no feed; the no-profile number registered a profile with `email = null`.
 - `npx expo export --platform ios|android` bundles.
 - End-to-end scripts drive the real RPCs and storage with the app's own functions. They are kept outside the repo; known non-bugs: one assertion in the Stage A script was too strict, and "staff are notified" is 0 locally because no admin profile exists.
@@ -116,6 +124,6 @@ The SMS channel is for development. WhatsApp stays the product channel; its prod
 ## Open items
 
 - UI movement ("the layout moves here and there"): not reproduced; waiting for a screen recording or a description of the screen and motion.
-- Commit the 1 Nov changes when the user approves. The claim-and-lock job flow (final per the user, 1 Nov) is not built yet; it waits on Shariq's answers (docs/OPEN-QUESTIONS.md). Any later migration goes to DEV only on explicit request.
+- Test the 3 Nov screens on a phone; for hosted DEV demos run `supabase/dev/hosted_dev_fake_open_jobs.sql` in the dashboard SQL Editor (4 "[FAKE]" open jobs; cleanup SQL inside). Commit the 0026 work when the user approves. The claim-and-lock job flow (final per the user, 1 Nov) is not built yet; it waits on Shariq's answers (docs/OPEN-QUESTIONS.md). Any later migration goes to DEV only on explicit request.
 - Decisions: the two proposals, W09 revisit, native vs designed tab bar, public repo, account email named in HANDOVER and SETUP.
-- Not built: customer app, admin portal and the staff write RPCs (approve/reject, resolve reports, cancellation decisions, suspend).
+- Not built: customer app (Shariq's), admin portal (starts next week or the week after, user 3 Nov) and the staff write RPCs (approve/reject, resolve reports, cancellation decisions, suspend).

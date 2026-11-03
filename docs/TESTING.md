@@ -14,9 +14,9 @@ There is no CI yet; run the checks below locally before each change. The databas
 
 ## What runs today (30 Oct)
 
-- Database: `npm run db:local -- test db` (pgTAP, 592 assertions in 16 files), `npm run db:local -- db lint --local`, `bash supabase/proposals/run_proposal_test.sh`.
+- Database: `npm run db:local -- test db` (pgTAP, 676 assertions in 18 files), `npm run db:local -- db lint --local`, `bash supabase/proposals/run_proposal_test.sh`.
 - Config safety: `npm run safety:test` (22 tests, including the pre-push commit check against a temporary git repo) and `npm run safety:supabase`. Verified locally on 30 Oct: all five static test OTPs sign in and a wrong code returns 403.
-- Worker app: `npm run worker:typecheck`, `worker:lint`, `worker:test` (196 node:test unit tests of the pure rules and call helpers, including phone/WhatsApp OTP request/verify and error mapping), `npx expo export --platform ios|android`.
+- Worker app: `npm run worker:typecheck`, `worker:lint`, `worker:test` (202 node:test unit tests of the pure rules and call helpers, including phone/WhatsApp OTP request/verify and error mapping), `npx expo export --platform ios|android`.
 - End-to-end scripts against the local stack drive the real RPCs and storage with the app's own functions (details in [WORKER-APP.md](WORKER-APP.md)). No device or UI-automation tests yet; Android untested on a device.
 
 ## Must-have tests (highest value first)
