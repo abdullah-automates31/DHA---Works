@@ -1,36 +1,32 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
 import { ChevronLeftIcon } from '@/components/icons';
 import { BottomBar, FieldError, LabeledInput } from '@/components/onboarding';
 import { formatRupees } from '@/features/home/format';
+import { pickImage } from '@/features/documents/pick';
 import { jobHref } from '@/features/job/routes';
 import { useJob } from '@/features/job/useJob';
 import {
-  DAY_COUNT,
-  WINDOW_STARTS,
   amountDigits,
   buildSubmitArgs,
   ITEM_NAME_MAX,
   MAX_ITEMS,
   computeTotal,
-  dayLabel,
-  defaultVisit,
   isQuoteValid,
-  isWindowAvailable,
   materialsTotal,
   parseAmount,
   validateQuote,
-  visitText,
-  windowLabel,
   type MaterialItem,
   type QuoteInput,
 } from '@/features/quote/rules';
+import { buildBillPath, type Bill } from '@/features/myjobs/actions';
 import { sendQuote } from '@/features/quote/submit';
 import { t } from '@/i18n';
+import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { colors, fontFamily } from '@/theme';
 
@@ -90,20 +86,22 @@ export default function QuoteScreen() {
         </Notice>
       ) : null}
 
-      {job && job.standing === 'interested' ? <QuoteForm jobId={job.id} onSent={() => (router.canGoBack() ? router.back() : router.replace(jobHref(job.id)))} /> : null}
+      {job && job.standing === 'interested' ? <QuoteForm jobId={job.id} when={job.when} onSent={() => (router.canGoBack() ? router.back() : router.replace(jobHref(job.id)))} /> : null}
     </View>
   );
 }
 
-function QuoteForm({ jobId, onSent }: { jobId: string; onSent: () => void }) {
-  const now = new Date();
-  const [input, setInput] = useState<QuoteInput>({ labour: '', withMaterials: false, items: [{ name: '', price: '' }] });
-  const [visit, setVisit] = useState(() => defaultVisit(new Date()));
+function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSent: () => void }) {
+  const { session } = useAuth();
+  const userId = session?.user.id ?? '';
+  const [typed, setInput] = useState<Omit<QuoteInput, 'hasBill'>>({ labour: '', withMaterials: false, items: [{ name: '', price: '' }] });
+  const [bill, setBill] = useState<Bill | null>(null);
+  const input: QuoteInput = { ...typed, hasBill: bill !== null };
   const [touched, setTouched] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (patch: Partial<QuoteInput>) => {
+  const set = (patch: Partial<Omit<QuoteInput, 'hasBill'>>) => {
     setInput((current) => ({ ...current, ...patch }));
     if (error) setError(null);
   };
@@ -121,28 +119,42 @@ function QuoteForm({ jobId, onSent }: { jobId: string; onSent: () => void }) {
     const rest = input.items.filter((_, n) => n !== index);
     set({ items: rest.length > 0 ? rest : [{ name: '', price: '' }] });
   };
-  const windowOk = isWindowAvailable(now, visit.day, visit.window);
 
-  function chooseDay(day: number) {
-    // Moving to today can leave the chosen window in the past: pick the first one still open.
-    const stillOpen = isWindowAvailable(new Date(), day, visit.window);
-    const first = WINDOW_STARTS.findIndex((_, w) => isWindowAvailable(new Date(), day, w));
-    setVisit({ day, window: stillOpen ? visit.window : Math.max(first, 0) });
-    if (error) setError(null);
+  async function takeBill(source: 'camera' | 'library') {
+    const picked = await pickImage(source);
+    if (picked.status === 'ok') {
+      setBill({ bytes: picked.file.bytes, mime: picked.file.mime });
+      if (error) setError(null);
+    } else if (picked.status === 'denied') setError(t('documents.errors.permission'));
+    else if (picked.status === 'error') setError(t('documents.errors.pickFailed'));
+  }
+
+  function chooseBill() {
+    Alert.alert(t('quote.billTitle'), undefined, [
+      { text: t('quote.billTake'), onPress: () => void takeBill('camera') },
+      { text: t('quote.billChoose'), onPress: () => void takeBill('library') },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
   }
 
   async function onSend() {
     if (sending) return;
     setTouched(true);
-    if (!valid || !windowOk) {
-      if (!windowOk) setError(t('quote.errors.past'));
-      return;
-    }
+    if (!valid) return;
     setError(null);
     setSending(true);
     const result = await sendQuote(
-      { submitQuote: (args) => supabase.rpc('submit_quote', args) },
-      buildSubmitArgs(jobId, input, new Date(), visit.day, visit.window),
+      {
+        submitQuote: (args) => supabase.rpc('submit_quote', args),
+        uploadBill: async (bytes, mime, extension) => {
+          const path = buildBillPath(userId, extension, Date.now(), Math.random().toString(16).slice(2, 10));
+          const { error: uploadError } = await supabase.storage.from('job-media').upload(path, bytes, { contentType: mime, upsert: false });
+          return { path: uploadError ? null : path, error: uploadError };
+        },
+        deleteBill: (path) => supabase.storage.from('job-media').remove([path]),
+      },
+      buildSubmitArgs(jobId, input),
+      input.withMaterials ? bill : null,
     );
     setSending(false);
     if (result.ok || result.key === 'quote.errors.alreadySent') {
@@ -214,35 +226,38 @@ function QuoteForm({ jobId, onSent }: { jobId: string; onSent: () => void }) {
                 <Text style={styles.itemsTotalValue}>{formatRupees(materials)}</Text>
               </View>
               {touched && errors.items ? <FieldError>{t('quote.errors.itemsHint')}</FieldError> : null}
+
+              <View style={styles.billBox}>
+                <Text style={styles.label}>{t('quote.billTitle')}</Text>
+                {bill ? (
+                  <View style={styles.billRow}>
+                    <Text style={styles.billOk}>{'\u2713 ' + t('quote.billAttached')}</Text>
+                    <Pressable accessibilityRole="button" onPress={chooseBill}>
+                      <Text style={styles.billLink}>{t('quote.billChange')}</Text>
+                    </Pressable>
+                    <Pressable accessibilityRole="button" onPress={() => setBill(null)}>
+                      <Text style={styles.billLink}>{t('quote.billRemove')}</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={styles.billHint}>{t('quote.billHint')}</Text>
+                    <Pressable accessibilityRole="button" onPress={chooseBill} style={styles.addItem}>
+                      <Text style={styles.addItemText}>{t('quote.billTitle')}</Text>
+                    </Pressable>
+                  </>
+                )}
+                {touched && errors.bill ? <FieldError>{t('quote.errors.billHint')}</FieldError> : null}
+              </View>
             </View>
           ) : null}
 
-          <View style={{ gap: 6 }}>
-            <Text style={styles.label}>{t('quote.visitDay')}</Text>
-            <View style={styles.pills}>
-              {Array.from({ length: DAY_COUNT }, (_, day) => (
-                <Choice key={day} label={dayLabel(now, day)} on={visit.day === day} onPress={() => chooseDay(day)} />
-              ))}
+          {when ? (
+            <View style={styles.visitBox}>
+              <Text style={styles.visitFixed}>{t('quote.visitFixed', { when })}</Text>
+              <Text style={styles.billHint}>{t('quote.visitFixedHint')}</Text>
             </View>
-          </View>
-
-          <View style={{ gap: 6 }}>
-            <Text style={styles.label}>{t('quote.visitTime')}</Text>
-            <View style={styles.pills}>
-              {WINDOW_STARTS.map((_, window) => (
-                <Choice
-                  key={window}
-                  label={windowLabel(window)}
-                  on={visit.window === window}
-                  disabled={!isWindowAvailable(now, visit.day, window)}
-                  onPress={() => {
-                    setVisit({ day: visit.day, window });
-                    if (error) setError(null);
-                  }}
-                />
-              ))}
-            </View>
-          </View>
+          ) : null}
 
           <View style={styles.preview} accessibilityLabel={t('quote.preview')}>
             <Text style={styles.previewTitle}>{t('quote.preview')}</Text>
@@ -253,7 +268,7 @@ function QuoteForm({ jobId, onSent }: { jobId: string; onSent: () => void }) {
               <Text style={styles.totalLabel}>{t('quote.total')}</Text>
               <Text style={styles.totalValue}>{formatRupees(total)}</Text>
             </View>
-            <Text style={styles.visit}>{t('quote.visit', { when: visitText(now, visit.day, visit.window) })}</Text>
+            {when ? <Text style={styles.visit}>{t('quote.visitFixed', { when })}</Text> : null}
           </View>
 
           <Text style={styles.fine}>{t('quote.fine')}</Text>
@@ -316,6 +331,13 @@ const styles = StyleSheet.create({
   removeText: { fontFamily: fontFamily.extrabold, fontSize: 22, color: colors.muted },
   addItem: { height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: colors.green, alignItems: 'center', justifyContent: 'center' },
   addItemText: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.greenDark },
+  visitBox: { backgroundColor: colors.mint, borderRadius: 14, padding: 12, gap: 4 },
+  visitFixed: { fontFamily: fontFamily.extrabold, fontSize: 14, color: colors.greenDark },
+  billBox: { gap: 8, marginTop: 4 },
+  billRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  billOk: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.greenDark },
+  billLink: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.green },
+  billHint: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 17, color: colors.muted },
   itemsTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   itemsTotalValue: { fontFamily: fontFamily.extrabold, fontSize: 14, color: colors.ink },
   pills: { flexDirection: 'row', gap: 6 },

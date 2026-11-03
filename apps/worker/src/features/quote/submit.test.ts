@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { buildSubmitArgs } from './rules.ts';
 import { quoteErrorKey, sendQuote } from './submit.ts';
 
-const args = buildSubmitArgs('job-1', { labour: '1500', withMaterials: false, items: [] }, new Date(2026, 9, 24, 9), 0, 1);
+const args = buildSubmitArgs('job-1', { labour: '1500', withMaterials: false, items: [], hasBill: false });
 
 test('every database refusal maps to a friendly key', () => {
   const cases: [string, string][] = [
@@ -12,11 +12,12 @@ test('every database refusal maps to a friendly key', () => {
     ['the resident did not accept your quote on this job', 'quote.errors.rejected'],
     ['this job has expired', 'quote.errors.expired'],
     ['show interest in the job before sending a quote', 'quote.errors.needInterest'],
-    ['choose a visit time in the future', 'quote.errors.past'],
     ['this job is not available for quotes', 'quote.errors.notAvailable'],
     ['your account is not approved yet', 'quote.errors.notAvailable'],
     ['new row violates check constraint "quotes_total_positive"', 'quote.errors.total'],
     ['new row violates check constraint "quotes_other_note_required"', 'quote.errors.otherNote'],
+    ['upload the material bill', 'quote.errors.billRequired'],
+    ['invalid bill path', 'quote.errors.billInvalid'],
     ['Network request failed', 'quote.errors.network'],
     ['something internal', 'quote.errors.generic'],
   ];
@@ -61,4 +62,63 @@ test('a second tap after a sent quote reports "already sent"', async () => {
   };
   assert.deepEqual(await sendQuote(client, args), { ok: true });
   assert.deepEqual(await sendQuote(client, args), { ok: false, key: 'quote.errors.alreadySent' });
+});
+
+const withMaterials = buildSubmitArgs('job-1', { labour: '1500', withMaterials: true, items: [{ name: 'Pipe', price: '500' }], hasBill: true });
+const photo = { bytes: new ArrayBuffer(2000), mime: 'image/jpeg' };
+
+test('with materials the bill is uploaded first and its path goes with the quote', async () => {
+  const calls: string[] = [];
+  const client = {
+    async uploadBill(_b: ArrayBuffer, _m: string, ext: string) {
+      calls.push('upload ' + ext);
+      return { path: 'worker/bill-1.jpg', error: null };
+    },
+    async submitQuote(a: typeof withMaterials) {
+      calls.push('submit ' + a.p_material_bill_path);
+      return { error: null };
+    },
+  };
+  assert.deepEqual(await sendQuote(client, withMaterials, photo), { ok: true });
+  assert.deepEqual(calls, ['upload jpg', 'submit worker/bill-1.jpg']);
+});
+
+test('a quote with materials but no photo is not sent', async () => {
+  let sent = false;
+  const client = { uploadBill: async () => ({ path: 'x', error: null }), submitQuote: async () => ((sent = true), { error: null }) };
+  assert.deepEqual(await sendQuote(client, withMaterials, null), { ok: false, key: 'quote.errors.billRequired' });
+  assert.equal(sent, false);
+});
+
+test('a bad or oversized photo is refused before anything is uploaded', async () => {
+  let uploaded = false;
+  const client = { uploadBill: async () => ((uploaded = true), { path: 'x', error: null }), submitQuote: async () => ({ error: null }) };
+  assert.deepEqual(await sendQuote(client, withMaterials, { bytes: new ArrayBuffer(10), mime: 'application/pdf' }), { ok: false, key: 'quote.errors.billType' });
+  assert.deepEqual(await sendQuote(client, withMaterials, { bytes: new ArrayBuffer(6 * 1024 * 1024), mime: 'image/jpeg' }), { ok: false, key: 'quote.errors.billSize' });
+  assert.equal(uploaded, false);
+});
+
+test('a failed upload stops the quote', async () => {
+  let submitted = false;
+  const client = { uploadBill: async () => ({ path: null, error: { message: 'boom' } }), submitQuote: async () => ((submitted = true), { error: null }) };
+  assert.deepEqual(await sendQuote(client, withMaterials, photo), { ok: false, key: 'quote.errors.billUpload' });
+  assert.equal(submitted, false);
+});
+
+test('when the quote is refused the uploaded bill is removed again', async () => {
+  const removed: string[] = [];
+  const client = {
+    uploadBill: async () => ({ path: 'worker/bill-2.jpg', error: null }),
+    deleteBill: async (p: string) => void removed.push(p),
+    submitQuote: async () => ({ error: { message: 'this job has expired' } }),
+  };
+  assert.deepEqual(await sendQuote(client, withMaterials, photo), { ok: false, key: 'quote.errors.expired' });
+  assert.deepEqual(removed, ['worker/bill-2.jpg']);
+});
+
+test('without materials no photo is needed or uploaded', async () => {
+  let uploaded = false;
+  const client = { uploadBill: async () => ((uploaded = true), { path: 'x', error: null }), submitQuote: async () => ({ error: null }) };
+  assert.deepEqual(await sendQuote(client, args, null), { ok: true });
+  assert.equal(uploaded, false);
 });

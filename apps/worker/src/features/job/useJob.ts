@@ -4,6 +4,8 @@ import { useCallback, useState } from 'react';
 import { jobKind, type JobKind } from '@/features/myjobs/rules';
 import { supabase } from '@/lib/supabase';
 
+import { whenPill } from '@/features/feed/format';
+
 import { standingFromMyJob, type Standing } from './detail';
 
 export type JobDetail = {
@@ -15,6 +17,7 @@ export type JobDetail = {
   phase: number;
   lane: string;
   urgency: string;
+  when: string; // the date and time the CUSTOMER chose (workers cannot change it)
   postedAt: string | null;
   photos: string[]; // signed URLs, in the order the resident added them
   hasVoiceNote: boolean;
@@ -36,7 +39,7 @@ async function fetchJob(id: string): Promise<JobState> {
   //    resident name, phone, plot or address, so nothing private can reach this screen.
   const feed = await supabase
     .from('worker_feed')
-    .select('id, code, title, description, category_name, phase, lane, urgency, posted_at, voice_note_path, interest_count, quote_count')
+    .select('id, code, title, description, category_name, phase, lane, urgency, preferred_date, window_from, window_to, posted_at, voice_note_path, interest_count, quote_count')
     .eq('id', id)
     .maybeSingle();
   if (feed.error) return { status: 'error' };
@@ -55,6 +58,7 @@ async function fetchJob(id: string): Promise<JobState> {
       phase: feed.data.phase ?? 0,
       lane: feed.data.lane ?? '',
       urgency: feed.data.urgency ?? 'asap',
+      when: whenPill({ urgency: feed.data.urgency ?? 'asap', preferredDate: feed.data.preferred_date, windowFrom: feed.data.window_from, windowTo: feed.data.window_to, postedAt: feed.data.posted_at }).text,
       postedAt: feed.data.posted_at,
       hasVoiceNote: Boolean(voicePath),
       others: feed.data.interest_count ?? 0,
@@ -66,11 +70,13 @@ async function fetchJob(id: string): Promise<JobState> {
     // 2) A job this worker already engaged with (interest or quote): worker_jobs.
     const mine = await supabase
       .from('worker_jobs')
-      .select('id, code, title, description, category_name, phase, lane, urgency, posted_at, voice_note_path, status, my_quote_status, is_mine')
+      .select('id, code, title, description, category_name, phase, lane, urgency, preferred_date, window_from, window_to, posted_at, voice_note_path, status, my_quote_status, is_mine')
       .eq('id', id)
       .maybeSingle();
     if (mine.error) return { status: 'error' };
     if (!mine.data) return { status: 'unavailable' };
+    // A job the customer rejected this worker on shows nothing at all: the database already blanks its details.
+    if (jobKind({ status: mine.data.status ?? '', isMine: mine.data.is_mine, myQuoteStatus: mine.data.my_quote_status }) === 'not_chosen') return { status: 'unavailable' };
     voicePath = mine.data.voice_note_path;
     base = {
       id: mine.data.id ?? id,
@@ -81,6 +87,7 @@ async function fetchJob(id: string): Promise<JobState> {
       phase: mine.data.phase ?? 0,
       lane: mine.data.lane ?? '',
       urgency: mine.data.urgency ?? 'asap',
+      when: whenPill({ urgency: mine.data.urgency ?? 'asap', preferredDate: mine.data.preferred_date, windowFrom: mine.data.window_from, windowTo: mine.data.window_to, postedAt: mine.data.posted_at }).text,
       postedAt: mine.data.posted_at,
       hasVoiceNote: Boolean(voicePath),
       others: null,

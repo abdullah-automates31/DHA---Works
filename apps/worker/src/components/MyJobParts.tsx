@@ -79,7 +79,7 @@ export function MyJobCard({
 }: {
   job: MyJob;
   index: number;
-  onOpen: () => void;
+  onOpen?: () => void;
   onQuote: () => void;
   onCash: () => void;
   now: Date;
@@ -90,7 +90,7 @@ export function MyJobCard({
   const won = job.residentName !== null;
 
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={job.title} onPress={onOpen} style={styles.card}>
+    <Pressable accessibilityRole={onOpen ? 'button' : 'text'} accessibilityLabel={job.title} onPress={onOpen} disabled={!onOpen} style={styles.card}>
       <View style={styles.row}>
         <StatusChip kind={kind} />
         <Text style={styles.code}>{job.code}</Text>

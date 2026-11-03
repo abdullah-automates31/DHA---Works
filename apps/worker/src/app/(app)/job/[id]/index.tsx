@@ -97,6 +97,8 @@ export default function JobDetailScreen() {
               <Tag>{t('feed.where', { phase: job.phase, lane: job.lane })}</Tag>
             </View>
 
+            {job.when ? <InfoCard title={t('job.whenTitle')}>{t('job.whenBody', { when: job.when })}</InfoCard> : null}
+
             <PhotoRow photos={job.photos} />
             {job.description ? <InfoCard title={t('job.customerSays')}>{job.description}</InfoCard> : null}
             {job.hasVoiceNote ? <VoiceMessage uri={job.voiceUrl} /> : null}

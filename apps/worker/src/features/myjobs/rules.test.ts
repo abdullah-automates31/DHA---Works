@@ -162,9 +162,20 @@ test('a finished job shows every step as done', () => {
   assert.equal(steps[6]?.sub, 'Customer rated the job');
 });
 
-test('cash collected is the current step and the review step stays empty', () => {
-  const steps = timeline({ kind: 'cash_collected', interestAt: at(24, 9), quoteAt: at(24, 10), quoteTotal: 3200, scheduledStart: at(24, 11), scheduledEnd: at(24, 13), startedAt: at(24, 11, 8), completedAt: at(24, 12, 20), cashAmount: 3200 });
+test('completed is done (green tick) as soon as the worker completes the job; cash collected waits', () => {
+  const steps = timeline({ kind: 'completed', interestAt: at(24, 9), quoteAt: at(24, 10), quoteTotal: 3200, scheduledStart: at(24, 11), scheduledEnd: at(24, 13), startedAt: at(24, 11, 8), completedAt: at(24, 12, 20), cashAmount: null });
   assert.deepEqual(steps.map((s) => s.state), ['done', 'done', 'done', 'done', 'done', 'current', 'todo']);
+  assert.equal(steps[4]?.sub, 'Finished at 12:20 PM');
+});
+
+test('in progress is the current step while the work is going on', () => {
+  const steps = timeline({ kind: 'in_progress', interestAt: at(24, 9), quoteAt: at(24, 10), quoteTotal: 3200, scheduledStart: at(24, 11), scheduledEnd: at(24, 13), startedAt: at(24, 11, 8), completedAt: null, cashAmount: null });
+  assert.deepEqual(steps.map((s) => s.state), ['done', 'done', 'done', 'current', 'todo', 'todo', 'todo']);
+});
+
+test('once the cash is collected that step is done and the review is still to come', () => {
+  const steps = timeline({ kind: 'cash_collected', interestAt: at(24, 9), quoteAt: at(24, 10), quoteTotal: 3200, scheduledStart: at(24, 11), scheduledEnd: at(24, 13), startedAt: at(24, 11, 8), completedAt: at(24, 12, 20), cashAmount: 3200 });
+  assert.deepEqual(steps.map((s) => s.state), ['done', 'done', 'done', 'done', 'done', 'done', 'todo']);
   assert.equal(steps[6]?.sub, '');
 });
 
@@ -184,7 +195,11 @@ test('stopped jobs end with a stop step after the stages they reached', () => {
 test('the note card uses the corrected wording and reveals the address only after acceptance', () => {
   const sched = noteFor(base, 'scheduled', now);
   assert.equal(sched.headline, 'Visit today, 11 AM to 1 PM');
-  assert.equal(sched.body, 'Phase 6, Lane 7, House 118-C. Tap Start job when you arrive.');
+  assert.equal(sched.body, 'Phase 6, Lane 7, House 118-C. The customer chose this time. Running late? Call the customer and tell them when you will arrive. Tap Start job when you arrive.');
+  // A job with no fixed time (ASAP) tells the worker to agree one by phone; the app offers no way to set it.
+  const noTime = noteFor(j({ ...base, scheduledStart: null, scheduledEnd: null }), 'scheduled', now);
+  assert.equal(noTime.headline, 'Visit time to be confirmed');
+  assert.match(noTime.body, /Call the customer to agree when you will come\./);
   const quoted = noteFor(j({ status: 'quoted', isMine: false, myQuoteStatus: 'sent', residentName: null }), 'quoted', now);
   assert.ok(!/call/i.test(quoted.body) && !/she|he /.test(quoted.body), 'no call advice and no gendered pronoun');
   assert.ok(!/call the customer/i.test(noteFor(base, 'interested', now).headline + noteFor(base, 'interested', now).body));

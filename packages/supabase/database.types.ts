@@ -944,6 +944,7 @@ export type Database = {
           job_id: string
           labour: number
           materials: number
+          material_bill_path: string | null
           materials_note: string | null
           note: string | null
           other_amount: number
@@ -951,8 +952,8 @@ export type Database = {
           reject_reason: string | null
           status: Database["public"]["Enums"]["quote_status"]
           total: number | null
-          visit_end: string
-          visit_start: string
+          visit_end: string | null
+          visit_start: string | null
           worker_id: string
         }
         Insert: {
@@ -962,6 +963,7 @@ export type Database = {
           job_id: string
           labour: number
           materials?: number
+          material_bill_path?: string | null
           materials_note?: string | null
           note?: string | null
           other_amount?: number
@@ -969,8 +971,8 @@ export type Database = {
           reject_reason?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           total?: number | null
-          visit_end: string
-          visit_start: string
+          visit_end?: string | null
+          visit_start?: string | null
           worker_id: string
         }
         Update: {
@@ -980,6 +982,7 @@ export type Database = {
           job_id?: string
           labour?: number
           materials?: number
+          material_bill_path?: string | null
           materials_note?: string | null
           note?: string | null
           other_amount?: number
@@ -987,8 +990,8 @@ export type Database = {
           reject_reason?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           total?: number | null
-          visit_end?: string
-          visit_start?: string
+          visit_end?: string | null
+          visit_start?: string | null
           worker_id?: string
         }
         Relationships: [
@@ -1716,6 +1719,7 @@ export type Database = {
           jobs_done: number | null
           labour: number | null
           materials: number | null
+          material_bill_path: string | null
           materials_note: string | null
           note: string | null
           other_amount: number | null
@@ -1821,6 +1825,9 @@ export type Database = {
       }
       worker_jobs: {
         Row: {
+          window_from: string | null
+          window_to: string | null
+          preferred_date: string | null
           cancellation_pending: boolean | null
           category_id: number | null
           category_name: string | null
@@ -1991,12 +1998,13 @@ export type Database = {
           p_job_id: string
           p_labour: number
           p_materials?: number
+          p_material_bill_path?: string
           p_materials_note?: string
           p_note?: string
           p_other_amount?: number
           p_other_note?: string
-          p_visit_end: string
-          p_visit_start: string
+          p_visit_end?: string
+          p_visit_start?: string
         }
         Returns: string
       }

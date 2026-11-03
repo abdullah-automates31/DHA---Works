@@ -126,7 +126,8 @@ select is((select quote_count from public.worker_feed where id = '00000000-0000-
 select tests.act('00000000-0000-0000-0000-0000000000a1');
 select lives_ok($$select public.accept_quote((select id from public.quotes where worker_id = '00000000-0000-0000-0000-0000000000b2' and job_id = '00000000-0000-0000-0000-00000000e001'))$$, 'the resident accepts w2''s quote');
 select tests.act('00000000-0000-0000-0000-0000000000b1');
-select is((select status::text from public.worker_jobs where id = '00000000-0000-0000-0000-00000000e001'), 'scheduled', 'w1 sees the job is scheduled with someone else');
+select is((select status::text from public.worker_jobs where id = '00000000-0000-0000-0000-00000000e001'), 'open', 'w1 gets a neutral status for a job that went to someone else (no status updates)');
+select ok((select description is null and lane is null and scheduled_start is null from public.worker_jobs where id = '00000000-0000-0000-0000-00000000e001'), 'and no job details');
 select is((select my_quote_status::text from public.worker_jobs where id = '00000000-0000-0000-0000-00000000e001'), 'not_selected', 'and that their quote was not selected (the screen shows "closed")');
 select is((select resident_name from public.worker_jobs where id = '00000000-0000-0000-0000-00000000e001'), null, 'w1 still does not see the resident name');
 select tests.act('00000000-0000-0000-0000-0000000000b2');

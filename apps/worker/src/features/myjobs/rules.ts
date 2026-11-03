@@ -284,7 +284,9 @@ export type TimelineInput = {
 };
 
 const BASE = ['Interested', 'Quoted', 'Scheduled', 'In progress', 'Completed', 'Cash collected', 'Review'] as const;
-const AT: Partial<Record<JobKind, number>> = { interested: 0, quoted: 1, scheduled: 2, in_progress: 3, completed: 4, cash_collected: 5, reviewed: 7 };
+// The step a job is on. A step that has been reached and finished is done (green tick): once the worker completes the job,
+// "Completed" is done and "Cash collected" is the one waiting; once the cash is in, "Cash collected" is done too.
+const AT: Partial<Record<JobKind, number>> = { interested: 0, quoted: 1, scheduled: 2, in_progress: 3, completed: 5, cash_collected: 6, reviewed: 7 };
 
 function rupees(n: number): string {
   return `Rs ${Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
@@ -326,7 +328,8 @@ export function timeline(i: TimelineInput): TimelineStep[] {
 
   const at = AT[i.kind] ?? 0;
   return BASE.map((label, n) => {
-    const state = n < at ? 'done' : n === at ? 'current' : 'todo';
+    // The customer's rating is not something the worker acts on: until it arrives the Review step is simply still to come.
+    const state = n < at ? 'done' : n === at && i.kind !== 'cash_collected' ? 'current' : 'todo';
     // The Review step only says anything once the job is closed; future steps show no detail.
     const sub = state === 'todo' ? '' : n === 6 && i.kind !== 'reviewed' ? '' : (subs[n] ?? '');
     return { label, sub, state } as TimelineStep;
@@ -348,7 +351,11 @@ export function noteFor(job: MyJob, kind: JobKind, now: Date = new Date()): Note
       const day = dayWord(job.scheduledStart, now);
       const when = day ? `Visit ${day}, ${windowText(job.scheduledStart, job.scheduledEnd)}` : 'Visit time to be confirmed';
       const place = [`Phase ${job.phase}`, job.lane, job.plotNo ? `House ${job.plotNo}` : '', job.floor ? `Floor ${job.floor}` : ''].filter(Boolean).join(', ');
-      return { headline: when, body: `${place}. Tap Start job when you arrive.` };
+      // The customer chose the time; the worker cannot change it. A delay is handled by phone, not in the app.
+      const guide = day
+        ? 'The customer chose this time. Running late? Call the customer and tell them when you will arrive.'
+        : 'The customer has not fixed a time. Call the customer to agree when you will come.';
+      return { headline: when, body: `${place}. ${guide} Tap Start job when you arrive.` };
     }
     case 'in_progress':
       return { headline: 'Work in progress', body: 'Tap Mark complete when the work is finished and the area is clean.' };

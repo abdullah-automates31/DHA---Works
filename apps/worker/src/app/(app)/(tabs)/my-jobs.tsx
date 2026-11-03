@@ -71,7 +71,8 @@ export default function MyJobsScreen() {
 
         {jobs.map((job, index) => {
           // Every job the worker engaged with opens its status screen (W12): the timeline and the next action.
-          const open = () => router.push(statusHref(job.id));
+          // A rejected quote is a plain record: the card cannot be opened (and shows no details).
+          const open = jobKind(job) === 'not_chosen' ? undefined : () => router.push(statusHref(job.id));
           return (
             <MyJobCard
               key={job.id}
