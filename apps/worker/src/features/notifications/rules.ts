@@ -34,9 +34,9 @@ export function describe(n: Notice, now: Date = new Date()): NoticeView {
       return { title: 'Quote accepted', body: `Your quote for ${job} was accepted.${when}`, icon: 'check', opensJob: true };
     }
     case 'quote_not_selected':
-      return { title: 'Quote not selected', body: `The customer chose another worker for ${job}. Find more jobs.`, icon: 'info', opensJob: true };
+      return { title: 'Quote rejected', body: `The customer rejected your quote for ${job}. Find more jobs.`, icon: 'info', opensJob: true };
     case 'quote_rejected':
-      return { title: 'Quote declined', body: `The customer declined your quote for ${job}.`, icon: 'info', opensJob: true };
+      return { title: 'Quote rejected', body: `The customer rejected your quote for ${job}.`, icon: 'info', opensJob: true };
     case 'job_cancelled':
       return { title: 'Job cancelled', body: `${capitalize(job)} was cancelled by the customer. Nothing is owed.`, icon: 'alert', opensJob: true };
     case 'job_expired':

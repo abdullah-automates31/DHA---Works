@@ -9,6 +9,7 @@ import {
   defaultVisit,
   isQuoteValid,
   isWindowAvailable,
+  materialsTotal,
   parseAmount,
   validateQuote,
   visitText,
@@ -18,8 +19,15 @@ import {
   type QuoteInput,
 } from './rules.ts';
 
-const empty: QuoteInput = { labour: '', materials: '', materialsNote: '', other: '', otherNote: '' };
-const design: QuoteInput = { labour: '1500', materials: '1450', materialsNote: 'Trap pipe, flexible hose, washers', other: '250', otherNote: 'Fittings and washers' };
+const empty: QuoteInput = { labour: '', withMaterials: false, items: [] };
+const design: QuoteInput = {
+  labour: '1500',
+  withMaterials: true,
+  items: [
+    { name: 'Trap pipe', price: '900' },
+    { name: 'Flexible hose', price: '550' },
+  ],
+};
 const sat9am = new Date(2026, 9, 24, 9, 0); // Sat 24 Oct 2026, 9 AM
 
 test('amounts keep digits only, at most seven', () => {
@@ -30,25 +38,24 @@ test('amounts keep digits only, at most seven', () => {
   assert.equal(parseAmount('1,450'), 1450);
 });
 
-test('the preview total is the sum of the three amounts (the database computes the real one)', () => {
-  assert.equal(computeTotal(design), 3200);
+test('the materials cost is the sum of the item prices, and only counts with materials on', () => {
+  assert.equal(materialsTotal(design), 1450);
+  assert.equal(materialsTotal({ ...design, withMaterials: false }), 0);
+  assert.equal(materialsTotal({ ...design, items: [...design.items, { name: '', price: '' }] }), 1450); // blank rows are ignored
+  assert.equal(computeTotal(design), 2950);
   assert.equal(computeTotal(empty), 0);
-  assert.equal(computeTotal({ labour: '800', materials: '', other: '' }), 800);
+  assert.equal(computeTotal({ labour: '800', withMaterials: false, items: [{ name: 'x', price: '99' }] }), 800);
 });
 
-test('validation mirrors the table constraints: total above zero, a note for "other"', () => {
+test('validation: total above zero, and a complete item list when materials are on', () => {
   assert.deepEqual(validateQuote(empty), { total: true });
   assert.deepEqual(validateQuote(design), {});
-  assert.deepEqual(validateQuote({ ...design, otherNote: '   ' }), { otherNote: true });
-  assert.deepEqual(validateQuote({ ...design, other: '', otherNote: '' }), {});
-  assert.deepEqual(validateQuote({ ...empty, other: '100' }), { otherNote: true });
-  assert.equal(isQuoteValid({ ...empty, materials: '500' }), true); // labour 0 is allowed while the total is above zero
+  assert.deepEqual(validateQuote({ ...design, withMaterials: false }), {}); // items are ignored when off
+  assert.deepEqual(validateQuote({ labour: '500', withMaterials: true, items: [] }), { items: true });
+  assert.deepEqual(validateQuote({ ...design, items: [...design.items, { name: 'Tape', price: '' }] }), { items: true });
+  assert.deepEqual(validateQuote({ ...design, items: [...design.items, { name: '', price: '40' }] }), { items: true });
+  assert.equal(isQuoteValid({ labour: '', withMaterials: true, items: [{ name: 'Pipe', price: '500' }] }), true); // labour 0 is fine while the total is above zero
   assert.equal(isQuoteValid(empty), false);
-  assert.equal(isQuoteValid({ ...design, otherNote: '' }), false);
-});
-
-test('the materials list is optional', () => {
-  assert.equal(isQuoteValid({ ...design, materialsNote: '' }), true);
 });
 
 test('visit windows are two hours long, in local time', () => {
@@ -82,14 +89,14 @@ test('labels read like the design', () => {
   assert.equal(visitText(sat9am, 0, 1), 'Sat 24 Oct, 11 AM to 1 PM');
 });
 
-test('the request carries amounts and visit times, never a total', () => {
+test('the request carries amounts, the item list and visit times, never a total', () => {
   const args = buildSubmitArgs('job-1', design, sat9am, 1, 2);
   assert.equal(args.p_job_id, 'job-1');
   assert.equal(args.p_labour, 1500);
   assert.equal(args.p_materials, 1450);
-  assert.equal(args.p_materials_note, 'Trap pipe, flexible hose, washers');
-  assert.equal(args.p_other_amount, 250);
-  assert.equal(args.p_other_note, 'Fittings and washers');
+  assert.equal(args.p_materials_note, 'Trap pipe Rs 900; Flexible hose Rs 550');
+  assert.equal(args.p_other_amount, 0);
+  assert.equal(args.p_other_note, undefined);
   assert.equal(args.p_note, undefined);
   assert.equal(new Date(args.p_visit_start).getHours(), 14);
   assert.equal(new Date(args.p_visit_end).getHours(), 16);
@@ -97,15 +104,10 @@ test('the request carries amounts and visit times, never a total', () => {
   assert.ok(!('p_total' in args));
 });
 
-test('notes travel only with their amounts and are tidied', () => {
-  const args = buildSubmitArgs('j', { labour: '900', materials: '', materialsNote: 'unused', other: '', otherNote: 'unused' }, sat9am, 0, 1);
-  assert.equal(args.p_materials, 0);
-  assert.equal(args.p_materials_note, undefined);
-  assert.equal(args.p_other_amount, 0);
-  assert.equal(args.p_other_note, undefined);
-  const spaced = buildSubmitArgs('j', { ...design, materialsNote: '  Trap   pipe ', otherNote: ' Fittings   and washers ' }, sat9am, 0, 1);
-  assert.equal(spaced.p_materials_note, 'Trap pipe');
-  assert.equal(spaced.p_other_note, 'Fittings and washers');
-  const noList = buildSubmitArgs('j', { ...design, materialsNote: '   ' }, sat9am, 0, 1);
-  assert.equal(noList.p_materials_note, undefined);
+test('without materials nothing about materials is sent; item names are tidied', () => {
+  const off = buildSubmitArgs('j', { ...design, withMaterials: false }, sat9am, 0, 1);
+  assert.equal(off.p_materials, 0);
+  assert.equal(off.p_materials_note, undefined);
+  const spaced = buildSubmitArgs('j', { labour: '0', withMaterials: true, items: [{ name: '  Trap   pipe ', price: '500' }] }, sat9am, 0, 1);
+  assert.equal(spaced.p_materials_note, 'Trap pipe Rs 500');
 });

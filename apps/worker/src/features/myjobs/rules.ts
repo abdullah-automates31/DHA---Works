@@ -151,7 +151,7 @@ export function chipFor(kind: JobKind): ChipStyle {
     case 'expired':
       return { label: 'Expired', bg: '#FADCDA', fg: '#99191A' };
     case 'not_chosen':
-      return { label: 'Not chosen', bg: '#E6EBE8', fg: '#4F6A5C' };
+      return { label: 'Rejected', bg: '#E6EBE8', fg: '#4F6A5C' };
   }
 }
 
@@ -314,7 +314,7 @@ export function timeline(i: TimelineInput): TimelineStep[] {
     disputed: { label: 'Problem reported', sub: 'DHA staff are reviewing it' },
     cancelled: { label: 'Cancelled', sub: 'This job was cancelled' },
     expired: { label: 'Expired', sub: 'Nobody was chosen within 24 hours' },
-    not_chosen: { label: 'Not chosen', sub: 'Another worker was chosen' },
+    not_chosen: { label: 'Rejected', sub: 'The customer rejected your quote' },
   };
   const stop = stops[i.kind];
   if (stop) {
@@ -366,7 +366,7 @@ export function noteFor(job: MyJob, kind: JobKind, now: Date = new Date()): Note
     case 'expired':
       return { headline: 'This job expired', body: 'Nobody was chosen within 24 hours. Find another job in Open jobs.' };
     case 'not_chosen':
-      return { headline: 'Another worker was chosen', body: 'Your quote was not selected. Find more jobs in Open jobs.' };
+      return { headline: 'Your quote was rejected', body: 'The customer rejected your quote. Find more jobs in Open jobs.' };
   }
 }
 

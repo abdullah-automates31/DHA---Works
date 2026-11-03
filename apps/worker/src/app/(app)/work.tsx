@@ -2,11 +2,13 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { AboutBox } from '@/components/AboutBox';
 import { TextLink } from '@/components/AuthForm';
 import { BottomBar, FieldError, NumberField, OnboardingTop, Pill, Stepper } from '@/components/onboarding';
 import { VoiceIntro, type Recorded } from '@/components/VoiceIntro';
 import {
   VOICE_MIME,
+  aboutChanged,
   buildVoicePath,
   checkVoice,
   digitsOnly,
@@ -52,6 +54,7 @@ function WorkForm({ work, userId, refresh, onBack }: { work: Ready; userId: stri
   const [selected, setSelected] = useState<number[]>(work.selected);
   const [years, setYears] = useState(work.years === null ? '' : String(work.years));
   const [fee, setFee] = useState(work.fee === null ? '' : String(work.fee));
+  const [about, setAbout] = useState(work.about);
   const [recorded, setRecorded] = useState<Recorded | null>(null);
   const [voiceMessage, setVoiceMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ trades?: string; years?: string; fee?: string }>({});
@@ -94,11 +97,12 @@ function WorkForm({ work, userId, refresh, onBack }: { work: Ready; userId: stri
 
     const client: SubmitClient = {
       setCategories: (ids) => supabase.rpc('set_my_categories', { p_category_ids: ids }),
-      updateDetails: ({ years: y, fee: f, voicePath }) =>
+      updateDetails: ({ years: y, fee: f, voicePath, about: text }) =>
         supabase.rpc('update_worker_details', {
           p_experience_years: y ?? undefined,
           p_visit_fee: f ?? undefined,
           p_voice_intro_path: voicePath ?? undefined,
+          p_about: text ?? undefined,
         }),
       uploadVoice: async (bytes) => {
         const path = buildVoicePath(userId, Date.now(), Math.random().toString(16).slice(2, 10));
@@ -114,6 +118,7 @@ function WorkForm({ work, userId, refresh, onBack }: { work: Ready; userId: stri
       fee: feeResult.value,
       newVoice,
       previousVoicePath: work.voicePath,
+      about: aboutChanged(about, work.about) ? about : null,
     });
     if (!result.ok) {
       setSubmitting(false);
@@ -190,6 +195,13 @@ function WorkForm({ work, userId, refresh, onBack }: { work: Ready; userId: stri
             onError={setVoiceMessage}
           />
           {voiceMessage ? <FieldError>{voiceMessage}</FieldError> : null}
+          <AboutBox
+            label={t('work.about')}
+            hint={t('work.aboutHint')}
+            placeholder={t('work.aboutPlaceholder')}
+            value={about}
+            onChange={setAbout}
+          />
           {formError ? <FieldError>{formError}</FieldError> : null}
         </ScrollView>
         <BottomBar label={t('work.submit')} onPress={() => void onSubmit()} loading={submitting} hideArrow />

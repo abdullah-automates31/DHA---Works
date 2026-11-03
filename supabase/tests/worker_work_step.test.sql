@@ -62,6 +62,15 @@ select throws_ok($$select public.update_worker_details(null, null, '00000000-000
   'a voice file in someone else''s folder is refused');
 select lives_ok($$select public.update_worker_details(null, null, '00000000-0000-0000-0000-0000000000b1/voice_intro-1-aa.m4a')$$, 'the voice path is saved');
 select is((select voice_intro_path from public.worker_details), '00000000-0000-0000-0000-0000000000b1/voice_intro-1-aa.m4a', 'and stored');
+-- about text (0021)
+select lives_ok($$select public.update_worker_details(null, null, null, '  I fix wiring and fans.  ')$$, 'the about text is saved');
+select is((select about from public.worker_details), 'I fix wiring and fans.', 'and trimmed');
+select lives_ok($$select public.update_worker_details(null, null, null, null)$$, 'a null about leaves it unchanged');
+select is((select about from public.worker_details), 'I fix wiring and fans.', 'the old text is kept');
+select is((select visit_fee from public.worker_details), 0, 'the other details are untouched by an about-only save');
+select throws_ok($$select public.update_worker_details(null, null, null, repeat('x', 501))$$, '23514', null, 'more than 500 characters is refused');
+select lives_ok($$select public.update_worker_details(null, null, null, '   ')$$, 'a blank about clears it');
+select is((select about from public.worker_details), null, 'cleared to null');
 select tests.act('00000000-0000-0000-0000-0000000000b2');
 select is((select count(*) from public.worker_details where profile_id = '00000000-0000-0000-0000-0000000000b1'), 0::bigint,
   'another worker cannot read these details');

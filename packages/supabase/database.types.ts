@@ -1522,6 +1522,7 @@ export type Database = {
       }
       worker_details: {
         Row: {
+          about: string | null
           available_today: boolean
           experience_years: number | null
           jobs_done: number
@@ -1532,6 +1533,7 @@ export type Database = {
           voice_intro_path: string | null
         }
         Insert: {
+          about?: string | null
           available_today?: boolean
           experience_years?: number | null
           jobs_done?: number
@@ -1542,6 +1544,7 @@ export type Database = {
           voice_intro_path?: string | null
         }
         Update: {
+          about?: string | null
           available_today?: boolean
           experience_years?: number | null
           jobs_done?: number
@@ -1725,6 +1728,7 @@ export type Database = {
           visit_fee: number | null
           visit_start: string | null
           voice_intro_path: string | null
+          worker_about: string | null
           worker_id: string | null
           worker_name: string | null
           worker_phone: string | null
@@ -2035,6 +2039,7 @@ export type Database = {
       }
       update_worker_details: {
         Args: {
+          p_about?: string
           p_experience_years?: number
           p_visit_fee?: number
           p_voice_intro_path?: string

@@ -16,15 +16,15 @@ test('quote accepted names the job and the visit, never the resident', () => {
 
 test('each worker-facing type has its own words', () => {
   const title = (type: string) => describe(n({ type }), now).title;
-  assert.equal(title('quote_not_selected'), 'Quote not selected');
-  assert.equal(title('quote_rejected'), 'Quote declined');
+  assert.equal(title('quote_not_selected'), 'Quote rejected');
+  assert.equal(title('quote_rejected'), 'Quote rejected');
   assert.equal(title('job_cancelled'), 'Job cancelled');
   assert.equal(title('job_expired'), 'Job expired');
   assert.equal(title('cash_collected'), 'Job closed');
   assert.equal(title('cash_disputed'), 'Cash amounts differ');
   assert.equal(title('job_stuck'), 'Job needs an update');
   assert.equal(title('cancellation_requested'), 'Cancellation requested');
-  assert.match(describe(n({ type: 'quote_not_selected' }), now).body, /The customer chose another worker for Bathroom flush tank leak\. Find more jobs\./);
+  assert.match(describe(n({ type: 'quote_not_selected' }), now).body, /The customer rejected your quote for Bathroom flush tank leak\. Find more jobs\./);
 });
 
 test('a missing title is replaced by a neutral phrase, an unknown type still shows something', () => {

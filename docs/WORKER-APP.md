@@ -30,9 +30,16 @@ Status at **30 Oct 2026**: all worker screens W01 to W08 and W10 to W18 are buil
 | W14 Report a problem / I feel unsafe | `job/[id]/report` | `file_report`, photos to `report-media` |
 | W15 Notifications | `notifications` | `notifications`, `mark_notifications_read` |
 | W16 Profile | `(tabs)/profile` | `get_my_earnings`, `set_available_today`, `set_my_categories`, sign out |
+| Introduction (Profile row; Shariq 2 Nov) | `introduction` | voice introduction (same card and storage rules as W03b) plus a written "about" (max 500), saved with `update_worker_details(p_voice_intro_path, p_about)`. The about box is also on W03b. Needs migration 0021 on the database. |
 | W17 Help and support | `help` | `app_settings` (helpline hidden until `helpline_enabled`) |
 | Report a problem (from W17) | `report` | `worker_jobs`: "Which job is this about?" lists jobs that can be reported (started, up to 7 days after completion) and opens W14 for the chosen one |
 | Live updates | hook `features/live/useLiveRefresh.ts` | Realtime on `notifications` (migration 0020) |
+
+## Desktop browser preview (2 Nov 2026)
+
+- Run `npm run web --workspace @dha/worker` (or `npx expo start --web` in `apps/worker`) and open the printed `http://localhost:8081`. The first build takes about a minute and the page is blank until it finishes.
+- It is a preview for demos, not a designed desktop product: `components/WebFrame.tsx` shows the phone layout as a centred 430 px column when the window is wide. `lib/secureStorage.web.ts` keeps the session in `localStorage` (phones keep encrypted device storage). Uses `react-native-web`.
+- Not checked in a browser yet: photo and camera picking, voice recording, signed-in screens. A real desktop layout would be a separate design task (the admin portal is the planned desktop product).
 
 ## Decisions applied (see OPEN-QUESTIONS.md for the ones to confirm)
 

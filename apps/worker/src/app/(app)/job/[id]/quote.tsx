@@ -14,15 +14,19 @@ import {
   WINDOW_STARTS,
   amountDigits,
   buildSubmitArgs,
+  ITEM_NAME_MAX,
+  MAX_ITEMS,
   computeTotal,
   dayLabel,
   defaultVisit,
   isQuoteValid,
   isWindowAvailable,
+  materialsTotal,
   parseAmount,
   validateQuote,
   visitText,
   windowLabel,
+  type MaterialItem,
   type QuoteInput,
 } from '@/features/quote/rules';
 import { sendQuote } from '@/features/quote/submit';
@@ -93,7 +97,7 @@ export default function QuoteScreen() {
 
 function QuoteForm({ jobId, onSent }: { jobId: string; onSent: () => void }) {
   const now = new Date();
-  const [input, setInput] = useState<QuoteInput>({ labour: '', materials: '', materialsNote: '', other: '', otherNote: '' });
+  const [input, setInput] = useState<QuoteInput>({ labour: '', withMaterials: false, items: [{ name: '', price: '' }] });
   const [visit, setVisit] = useState(() => defaultVisit(new Date()));
   const [touched, setTouched] = useState(false);
   const [sending, setSending] = useState(false);
@@ -107,9 +111,16 @@ function QuoteForm({ jobId, onSent }: { jobId: string; onSent: () => void }) {
   const errors = validateQuote(input);
   const valid = isQuoteValid(input);
   const labour = parseAmount(input.labour);
-  const materials = parseAmount(input.materials);
-  const other = parseAmount(input.other);
+  const materials = materialsTotal(input);
   const total = computeTotal(input);
+
+  const setItem = (index: number, patch: Partial<MaterialItem>) =>
+    set({ items: input.items.map((item, n) => (n === index ? { ...item, ...patch } : item)) });
+  const addItem = () => input.items.length < MAX_ITEMS && set({ items: [...input.items, { name: '', price: '' }] });
+  const removeItem = (index: number) => {
+    const rest = input.items.filter((_, n) => n !== index);
+    set({ items: rest.length > 0 ? rest : [{ name: '', price: '' }] });
+  };
   const windowOk = isWindowAvailable(now, visit.day, visit.window);
 
   function chooseDay(day: number) {
@@ -145,57 +156,66 @@ function QuoteForm({ jobId, onSent }: { jobId: string; onSent: () => void }) {
     <>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-          <View style={styles.pair}>
-            <View style={{ flex: 1 }}>
-              <LabeledInput
-                label={t('quote.labour')}
-                value={input.labour}
-                onChangeText={(v) => set({ labour: amountDigits(v) })}
-                keyboardType="number-pad"
-                maxLength={7}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <LabeledInput
-                label={t('quote.materials')}
-                value={input.materials}
-                onChangeText={(v) => set({ materials: amountDigits(v) })}
-                keyboardType="number-pad"
-                maxLength={7}
-              />
-            </View>
-          </View>
-
           <LabeledInput
-            label={t('quote.materialsList')}
-            value={input.materialsNote}
-            onChangeText={(v) => set({ materialsNote: v })}
-            placeholder={t('quote.materialsListPlaceholder')}
-            maxLength={200}
+            label={t('quote.labour')}
+            value={input.labour}
+            onChangeText={(v) => set({ labour: amountDigits(v) })}
+            keyboardType="number-pad"
+            maxLength={7}
           />
 
-          <View style={styles.pair}>
-            <View style={{ width: 112 }}>
-              <LabeledInput
-                label={t('quote.other')}
-                value={input.other}
-                onChangeText={(v) => set({ other: amountDigits(v) })}
-                keyboardType="number-pad"
-                maxLength={7}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <LabeledInput
-                label={t('quote.otherNote')}
-                value={input.otherNote}
-                onChangeText={(v) => set({ otherNote: v })}
-                placeholder={t('quote.otherNotePlaceholder')}
-                maxLength={120}
-                invalid={errors.otherNote === true}
-              />
+          <View style={{ gap: 6 }}>
+            <Text style={styles.label}>{t('quote.materialsToggle')}</Text>
+            <View style={styles.pills}>
+              <Choice label={t('quote.withMaterials')} on={input.withMaterials} onPress={() => set({ withMaterials: true })} />
+              <Choice label={t('quote.withoutMaterials')} on={!input.withMaterials} onPress={() => set({ withMaterials: false })} />
             </View>
           </View>
-          {errors.otherNote ? <Text style={styles.noteError}>{t('quote.errors.otherNoteHint')}</Text> : null}
+
+          {input.withMaterials ? (
+            <View style={styles.items}>
+              <Text style={styles.label}>{t('quote.materialsList')}</Text>
+              {input.items.map((item, index) => (
+                <View key={index} style={styles.itemRow}>
+                  <View style={{ flex: 1 }}>
+                    <LabeledInput
+                      label={t('quote.itemName')}
+                      value={item.name}
+                      onChangeText={(v) => setItem(index, { name: v.slice(0, ITEM_NAME_MAX) })}
+                      placeholder={t('quote.itemNamePlaceholder')}
+                      maxLength={ITEM_NAME_MAX}
+                      invalid={touched && errors.items === true && item.name.trim() === '' && parseAmount(item.price) > 0}
+                    />
+                  </View>
+                  <View style={{ width: 104 }}>
+                    <LabeledInput
+                      label={t('quote.itemPrice')}
+                      value={item.price}
+                      onChangeText={(v) => setItem(index, { price: amountDigits(v) })}
+                      keyboardType="number-pad"
+                      maxLength={7}
+                      invalid={touched && errors.items === true && item.name.trim() !== '' && parseAmount(item.price) === 0}
+                    />
+                  </View>
+                  {input.items.length > 1 ? (
+                    <Pressable accessibilityRole="button" accessibilityLabel={t('quote.removeItem')} onPress={() => removeItem(index)} style={styles.remove}>
+                      <Text style={styles.removeText}>×</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ))}
+              {input.items.length < MAX_ITEMS ? (
+                <Pressable accessibilityRole="button" onPress={addItem} style={styles.addItem}>
+                  <Text style={styles.addItemText}>{t('quote.addItem')}</Text>
+                </Pressable>
+              ) : null}
+              <View style={styles.itemsTotal}>
+                <Text style={styles.label}>{t('quote.materialsAuto')}</Text>
+                <Text style={styles.itemsTotalValue}>{formatRupees(materials)}</Text>
+              </View>
+              {touched && errors.items ? <FieldError>{t('quote.errors.itemsHint')}</FieldError> : null}
+            </View>
+          ) : null}
 
           <View style={{ gap: 6 }}>
             <Text style={styles.label}>{t('quote.visitDay')}</Text>
@@ -227,15 +247,7 @@ function QuoteForm({ jobId, onSent }: { jobId: string; onSent: () => void }) {
           <View style={styles.preview} accessibilityLabel={t('quote.preview')}>
             <Text style={styles.previewTitle}>{t('quote.preview')}</Text>
             <Line label={t('quote.labourLine')} value={formatRupees(labour)} />
-            {materials > 0 ? (
-              <Line
-                label={input.materialsNote.trim() ? t('quote.materialsLineWith', { list: input.materialsNote.trim() }) : t('quote.materialsLine')}
-                value={formatRupees(materials)}
-              />
-            ) : null}
-            {other > 0 ? (
-              <Line label={t('quote.otherLineWith', { note: input.otherNote.trim() })} value={formatRupees(other)} />
-            ) : null}
+            {materials > 0 ? <Line label={t('quote.materialsLine')} value={formatRupees(materials)} /> : null}
             <View style={styles.rule} />
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>{t('quote.total')}</Text>
@@ -298,7 +310,14 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24, gap: 10 },
   pair: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   label: { fontFamily: fontFamily.bold, fontSize: 12, color: colors.muted },
-  noteError: { fontFamily: fontFamily.bold, fontSize: 12, color: '#C0392B', marginTop: -4 },
+  items: { backgroundColor: '#fff', borderRadius: 18, padding: 14, gap: 8 },
+  itemRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  remove: { width: 36, height: 44, marginTop: 20, alignItems: 'center', justifyContent: 'center' },
+  removeText: { fontFamily: fontFamily.extrabold, fontSize: 22, color: colors.muted },
+  addItem: { height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: colors.green, alignItems: 'center', justifyContent: 'center' },
+  addItemText: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.greenDark },
+  itemsTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  itemsTotalValue: { fontFamily: fontFamily.extrabold, fontSize: 14, color: colors.ink },
   pills: { flexDirection: 'row', gap: 6 },
   pill: { flex: 1, minWidth: 0, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   pillOn: { backgroundColor: colors.green },

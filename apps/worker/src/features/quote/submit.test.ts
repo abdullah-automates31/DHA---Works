@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { buildSubmitArgs } from './rules.ts';
 import { quoteErrorKey, sendQuote } from './submit.ts';
 
-const args = buildSubmitArgs('job-1', { labour: '1500', materials: '', materialsNote: '', other: '', otherNote: '' }, new Date(2026, 9, 24, 9), 0, 1);
+const args = buildSubmitArgs('job-1', { labour: '1500', withMaterials: false, items: [] }, new Date(2026, 9, 24, 9), 0, 1);
 
 test('every database refusal maps to a friendly key', () => {
   const cases: [string, string][] = [

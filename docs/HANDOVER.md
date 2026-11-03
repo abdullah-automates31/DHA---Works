@@ -51,6 +51,9 @@ Rules: schema changes only as new migration files (never edit an existing one); 
 | 20261029000016 | `submit_for_review` no longer requires worker areas (chosen after approval); every other check is unchanged. | yes (31 Oct) |
 | 20261029000017 | `worker_feed` gains `quote_count` at the end, counting `sent` quotes only. | yes (31 Oct) |
 | 20261030000020 | publishes `public.notifications` for Realtime; job tables stay unpublished. | yes (31 Oct) |
+| 20261102000021 | Shariq 2 Nov: `worker_details.about` (text, max 500); `update_worker_details` gets a 4th argument `p_about` (null = unchanged, blank = clear); `resident_quotes` gains `worker_about` at the end. | yes (pushed 3 Nov) |
+| 20261103000022 | `replace_worker(p_job_id, p_reason)`: a resident drops the worker of a scheduled job; the job reopens, the worker's quote becomes `rejected` (cannot re-quote), they get `quote_rejected`. From Shariq's draft 0018 (grants also revoke anon). Tests: `replace_worker_profile.test.sql`. | yes (pushed 3 Nov) |
+| 20261103000023 | `worker_public_profile(p_worker_id)`: trades, areas, about, completion rate, verified date and the last 10 anonymised reviews of a worker who quoted one of the caller's jobs. From Shariq's draft 0019, fixed against the real schema (`about` not `bio`, `profile_id`, no `cancelled_before_start` status, anon revoked). | yes (pushed 3 Nov) |
 
 Verified: `npm run db:local -- db reset` applies all 18 locally; `npm run db:local -- db lint --local` is clean. Hosted DEV is at 0020 (all 18 applied); `db lint --linked` was clean there on 29 Oct (at 0015; not re-run since).
 

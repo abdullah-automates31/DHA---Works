@@ -14,6 +14,7 @@ export type WorkData =
       fee: number | null;
       voicePath: string | null;
       voiceUrl: string | null;
+      about: string;
     };
 
 async function fetchWork(): Promise<WorkData> {
@@ -21,7 +22,7 @@ async function fetchWork(): Promise<WorkData> {
   const [categories, mine, details] = await Promise.all([
     supabase.from('categories').select('id, name').eq('active', true).order('sort'),
     supabase.from('worker_categories').select('category_id'),
-    supabase.from('worker_details').select('experience_years, visit_fee, voice_intro_path').maybeSingle(),
+    supabase.from('worker_details').select('experience_years, visit_fee, voice_intro_path, about').maybeSingle(),
   ]);
   if (categories.error || mine.error || details.error) return { status: 'error' };
   const voicePath = details.data?.voice_intro_path ?? null;
@@ -40,6 +41,7 @@ async function fetchWork(): Promise<WorkData> {
     fee: fee === 0 ? null : fee,
     voicePath,
     voiceUrl,
+    about: details.data?.about ?? '',
   };
 }
 

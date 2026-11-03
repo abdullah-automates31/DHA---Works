@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { WebFrame } from '@/components/WebFrame';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { colors } from '@/theme';
 
@@ -54,7 +55,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <StatusBar style="auto" />
-        <RootStack />
+        <WebFrame>
+          <RootStack />
+        </WebFrame>
       </AuthProvider>
     </SafeAreaProvider>
   );

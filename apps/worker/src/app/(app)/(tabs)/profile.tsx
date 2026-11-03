@@ -118,6 +118,7 @@ export default function ProfileScreen() {
                 />
               </View>
               <Row title={t('profile.category')} value={tradeSummary(names)} onPress={openSheet} divider />
+              <Row title={t('profile.introduction')} onPress={() => router.push('/introduction')} divider />
               <Row title={t('profile.areas')} value={areaSummary(areas)} onPress={() => router.push('/areas')} divider />
               <Row title={t('profile.help')} onPress={() => router.push('/help')} divider />
               <Row title={t('profile.signOut')} danger onPress={() => void supabase.auth.signOut()} />

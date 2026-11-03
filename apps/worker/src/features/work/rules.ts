@@ -29,6 +29,19 @@ export function parseFee(raw: string): Optional<number> {
   return { ok: true, value: Number(text) };
 }
 
+// ---------------------------------------------------------------- about text
+export const ABOUT_MAX = 500; // the database check on worker_details.about
+
+/** Keeps what the worker types within the limit. Line breaks are allowed. */
+export function limitAbout(raw: string): string {
+  return raw.slice(0, ABOUT_MAX);
+}
+
+/** True when the box differs from what is saved (blank and missing count as the same). */
+export function aboutChanged(typed: string, saved: string | null): boolean {
+  return typed.trim() !== (saved ?? '').trim();
+}
+
 // ---------------------------------------------------------------- trades
 export function toggleTrade(selected: readonly number[], id: number): number[] {
   return selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id];

@@ -107,7 +107,7 @@ test('progress segments follow the design (3, 5, 6, 7 of 9)', () => {
 
 test('chips and main actions', () => {
   assert.equal(chipFor('scheduled').label, 'Scheduled');
-  assert.equal(chipFor('not_chosen').label, 'Not chosen');
+  assert.equal(chipFor('not_chosen').label, 'Rejected');
   assert.equal(chipFor('disputed').label, 'Under review');
   assert.equal(primaryAction('interested'), 'create_quote');
   assert.equal(primaryAction('quoted'), 'waiting');
@@ -173,7 +173,7 @@ test('stopped jobs end with a stop step after the stages they reached', () => {
   assert.deepEqual(cancelled.map((s) => s.state), ['done', 'done', 'stop']);
   assert.equal(cancelled[2]?.label, 'Cancelled');
   const lost = timeline({ kind: 'not_chosen', interestAt: at(24, 9), quoteAt: at(24, 10), quoteTotal: 3000, scheduledStart: at(25, 11), scheduledEnd: at(25, 13), startedAt: null, completedAt: null, cashAmount: null });
-  assert.equal(lost.at(-1)?.label, 'Not chosen');
+  assert.equal(lost.at(-1)?.label, 'Rejected');
   const disputed = timeline({ kind: 'disputed', interestAt: at(24, 9), quoteAt: at(24, 10), quoteTotal: 3200, scheduledStart: at(24, 11), scheduledEnd: at(24, 13), startedAt: at(24, 11, 8), completedAt: at(24, 12, 20), cashAmount: null });
   assert.equal(disputed.length, 6);
   assert.equal(disputed.at(-1)?.state, 'stop');

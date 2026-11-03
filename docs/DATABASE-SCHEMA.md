@@ -184,7 +184,7 @@ These views deliberately run with the database owner's rights so they can join d
 | Area | Functions |
 |---|---|
 | Account | `register_profile`, `update_my_profile`, `upsert_address`, `add_verification_document`, `set_my_references`, `submit_for_review` |
-| Worker setup | `set_my_areas`, `set_my_categories`, `set_available_today`, `update_worker_details` |
+| Worker setup | `set_my_areas`, `set_my_categories`, `set_available_today`, `update_worker_details` (experience, fee, voice path, about text since 0021) |
 | Resident jobs | `save_job_draft`, `delete_draft`, `post_job`, `update_job`, `cancel_job`, `accept_quote`, `reject_quote`, `confirm_cash_resident`, `submit_review` |
 | Worker jobs | `record_job_view`, `express_interest`, `withdraw_interest`, `submit_quote`, `withdraw_quote`, `start_job`, `complete_job`, `record_cash_worker`, `get_my_earnings` |
 | Both | `file_report`, `request_cancellation`, `withdraw_cancellation_request`, `register_device_token`, `mark_notifications_read` |

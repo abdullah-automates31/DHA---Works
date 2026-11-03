@@ -15,7 +15,8 @@ type Err = { name?: string; message?: string } | null;
 
 export type SubmitClient = {
   setCategories(ids: number[]): PromiseLike<{ error: Err }>;
-  updateDetails(args: { years: number | null; fee: number | null; voicePath: string | null }): PromiseLike<{ error: Err }>;
+  /** about: null leaves the saved text alone; an empty string clears it */
+  updateDetails(args: { years: number | null; fee: number | null; voicePath: string | null; about: string | null }): PromiseLike<{ error: Err }>;
   uploadVoice(bytes: ArrayBuffer): PromiseLike<{ path: string | null; error: Err }>;
   deleteVoice(path: string): PromiseLike<unknown>;
   submit(): PromiseLike<{ error: Err }>;
@@ -29,6 +30,8 @@ export type SubmitInput = {
   newVoice: ArrayBuffer | null;
   /** the voice file already saved earlier, replaced (and then deleted) when newVoice is given */
   previousVoicePath: string | null;
+  /** the written introduction; leave out (or null) to keep what is saved, '' to clear it */
+  about?: string | null;
 };
 
 export function submitErrorKey(error: Err): SubmitErrorKey {
@@ -55,7 +58,7 @@ export async function submitApplication(client: SubmitClient, input: SubmitInput
       voicePath = uploaded.path;
     }
 
-    const details = await client.updateDetails({ years: input.years, fee: input.fee, voicePath });
+    const details = await client.updateDetails({ years: input.years, fee: input.fee, voicePath, about: input.about ?? null });
     if (details.error) return { ok: false, key: submitErrorKey(details.error) };
 
     // The new voice file is now the one on the profile: remove the one it replaces (worker-media allows it).

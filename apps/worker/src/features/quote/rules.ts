@@ -18,34 +18,54 @@ export function parseAmount(raw: string): number {
   return digits === '' ? 0 : Number(digits);
 }
 
+export const MAX_ITEMS = 10;
+export const ITEM_NAME_MAX = 40;
+
+export type MaterialItem = { name: string; price: string };
+
+/** The toggle decides whether materials count at all; the items are kept while it is off so a tap back loses nothing. */
 export type QuoteInput = {
   labour: string;
-  materials: string;
-  materialsNote: string;
-  other: string;
-  otherNote: string;
+  withMaterials: boolean;
+  items: MaterialItem[];
 };
 
-export function computeTotal(input: Pick<QuoteInput, 'labour' | 'materials' | 'other'>): number {
-  return parseAmount(input.labour) + parseAmount(input.materials) + parseAmount(input.other);
+const itemUsed = (item: MaterialItem) => item.name.trim() !== '' || parseAmount(item.price) > 0;
+const itemComplete = (item: MaterialItem) => item.name.trim() !== '' && parseAmount(item.price) > 0;
+
+/** Rows the worker actually started (blank rows are ignored). */
+export function usedItems(input: Pick<QuoteInput, 'withMaterials' | 'items'>): MaterialItem[] {
+  return input.withMaterials ? input.items.filter(itemUsed) : [];
+}
+
+/** The materials cost is worked out from the item prices; it is never typed. 0 when "Without materials". */
+export function materialsTotal(input: Pick<QuoteInput, 'withMaterials' | 'items'>): number {
+  return usedItems(input).reduce((sum, item) => sum + parseAmount(item.price), 0);
+}
+
+export function computeTotal(input: Pick<QuoteInput, 'labour' | 'withMaterials' | 'items'>): number {
+  return parseAmount(input.labour) + materialsTotal(input);
 }
 
 export type QuoteErrors = {
   total?: true; // nothing entered: the total must be above zero
-  otherNote?: true; // an extra cost needs a reason
+  items?: true; // "With materials" needs at least one item, and every started row needs a name and a price
 };
 
-/** Same two rules as the quotes table: total above zero, and a note whenever "other" is above zero. */
+/** Mirrors the table rule (total above zero) plus the form rule for the materials list. */
 export function validateQuote(input: QuoteInput): QuoteErrors {
   const errors: QuoteErrors = {};
   if (computeTotal(input) <= 0) errors.total = true;
-  if (parseAmount(input.other) > 0 && input.otherNote.trim() === '') errors.otherNote = true;
+  if (input.withMaterials) {
+    const used = usedItems(input);
+    if (used.length === 0 || !used.every(itemComplete)) errors.items = true;
+  }
   return errors;
 }
 
 export function isQuoteValid(input: QuoteInput): boolean {
   const errors = validateQuote(input);
-  return !errors.total && !errors.otherNote;
+  return !errors.total && !errors.items;
 }
 
 // ---------------------------------------------------------------- visit day and time
@@ -125,21 +145,26 @@ export type SubmitQuoteArgs = {
   p_note: undefined;
 };
 
-/** Notes are sent only with the amount they explain; blank text is left out (the database stores null). No total is ever sent. */
+/**
+ * The materials amount is the sum of the item prices and the list goes in the note ("Pipe Rs 500; Tape Rs 50").
+ * "Other" charges are no longer part of a quote: they are always sent as 0. No total is ever sent.
+ */
 export function buildSubmitArgs(jobId: string, input: QuoteInput, now: Date, dayOffset: number, windowIndex: number): SubmitQuoteArgs {
   const { start, end } = visitWindow(now, dayOffset, windowIndex);
-  const materials = parseAmount(input.materials);
-  const other = parseAmount(input.other);
+  const materials = materialsTotal(input);
   const collapse = (text: string) => text.replace(/\s+/g, ' ').trim();
+  const list = usedItems(input)
+    .map((item) => `${collapse(item.name)} Rs ${parseAmount(item.price)}`)
+    .join('; ');
   return {
     p_job_id: jobId,
     p_labour: parseAmount(input.labour),
     p_visit_start: start.toISOString(),
     p_visit_end: end.toISOString(),
     p_materials: materials,
-    p_materials_note: materials > 0 && collapse(input.materialsNote) !== '' ? collapse(input.materialsNote) : undefined,
-    p_other_amount: other,
-    p_other_note: other > 0 ? collapse(input.otherNote) : undefined,
+    p_materials_note: materials > 0 && list !== '' ? list : undefined,
+    p_other_amount: 0,
+    p_other_note: undefined,
     p_note: undefined,
   };
 }
