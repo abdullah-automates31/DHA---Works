@@ -91,6 +91,8 @@ Append-only: who, what, when, which record, old and new value, reason. Covers wo
 
 ## 10. Security testing
 
+- **6 Nov audit of the worker app and backend (fixed in migration 0032, tests in `supabase/tests/security_hardening.test.sql`):** upload gate and per-user file caps on every bucket, `worker-media` visible only to the owner, staff and a resident with a quote from that worker, limits on free text and amounts, https-only server URL in release builds and Android backup off. Checked and found sound: RLS on every table, no `anon` privileges, `search_path` pinned on every security-definer function, workers cannot change role, rating, notifications or cash, resident phone and plot reach only the accepted worker, CNIC bucket not readable by its owner, no secrets in git. Still open: see OPEN-QUESTIONS #9, #10 and #12.
+
 - **RLS tests (pgTAP):** per table, prove a customer, a worker and an unrelated user cannot read or write what they should not. The most important test set.
 - **Accept race test:** concurrent accepts on one job give exactly one winner; the other quotes become not selected.
 - **Supabase advisors:** run the security advisor before each release; fix every warning.

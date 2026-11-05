@@ -18,8 +18,8 @@ Size: 29 tables, 5 views, 33 functions the apps can call (listed in section 8), 
 
 | Environment | State |
 |---|---|
-| **Migration files in the repo** | 29 (0001 to 0017 and 0020 to 0031) |
-| **Local (Docker) database** | All 29 applied; `supabase test db` passed 790 assertions in 22 files on 6 Nov 2026. |
+| **Migration files in the repo** | 30 (0001 to 0017 and 0020 to 0032) |
+| **Local (Docker) database** | All 30 applied; `supabase test db` passed 817 assertions in 23 files on 6 Nov 2026. |
 | **Hosted DEV** (Supabase free tier) | Migrations 0001 to 0030 are applied (0021 to 0026 on 3 Nov, 0027 to 0030 on 5 Nov); 0031 (claim-and-lock) is applied on 6 Nov once pushed. Local and DEV match after that. |
 | **Production** | Does not exist. No production Supabase project has been created. |
 
@@ -228,6 +228,7 @@ A **migration** is a numbered SQL file that changes the database structure. File
 | 0029 | Performance: the feed's matching rules written as plain SQL (they were SECURITY DEFINER functions, which Postgres cannot see into) so `jobs_feed_idx` is used. Same visible jobs, proven by `worker_feed_equivalence.test.sql`. |
 | 0030 | Audit fix (5 Nov): a worker can no longer delete a stored file that `jobs.material_bill_path` or `quotes.material_bill_path` points at (the storage delete rule calls `public.is_filed_bill(name)`, a security-definer helper, because a worker cannot read other people's job rows); `complete_job` refuses a bill path with no file behind it; partial indexes `jobs_material_bill_idx` and `quotes_material_bill_idx` (they also speed up the storage read rule). Pushed to DEV on 5 Nov and verified (helper, both indexes, the delete rule; `anon` cannot run the helper). |
 | 0031 | Claim-and-lock (6 Nov): `public.accept_job(job, labour, materials, materials_note, note)`. One row-locked transaction: checks the job is open for this worker, inserts the quote as `accepted`, marks other sent quotes `not_selected`, withdraws other interest, sets `scheduled`, `accepted_quote_id`, `accepted_worker_id` and the schedule, and (re)creates the `cash_records` row (a stale one left by `replace_worker` is deleted first; nothing can have been entered on it). Notifies the resident with type `job_accepted`. No new table or column. |
+| 0032 | Security hardening (6 Nov audit): `public.can_upload_media(bucket)` gates uploads to job-media, worker-media, report-media and identity (registered, active user of the right role, plus a file cap of 600 / 100 / 100 / 30 per user); `worker-media` files are readable only by the owner, staff and a resident who received a quote from that worker (`public.resident_may_see_worker_media`), and `is_approved_worker` is dropped; check constraints cap free text (quote note 500, materials note 1000, other note 300, report text 1100, cancellation details 500, cash reason 500, references) and amounts (quote parts and visit fee Rs 9,999,999; cash and agreed amount Rs 30,000,000). |
 
 Two further files, `supabase/proposals/20261029000018` and `...019` (lock identity details during review; let owners delete their own identity files), are **proposals, not migrations**, and are not applied anywhere.
 
