@@ -106,11 +106,28 @@ select throws_ok($$select public.complete_job('00000000-0000-0000-0000-00000000a
 select throws_ok($$select public.complete_job('00000000-0000-0000-0000-00000000a001', '  ')$$, null, 'upload the material bill', 'a blank bill path does not count');
 select throws_ok($$select public.complete_job('00000000-0000-0000-0000-00000000a001', '00000000-0000-0000-0000-0000000000b2/bill.jpg')$$, null, 'invalid bill path', 'a bill in someone else''s folder is refused');
 select is((select status::text from public.worker_jobs where id = '00000000-0000-0000-0000-00000000a001'), 'in_progress', 'refused attempts changed nothing');
+select throws_ok($$select public.complete_job('00000000-0000-0000-0000-00000000a001', '00000000-0000-0000-0000-0000000000b1/bill-1-aa.jpg')$$, null, 'invalid bill path', 'a bill path with no uploaded file behind it is refused');
+select lives_ok($$insert into storage.objects (bucket_id, name, owner) values ('job-media', '00000000-0000-0000-0000-0000000000b1/bill-1-aa.jpg', '00000000-0000-0000-0000-0000000000b1')$$, 'the worker uploads the bill photo');
 select lives_ok($$select public.complete_job('00000000-0000-0000-0000-00000000a001', '00000000-0000-0000-0000-0000000000b1/bill-1-aa.jpg')$$, 'with a bill in their own folder the job completes');
 select is((select status::text from public.worker_jobs where id = '00000000-0000-0000-0000-00000000a001'), 'completed', 'completed');
 select ok((select completed_at is not null from public.worker_jobs where id = '00000000-0000-0000-0000-00000000a001'), 'with a completion time');
 select tests.back();
 select is((select material_bill_path from public.jobs where id = '00000000-0000-0000-0000-00000000a001'), '00000000-0000-0000-0000-0000000000b1/bill-1-aa.jpg', 'the bill path is stored on the job');
+
+-- the filed bill is evidence: the worker who uploaded it can no longer delete it, but can still delete other files
+select set_config('storage.allow_delete_query', 'true', true);
+select tests.act('00000000-0000-0000-0000-0000000000b1');
+select lives_ok($$insert into storage.objects (bucket_id, name, owner) values ('job-media', '00000000-0000-0000-0000-0000000000b1/scratch.jpg', '00000000-0000-0000-0000-0000000000b1')$$, 'the worker uploads another file');
+select lives_ok($$delete from storage.objects where bucket_id = 'job-media' and name = '00000000-0000-0000-0000-0000000000b1/bill-1-aa.jpg'$$, 'deleting the filed bill does not raise an error');
+select lives_ok($$delete from storage.objects where bucket_id = 'job-media' and name = '00000000-0000-0000-0000-0000000000b1/scratch.jpg'$$, 'deleting a file that is not a bill works');
+select tests.back();
+select is((select count(*) from storage.objects where bucket_id = 'job-media' and name = '00000000-0000-0000-0000-0000000000b1/bill-1-aa.jpg'), 1::bigint, 'the filed bill is still there');
+select is((select count(*) from storage.objects where bucket_id = 'job-media' and name = '00000000-0000-0000-0000-0000000000b1/scratch.jpg'), 0::bigint, 'the ordinary file is gone');
+select ok(public.is_filed_bill('00000000-0000-0000-0000-0000000000b1/bill-1-aa.jpg'), 'the helper knows a filed bill');
+select ok(not public.is_filed_bill('00000000-0000-0000-0000-0000000000b1/scratch.jpg'), 'and an ordinary file');
+select tests.act('00000000-0000-0000-0000-0000000000a1');
+select is((select count(*) from storage.objects where bucket_id = 'job-media' and name = '00000000-0000-0000-0000-0000000000b1/bill-1-aa.jpg'), 1::bigint, 'the resident can still read the bill');
+select tests.back();
 
 -- a labour-only job needs no bill
 select tests.act('00000000-0000-0000-0000-0000000000b1');

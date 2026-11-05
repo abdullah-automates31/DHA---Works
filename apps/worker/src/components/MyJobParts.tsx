@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -69,7 +70,8 @@ export function whoLine(job: MyJob): string {
 }
 
 /** One card of W11. The whole card opens the job; the gold button on an "interested" job and "Record cash" go straight to their screens. */
-export function MyJobCard({
+// Memoised like FeedJobCard: the three handlers take the job id and must be stable functions.
+export const MyJobCard = memo(function MyJobCard({
   job,
   index,
   onOpen,
@@ -79,18 +81,24 @@ export function MyJobCard({
 }: {
   job: MyJob;
   index: number;
-  onOpen?: () => void;
-  onQuote: () => void;
-  onCash: () => void;
+  onOpen: (id: string) => void;
+  onQuote: (id: string) => void;
+  onCash: (id: string) => void;
   now: Date;
 }) {
   const kind = jobKind(job);
+  // A rejected quote is a plain record: the card cannot be opened (and shows no details).
+  const canOpen = kind !== 'not_chosen';
   const action = primaryAction(kind, job.cashRecorded === true);
   const visit = visitLine(job.scheduledStart, job.scheduledEnd, now);
   const won = job.residentName !== null;
+  // One sentence for a screen reader: status, title, who and where, price and visit time.
+  const label = [chipFor(kind).label, job.title, whoLine(job), job.myQuoteTotal !== null && kind !== 'interested' && kind !== 'not_chosen' ? formatRupees(job.myQuoteTotal) : '', kind === 'scheduled' ? visit : '']
+    .filter(Boolean)
+    .join('. ');
 
   return (
-    <Pressable accessibilityRole={onOpen ? 'button' : 'text'} accessibilityLabel={job.title} onPress={onOpen} disabled={!onOpen} style={styles.card}>
+    <Pressable accessibilityRole={canOpen ? 'button' : 'text'} accessibilityLabel={label} onPress={() => onOpen(job.id)} disabled={!canOpen} style={styles.card}>
       <View style={styles.row}>
         <StatusChip kind={kind} />
         <Text style={styles.code}>{job.code}</Text>
@@ -117,7 +125,7 @@ export function MyJobCard({
       ) : null}
 
       {kind === 'interested' ? (
-        <Pressable accessibilityRole="button" onPress={onQuote} style={[styles.btn, { backgroundColor: colors.gold }]}>
+        <Pressable accessibilityRole="button" onPress={() => onQuote(job.id)} style={[styles.btn, { backgroundColor: colors.gold }]}>
           <Text style={[styles.btnText, { color: colors.greenDark }]}>{t('myjobs.createQuote')}</Text>
         </Pressable>
       ) : null}
@@ -139,14 +147,14 @@ export function MyJobCard({
       {kind === 'completed' && action === 'record_cash' ? (
         <View style={styles.cashRow}>
           <Text style={styles.due}>{t('myjobs.dueInCash', { amount: formatRupees(job.myQuoteTotal ?? 0) })}</Text>
-          <Pressable accessibilityRole="button" onPress={onCash} style={[styles.btn, { paddingHorizontal: 16 }]}>
+          <Pressable accessibilityRole="button" onPress={() => onCash(job.id)} style={[styles.btn, { paddingHorizontal: 16 }]}>
             <Text style={styles.btnText}>{t('myjobs.recordCash')}</Text>
           </Pressable>
         </View>
       ) : null}
     </Pressable>
   );
-}
+});
 
 /** The W12 timeline card: a dot per step, green and checked when done, gold when current, grey when still to come. */
 export function TimelineCard({ steps }: { steps: TimelineStep[] }) {

@@ -127,6 +127,7 @@ select lives_ok($$select public.start_job((select id from t_job))$$, 'worker sta
 select throws_ok($$select public.complete_job((select id from t_job))$$, null, null, 'a job with materials cannot be completed without the bill');
 select throws_ok($$select public.complete_job((select id from t_job), '00000000-0000-0000-0000-0000000000b2/bill.jpg')$$, null, null,
   'the bill must be in the worker''s own folder');
+select lives_ok($$insert into storage.objects (bucket_id, name, owner) values ('job-media', '00000000-0000-0000-0000-0000000000b1/bill.jpg', '00000000-0000-0000-0000-0000000000b1')$$, 'worker uploads the bill photo');
 select lives_ok($$select public.complete_job((select id from t_job), '00000000-0000-0000-0000-0000000000b1/bill.jpg')$$, 'worker completes the job with the bill');
 select throws_ok($$select public.record_cash_worker((select id from t_job), 4000)$$, null, null,
   'a different amount needs a reason');

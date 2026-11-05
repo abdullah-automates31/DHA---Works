@@ -41,34 +41,48 @@ export function usePaged<R extends PagedBase>(options: {
     setData(next);
   }, []);
 
+  // Applies a finished reload. If "Show more" finished while the reload was on its way, the list on screen already
+  // holds more rows than the reload brought back; keep it (the next reload brings it up to date) instead of shrinking it.
+  const apply = useCallback(
+    (next: R | null, shown: number) => {
+      const current = latest.current;
+      if (next) {
+        if (current.status === 'ready' && current.consumed > Math.max(shown, next.consumed)) return;
+        set({ status: 'ready', ...next });
+      } else if (current.status !== 'ready') {
+        set({ status: 'error' });
+      }
+    },
+    [set],
+  );
+
   const load = useCallback(async () => {
     const shown = latest.current.status === 'ready' ? latest.current.consumed : 0;
-    const next = await firstRef.current(Math.max(pageSize, shown));
-    if (next) set({ status: 'ready', ...next });
-    else if (latest.current.status !== 'ready') set({ status: 'error' });
-  }, [pageSize, set]);
+    apply(await firstRef.current(Math.max(pageSize, shown)), shown);
+  }, [pageSize, apply]);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       const shown = latest.current.status === 'ready' ? latest.current.consumed : 0;
       void firstRef.current(Math.max(pageSize, shown)).then((next) => {
-        if (!active) return;
-        if (next) set({ status: 'ready', ...next });
-        else if (latest.current.status !== 'ready') set({ status: 'error' });
+        if (active) apply(next, shown);
       });
       return () => {
         active = false;
       };
       // `key` is not read inside: it only makes the screen reload when it changes
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [key, pageSize, set]),
+    }, [key, pageSize, apply]),
   );
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false); // a failed request must never leave the pull spinner stuck
+    }
   }, [load]);
 
   const loadMore = useCallback(async () => {
@@ -78,11 +92,17 @@ export function usePaged<R extends PagedBase>(options: {
     setLoadingMore(true);
     setMoreFailed(false);
     const { status: _status, ...state } = current;
-    const next = await moreRef.current(state as unknown as R);
-    if (next) set({ status: 'ready', ...next });
-    else setMoreFailed(true);
-    busy.current = false;
-    setLoadingMore(false);
+    try {
+      const next = await moreRef.current(state as unknown as R);
+      if (next) set({ status: 'ready', ...next });
+      else setMoreFailed(true);
+    } catch {
+      setMoreFailed(true);
+    } finally {
+      // always release the lock, or "Show more" would stay dead after one thrown request
+      busy.current = false;
+      setLoadingMore(false);
+    }
   }, [set]);
 
   /** Changes the rows on screen without a request (for example marking notifications read). */

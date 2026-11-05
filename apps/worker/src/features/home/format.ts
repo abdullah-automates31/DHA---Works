@@ -68,6 +68,17 @@ export function formatRupees(amount: number | null | undefined): string {
   return `Rs ${Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 }
 
+/** How many matching jobs Home counts exactly. Beyond this the banner says "99+" (see cappedCount). */
+export const HOME_COUNT_CAP = 99;
+
+/**
+ * Home only needs "how many new jobs" for a banner, so it reads at most CAP + 1 rows instead of counting every
+ * matching job (which gets slower as the feed grows). `rows` is how many it got back.
+ */
+export function cappedCount(rows: number, cap: number = HOME_COUNT_CAP): { count: number; more: boolean } {
+  return rows > cap ? { count: cap, more: true } : { count: Math.max(0, rows), more: false };
+}
+
 /** "3 new jobs near you" / "1 new job near you". */
 export function newJobsText(count: number): string {
   return count === 1 ? '1 new job near you' : `${count} new jobs near you`;

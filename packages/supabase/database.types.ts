@@ -1932,6 +1932,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_approved_worker: { Args: { p_id: string }; Returns: boolean }
+      is_filed_bill: { Args: { p_name: string }; Returns: boolean }
       is_job_owner: { Args: { p_job: string }; Returns: boolean }
       mark_notifications_read: {
         Args: { p_ids?: string[] }

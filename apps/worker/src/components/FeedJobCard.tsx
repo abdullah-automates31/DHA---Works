@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
+import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { categoryIconKey, timeAgo, whenPill } from '@/features/feed/format';
 import type { FeedJob } from '@/features/feed/useFeed';
 import { t } from '@/i18n';
-import { stableSource } from '@/lib/image';
+import { stableCacheKey, stableSource } from '@/lib/image';
 import { colors, fontFamily } from '@/theme';
 
 import {
@@ -26,13 +27,19 @@ const ICONS = { wrench: WrenchIcon, bolt: BoltIcon, snow: SnowIcon, hammer: Hamm
 const RED = colors.chip.declined;
 const PHOTO_TINTS = ['#CFE0D6', '#F6E7B4'];
 
-export function FeedJobCard({ job, onPress, now }: { job: FeedJob; onPress: () => void; now: Date }) {
+// Memoised: the list re-renders when a page loads or the pull spinner flips, and the cards that did not change are skipped.
+// So `onPress` must be one stable function that receives the job id, and `now` must stay the same between loads.
+export const FeedJobCard = memo(function FeedJobCard({ job, onPress, now }: { job: FeedJob; onPress: (id: string) => void; now: Date }) {
   const Icon = ICONS[categoryIconKey(job.categoryId)];
   const when = whenPill(job, now);
   const urgent = job.urgency === 'asap';
+  // One sentence for a screen reader: the card text is hidden behind this label, so it carries the details too.
+  const label = [job.title, t('feed.where', { phase: job.phase, lane: job.lane }), urgent ? t('feed.urgent') : t('feed.open'), when.text, timeAgo(job.postedAt, now)]
+    .filter(Boolean)
+    .join('. ');
 
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={job.title} onPress={onPress} style={styles.card}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => onPress(job.id)} style={styles.card}>
       <View style={styles.head}>
         <View style={styles.iconTile}>
           <Icon size={22} color={colors.green} />
@@ -73,7 +80,7 @@ export function FeedJobCard({ job, onPress, now }: { job: FeedJob; onPress: () =
           <View style={styles.photos}>
             {job.photos.map((uri, index) => (
               <Image
-                key={uri}
+                key={stableCacheKey(uri)}
                 source={stableSource(uri)}
                 contentFit="cover"
                 cachePolicy="memory-disk"
@@ -96,7 +103,7 @@ export function FeedJobCard({ job, onPress, now }: { job: FeedJob; onPress: () =
       </View>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 20, padding: 14, gap: 10 },

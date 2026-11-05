@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { stableSource } from '@/lib/image';
@@ -52,6 +52,22 @@ export function ProfilePhoto({ size = 44 }: { size?: number }) {
   // from the shared cache, so a screen that opens later draws the photo at once instead of flashing the initials.
   const [resolved, setResolved] = useState<{ path: string; url: string | null } | null>(() => (path && cachedUrl(path) ? { path, url: cachedUrl(path) } : null));
   const [failed, setFailed] = useState<string | null>(null);
+  const retried = useRef<string | null>(null);
+
+  // A link can expire while the app stays open. Sign once more before giving up and showing the initials.
+  const onError = () => {
+    if (!path) return;
+    if (retried.current === path) {
+      setFailed(path);
+      return;
+    }
+    retried.current = path;
+    cache.delete(path);
+    void signedUrl(path).then((next) => {
+      if (next) setResolved({ path, url: next });
+      else setFailed(path);
+    });
+  };
 
   useEffect(() => {
     // Nothing to do without a picture, or when this file's link is already in hand (from the cache on first render).
@@ -83,7 +99,10 @@ export function ProfilePhoto({ size = 44 }: { size?: number }) {
           transition={120}
           recyclingKey={path ?? undefined}
           accessibilityLabel={profile?.full_name ?? undefined}
-          onError={() => setFailed(path)}
+          onLoad={() => {
+            retried.current = null;
+          }}
+          onError={onError}
         />
       ) : null}
     </View>

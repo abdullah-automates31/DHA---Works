@@ -27,7 +27,10 @@ test('each worker-facing type has its own words', () => {
   assert.equal(describe(n({ type: 'quote_not_selected' }), now).opensJob, false);
   assert.equal(title('job_expired'), 'Job expired');
   assert.equal(title('cash_collected'), 'Job closed');
-  assert.equal(title('cash_disputed'), 'Cash amounts differ');
+  // A price difference never disputes a job (Shariq, 27 Oct): an old cash_disputed row must not claim a dispute.
+  const legacy = describe(n({ type: 'cash_disputed' }), now);
+  assert.equal(legacy.title, 'Cash update');
+  assert.doesNotMatch(`${legacy.title} ${legacy.body}`, /differ|match|dispute|DHA staff/i);
   assert.equal(title('job_stuck'), 'Job needs an update');
   assert.equal(title('cancellation_requested'), 'Cancellation requested');
   assert.match(describe(n({ type: 'quote_not_selected' }), now).body, /The customer rejected your quote for Bathroom flush tank leak\. Find more jobs\./);

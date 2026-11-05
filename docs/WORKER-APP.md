@@ -1,6 +1,6 @@
 # Worker app (apps/worker): build record
 
-Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the local Supabase stack; hosted DEV has all 27 migrations (0001 to 0029), so the app also works against DEV. W09 (Direct requests) is out of the MVP. W01 uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. Committed and pushed to `dev` up to `1ea890b`, which includes the 5 Nov performance work (skeleton loaders, image caching and compression, paged lists, one-trip reads; see [PERFORMANCE.md](PERFORMANCE.md)). The 3 Nov screens (quote toggle, Complete Job bill, Rejected card, Introduction, status timeline) and the 5 Nov performance changes (skeletons, Show more, voice at 16 kHz mono, bill photo at 1280 px, profile picture) have unit and database tests but are **not yet tried on a real phone**. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
+Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the local Supabase stack; hosted DEV has migrations 0001 to 0029 (28 exist; 0030 is local only), so the app also works against DEV. W09 (Direct requests) is out of the MVP. W01 uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. Committed and pushed to `dev` up to `1ea890b`, which includes the 5 Nov performance work (skeleton loaders, image caching and compression, paged lists, one-trip reads; see [PERFORMANCE.md](PERFORMANCE.md)). The 3 Nov screens (quote toggle, Complete Job bill, Rejected card, Introduction, status timeline) and the 5 Nov performance changes (skeletons, Show more, voice at 16 kHz mono, bill photo at 1280 px, profile picture) have unit and database tests but are **not yet tried on a real phone**. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack and layout
 
@@ -78,8 +78,9 @@ Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built
 | 20261105000027 | performance: `worker_feed.thumb_paths`, `worker_jobs.cash_recorded`, faster `worker_jobs`, `notifications_unread_idx` |
 | 20261105000028 | performance: query indexes (`worker_categories`, report children, `reports.against_id`) |
 | 20261105000029 | performance: feed matching rules as plain SQL so indexes are used |
+| 20261105000030 | audit fix: filed material bills cannot be deleted; `complete_job` checks the bill file exists (local only) |
 
-Hosted DEV is at 0029 (0016, 0017 and 0020 pushed on 31 Oct; 0021 to 0026 on 3 Nov; 0027 to 0029 on 5 Nov). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
+Hosted DEV is at 0029, 0030 is local only (0016, 0017 and 0020 pushed on 31 Oct; 0021 to 0026 on 3 Nov; 0027 to 0029 on 5 Nov). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
 
 ## Run it locally
 

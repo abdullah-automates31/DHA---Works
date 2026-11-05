@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,7 +31,22 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { state } = useMyProfile();
   const { data, refresh } = useHome();
-  const now = useMemo(() => new Date(), []);
+  // The date heading is renewed each time Home comes back to the front, so it never shows yesterday after midnight.
+  const [now, setNow] = useState(() => new Date());
+  useFocusEffect(
+    useCallback(() => {
+      setNow(new Date());
+    }, []),
+  );
+  const [pulling, setPulling] = useState(false);
+  const pull = useCallback(async () => {
+    setPulling(true);
+    try {
+      await refresh();
+    } finally {
+      setPulling(false);
+    }
+  }, [refresh]);
   const profile = state.status === 'ready' ? state.profile : null;
   const name = firstName(profile?.full_name);
 
@@ -58,7 +73,7 @@ export default function HomeScreen() {
 
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => void refresh()} tintColor={colors.green} />}
+        refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => void pull()} tintColor={colors.green} />}
       >
         {data.status === 'loading' ? (
           <SkeletonGroup style={{ gap: 12 }}>
@@ -72,7 +87,7 @@ export default function HomeScreen() {
           <>
             {data.newJobs > 0 ? (
               <Pressable accessibilityRole="button" onPress={() => router.navigate('/open-jobs')} style={styles.banner}>
-                <Text style={styles.bannerCount}>{data.newJobs}</Text>
+                <Text style={styles.bannerCount}>{data.newJobsMore ? `${data.newJobs}+` : data.newJobs}</Text>
                 <Text style={styles.bannerText}>{newJobsText(data.newJobs).replace(/^\d+ /, '')}</Text>
                 <View style={styles.bannerLink}>
                   <Text style={styles.bannerLinkText}>{t('home.seeJobs')}</Text>
@@ -83,7 +98,7 @@ export default function HomeScreen() {
 
             <View style={styles.headingRow}>
               <Text style={styles.heading}>{formatTodayHeading(now)}</Text>
-              <Pressable accessibilityRole="button" onPress={() => router.navigate('/my-jobs')} hitSlop={8}>
+              <Pressable accessibilityRole="button" onPress={() => router.navigate('/my-jobs')} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}>
                 <Text style={styles.allJobs}>{t('home.allJobs')}</Text>
               </Pressable>
             </View>
@@ -105,7 +120,7 @@ export default function HomeScreen() {
 function JobCard({ job, tint, onPress }: { job: TodayJob; tint: 'y' | 'b'; onPress: () => void }) {
   const chip = job.status === 'in_progress' ? colors.chip.inProgress : colors.chip.scheduled;
   const label = job.status === 'in_progress' ? t('home.inProgress') : t('home.scheduled');
-  const place = `Phase ${job.phase}, ${job.lane}`;
+  const place = t('home.where', { phase: job.phase, lane: job.lane });
   const who = job.residentName ? `${shortName(job.residentName)} · ${place}` : place;
   const avatar = tint === 'y' ? { bg: '#F6E7B4', fg: '#5C4300' } : { bg: '#D6E6F7', fg: '#17406B' };
   return (

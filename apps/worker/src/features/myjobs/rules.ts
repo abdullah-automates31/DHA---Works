@@ -1,6 +1,7 @@
 // Pure rules for W11 My jobs and W12 Job status (unit tested with node --test). Everything here is derived from
 // what the database already returns for the worker (worker_jobs plus the worker's own interest, quote and cash row).
-// Times are the phone's local time.
+// Times are the phone's local time. All sentences come from src/i18n/en.ts.
+import { t } from '../../i18n/index.ts';
 
 export type MyJob = {
   id: string;
@@ -131,27 +132,27 @@ const MINT = { bg: '#DCEBE2', fg: '#0A3D28' };
 export function chipFor(kind: JobKind): ChipStyle {
   switch (kind) {
     case 'interested':
-      return { label: 'Interested', ...MINT };
+      return { label: t('myjobs.chip.interested'), ...MINT };
     case 'quoted':
-      return { label: 'Quoted', bg: '#F6E7B4', fg: '#5C4300' };
+      return { label: t('myjobs.chip.quoted'), bg: '#F6E7B4', fg: '#5C4300' };
     case 'scheduled':
-      return { label: 'Scheduled', bg: '#D6E6F7', fg: '#17406B' };
+      return { label: t('myjobs.chip.scheduled'), bg: '#D6E6F7', fg: '#17406B' };
     case 'in_progress':
-      return { label: 'In progress', bg: '#E5DDF5', fg: '#44297A' };
+      return { label: t('myjobs.chip.inProgress'), bg: '#E5DDF5', fg: '#44297A' };
     case 'completed':
-      return { label: 'Completed', bg: '#C9E8D5', fg: '#0A5530' };
+      return { label: t('myjobs.chip.completed'), bg: '#C9E8D5', fg: '#0A5530' };
     case 'cash_collected':
-      return { label: 'Cash collected', bg: '#C9E8D5', fg: '#0A5530' };
+      return { label: t('myjobs.chip.cashCollected'), bg: '#C9E8D5', fg: '#0A5530' };
     case 'reviewed':
-      return { label: 'Reviewed', bg: '#C9E8D5', fg: '#0A5530' };
+      return { label: t('myjobs.chip.reviewed'), bg: '#C9E8D5', fg: '#0A5530' };
     case 'disputed':
-      return { label: 'Under review', bg: '#FADCDA', fg: '#99191A' };
+      return { label: t('myjobs.chip.underReview'), bg: '#FADCDA', fg: '#99191A' };
     case 'cancelled':
-      return { label: 'Cancelled', bg: '#FADCDA', fg: '#99191A' };
+      return { label: t('myjobs.chip.cancelled'), bg: '#FADCDA', fg: '#99191A' };
     case 'expired':
-      return { label: 'Expired', bg: '#FADCDA', fg: '#99191A' };
+      return { label: t('myjobs.chip.expired'), bg: '#FADCDA', fg: '#99191A' };
     case 'not_chosen':
-      return { label: 'Rejected', bg: '#E6EBE8', fg: '#4F6A5C' };
+      return { label: t('myjobs.chip.rejected'), bg: '#E6EBE8', fg: '#4F6A5C' };
   }
 }
 
@@ -283,7 +284,15 @@ export type TimelineInput = {
   cashAmount: number | null;
 };
 
-const BASE = ['Interested', 'Quoted', 'Scheduled', 'In progress', 'Completed', 'Cash collected', 'Review'] as const;
+const baseLabels = (): string[] => [
+  t('myjobs.chip.interested'),
+  t('myjobs.chip.quoted'),
+  t('myjobs.chip.scheduled'),
+  t('myjobs.chip.inProgress'),
+  t('myjobs.chip.completed'),
+  t('myjobs.chip.cashCollected'),
+  t('myjobs.step.review'),
+];
 // The step a job is on. A step that has been reached and finished is done (green tick): once the worker completes the job,
 // "Completed" is done and "Cash collected" is the one waiting; once the cash is in, "Cash collected" is done too.
 const AT: Partial<Record<JobKind, number>> = { interested: 0, quoted: 1, scheduled: 2, in_progress: 3, completed: 5, cash_collected: 6, reviewed: 7 };
@@ -304,30 +313,30 @@ function reached(i: TimelineInput): number {
 export function timeline(i: TimelineInput): TimelineStep[] {
   const subs: Record<number, string> = {
     0: stamp(i.interestAt),
-    1: i.quoteTotal !== null && i.quoteAt ? `${rupees(i.quoteTotal)} sent at ${clockText(i.quoteAt)}` : '',
+    1: i.quoteTotal !== null && i.quoteAt ? t('myjobs.sub.quoteSent', { amount: rupees(i.quoteTotal), time: clockText(i.quoteAt) }) : '',
     2: i.scheduledStart ? `${stamp(i.scheduledStart).split(',')[0]}, ${windowText(i.scheduledStart, i.scheduledEnd)}` : '',
-    3: i.startedAt ? `Started at ${clockText(i.startedAt)}` : '',
-    4: i.completedAt ? `Finished at ${clockText(i.completedAt)}` : '',
-    5: i.cashAmount !== null ? `${rupees(i.cashAmount)} in cash` : '',
-    6: 'Customer rated the job',
+    3: i.startedAt ? t('myjobs.sub.started', { time: clockText(i.startedAt) }) : '',
+    4: i.completedAt ? t('myjobs.sub.finished', { time: clockText(i.completedAt) }) : '',
+    5: i.cashAmount !== null ? t('myjobs.sub.cashIn', { amount: rupees(i.cashAmount) }) : '',
+    6: t('myjobs.sub.rated'),
   };
 
   const stops: Partial<Record<JobKind, { label: string; sub: string }>> = {
-    disputed: { label: 'Problem reported', sub: 'DHA staff are reviewing it' },
-    cancelled: { label: 'Cancelled', sub: 'This job was cancelled' },
-    expired: { label: 'Expired', sub: 'Nobody was chosen within 24 hours' },
-    not_chosen: { label: 'Rejected', sub: 'The customer rejected your quote' },
+    disputed: { label: t('myjobs.stop.problemLabel'), sub: t('myjobs.stop.problemSub') },
+    cancelled: { label: t('myjobs.chip.cancelled'), sub: t('myjobs.stop.cancelledSub') },
+    expired: { label: t('myjobs.chip.expired'), sub: t('myjobs.stop.expiredSub') },
+    not_chosen: { label: t('myjobs.chip.rejected'), sub: t('myjobs.stop.rejectedSub') },
   };
   const stop = stops[i.kind];
   if (stop) {
     const upTo = i.kind === 'disputed' ? 4 : reached(i);
-    const steps: TimelineStep[] = BASE.slice(0, upTo + 1).map((label, n) => ({ label, sub: subs[n] ?? '', state: 'done' as const }));
+    const steps: TimelineStep[] = baseLabels().slice(0, upTo + 1).map((label, n) => ({ label, sub: subs[n] ?? '', state: 'done' as const }));
     steps.push({ label: stop.label, sub: stop.sub, state: 'stop' });
     return steps;
   }
 
   const at = AT[i.kind] ?? 0;
-  return BASE.map((label, n) => {
+  return baseLabels().map((label, n) => {
     // The customer's rating is not something the worker acts on: until it arrives the Review step is simply still to come.
     const state = n < at ? 'done' : n === at && i.kind !== 'cash_collected' ? 'current' : 'todo';
     // The Review step only says anything once the job is closed; future steps show no detail.
@@ -341,39 +350,37 @@ export type Note = { headline: string; body: string };
 
 /** Wording follows the design, with the decided corrections: no contact before acceptance, no re-quote after a rejection. */
 export function noteFor(job: MyJob, kind: JobKind, now: Date = new Date()): Note {
-  const who = job.residentName ? shortName(job.residentName) : 'the customer';
+  const who = job.residentName ? shortName(job.residentName) : t('myjobs.note.theCustomer');
   switch (kind) {
     case 'interested':
-      return { headline: 'Send your quote', body: 'Review the job, then send one clear quote. The customer’s contact details are shared only after they accept it.' };
+      return { headline: t('myjobs.note.interestedHead'), body: t('myjobs.note.interestedBody') };
     case 'quoted':
-      return { headline: 'Waiting for the customer to accept', body: 'Your quote cannot be edited. You will be told here if it is chosen or not.' };
+      return { headline: t('myjobs.note.quotedHead'), body: t('myjobs.note.quotedBody') };
     case 'scheduled': {
       const day = dayWord(job.scheduledStart, now);
-      const when = day ? `Visit ${day}, ${windowText(job.scheduledStart, job.scheduledEnd)}` : 'Visit time to be confirmed';
-      const place = [`Phase ${job.phase}`, job.lane, job.plotNo ? `House ${job.plotNo}` : '', job.floor ? `Floor ${job.floor}` : ''].filter(Boolean).join(', ');
+      const when = day ? t('myjobs.note.visit', { day, window: windowText(job.scheduledStart, job.scheduledEnd) }) : t('myjobs.note.visitTbc');
+      const place = [t('myjobs.note.placePhase', { phase: job.phase }), job.lane, job.plotNo ? t('myjobs.note.placeHouse', { plot: job.plotNo }) : '', job.floor ? t('myjobs.note.placeFloor', { floor: job.floor }) : ''].filter(Boolean).join(', ');
       // The customer chose the time; the worker cannot change it. A delay is handled by phone, not in the app.
-      const guide = day
-        ? 'The customer chose this time. Running late? Call the customer and tell them when you will arrive.'
-        : 'The customer has not fixed a time. Call the customer to agree when you will come.';
-      return { headline: when, body: `${place}. ${guide} Tap Start job when you arrive.` };
+      const guide = day ? t('myjobs.note.guideFixed') : t('myjobs.note.guideOpen');
+      return { headline: when, body: t('myjobs.note.scheduledBody', { place, guide }) };
     }
     case 'in_progress':
-      return { headline: 'Work in progress', body: 'Tap Mark complete when the work is finished and the area is clean.' };
+      return { headline: t('myjobs.note.inProgressHead'), body: t('myjobs.note.inProgressBody') };
     case 'completed':
-      if (job.cashRecorded) return { headline: 'Cash recorded', body: `Waiting for ${who} to confirm the amount. The job closes when they do.` };
-      return { headline: 'Record the cash you collected', body: `Enter the amount ${who} paid you in cash. This closes the job.` };
+      if (job.cashRecorded) return { headline: t('myjobs.note.cashRecordedHead'), body: t('myjobs.note.cashRecordedBody', { who }) };
+      return { headline: t('myjobs.note.cashDueHead'), body: t('myjobs.note.cashDueBody', { who }) };
     case 'cash_collected':
-      return { headline: 'Waiting for the rating', body: `${capitalize(who)} will rate the job. You can report a problem for up to 7 days.` };
+      return { headline: t('myjobs.note.ratingHead'), body: t('myjobs.note.ratingBody', { who: capitalize(who) }) };
     case 'reviewed':
-      return { headline: 'Job closed', body: 'Your overall rating on Profile is updated. You do not see who rated what.' };
+      return { headline: t('myjobs.note.reviewedHead'), body: t('myjobs.note.reviewedBody') };
     case 'disputed':
-      return { headline: 'DHA staff are reviewing a problem', body: 'Do not discuss payment with the customer. DHA will contact you.' };
+      return { headline: t('myjobs.note.disputedHead'), body: t('myjobs.note.disputedBody') };
     case 'cancelled':
-      return { headline: 'This job was cancelled', body: 'Nothing is owed. Find another job in Open jobs.' };
+      return { headline: t('myjobs.note.cancelledHead'), body: t('myjobs.note.cancelledBody') };
     case 'expired':
-      return { headline: 'This job expired', body: 'Nobody was chosen within 24 hours. Find another job in Open jobs.' };
+      return { headline: t('myjobs.note.expiredHead'), body: t('myjobs.note.expiredBody') };
     case 'not_chosen':
-      return { headline: 'Your quote was rejected', body: 'The customer rejected your quote. Find more jobs in Open jobs.' };
+      return { headline: t('myjobs.note.rejectedHead'), body: t('myjobs.note.rejectedBody') };
   }
 }
 

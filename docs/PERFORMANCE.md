@@ -34,6 +34,33 @@ Cause of the feed cost: the matching rules were `SECURITY DEFINER` functions, wh
 - **Connection pool:** no code in this project opens a Postgres connection. The app talks to PostgREST over HTTPS and `send-push` uses supabase-js. Hosted DEV allows 60 connections and uses 7, nearly all Supabase's own services; PostgREST holds one. A new 10 to 20 connection pool would use up to a third of the whole budget with no caller. **Rule for later:** if the admin portal (Next.js on Vercel) ever needs a direct connection, use the Supavisor transaction pooler and a pool of 1 per serverless function, never a large pool per instance. Prefer supabase-js.
 - **SELECT *:** none in the app. The `select * into v_job ... for update` lines in the RPC functions are single-row primary-key reads that lock and validate a row; naming about 30 columns in each would risk breaking the job state machine for no measurable gain.
 
+## Audit of the worker app and its fixes (5 Nov, second pass)
+
+A report-only sub-agent audit (static review plus the local stack) found no critical or high problem and confirmed the work above. Fixed afterwards, each with a test or a measurement:
+
+| Finding | Fix | Check |
+| --- | --- | --- |
+| M1 a failed profile refresh replaced the whole app with an error screen | only the first load may set the error state (`lib/profile.tsx`) | typecheck, lint |
+| M2 every screen held its own Realtime channel and marking read reloaded all of them | listen to INSERT only, and only while the screen is in front (`useLiveRefresh`) | typecheck, lint; needs a phone check |
+| M3 a failed quote or cash read made the status screen guess (skip the bill prompt) | the screen shows the error state instead (`useJobStatus`) | typecheck |
+| L1 the bill file was deleted after an unclear failure | deleted only when the database definitely refused the job (`actions.ts`) | unit test for network and unknown errors |
+| L2 a worker could delete their own filed bill | migration 0030: delete blocked by `is_filed_bill`, `complete_job` checks the file exists, two partial indexes | 11 new pgTAP assertions; **negative control**: with the old rule put back, 2 of them fail |
+| L3 about 40 sentences bypassed `en.ts` | moved to `en.ts` (chips, timeline, notes, notifications, feed and profile helpers) | all existing text tests pass unchanged (same wording); `lib/textRules.test.ts` fails if a sentence is planted in a rules file |
+| L4 "Cash amounts differ" contradicted Shariq's 27 Oct decision | checked the database: no function sends `cash_disputed` any more; an old row now reads "Cash update" | unit test |
+| L5 lists redrew every card | `FeedJobCard` and `MyJobCard` are memoised, handlers take the job id and are stable, `now` is stable between renders | typecheck, lint; needs a phone check for jank |
+| L7 photos remounted on reload | the React key is the stable cache key | |
+| L8 profile photo never retried | re-signs once on error | |
+| L9 Home date heading went stale | renewed on each focus | |
+| L10 accessibility | cards read a full sentence (title, place, urgency, time, price); touch targets 44 dp (Call, Withdraw, Mark all read, remove item, add item, All jobs); the pull spinner now shows on Home and Notifications | |
+| L11 Home counted every matching job | reads at most 100 ids and shows "99+" (`cappedCount`) | 8,000 matching jobs: 13.0 ms and 16,689 buffers before, 1.6 ms and 707 after |
+| L12 `usePaged` | a thrown request can no longer leave "Show more" or the pull spinner stuck; a reload that finishes after "Show more" no longer shrinks the list | typecheck, lint |
+
+Looked at and left alone on purpose:
+- **Refetch on every tab focus (L6).** It is what lets a worker see their own action (started a job, sent a quote) the moment they go back. A time-based skip would show stale rows. The cost is bounded by the page size (20 to 30 rows per page).
+- **Feed page query (L11).** About 29 ms with 9,000 matching rows (a sort over the matching rows). Fine while open jobs expire after 24 hours; revisit if one trade and phase ever holds thousands.
+- **Date and month names and AM/PM** stay in the pure helpers: they are locale formatting, to be replaced with `Intl` when Urdu is written.
+- **Splash waits for five font weights** and **`worker-media` readable by every approved worker** (not used by the app; Shariq to say if residents need it): recorded in `docs/OPEN-QUESTIONS.md`.
+
 ## Not done, and why
 
 - **Real thumbnails.** The feed still downloads the full photo to show a 34 px thumbnail. Supabase image transformation needs a paid plan, and the job photos are uploaded by the customer app (Shariq's). **Message for Shariq:** the customer app should compress with the same limits (photos 1280 px at 0.6, voice 16 kHz mono 32 kbps) and upload a second 320 px copy for the feed.

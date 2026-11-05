@@ -1,17 +1,18 @@
 // Display helpers for W16 Profile (unit tested). The numbers come from the database (get_my_earnings and the
 // worker's own rows); nothing here computes earnings or ratings.
+import { t } from '../../i18n/index.ts';
 import { joinList } from '../feed/format.ts';
 
 /** "Phase 5, 6 and 7", or "No areas yet". */
 export function areaSummary(phases: readonly number[]): string {
   const sorted = [...phases].sort((a, b) => a - b);
-  if (sorted.length === 0) return 'No areas yet';
-  return `Phase ${joinList(sorted.map(String))}`;
+  if (sorted.length === 0) return t('profile.noAreas');
+  return t('feed.phasesLabel', { phases: joinList(sorted.map(String)) });
 }
 
 /** "Plumber", "Plumber and Electrician", or "No trade yet". */
 export function tradeSummary(names: readonly string[]): string {
-  return names.length === 0 ? 'No trade yet' : joinList(names);
+  return names.length === 0 ? t('profile.noTrade') : joinList(names);
 }
 
 /** "4.8" for a rated worker; a dash until the first rating (a rating of 0.0 would look like a bad rating). */

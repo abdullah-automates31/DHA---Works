@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,7 +24,12 @@ export default function OpenJobsScreen() {
   const { state } = useMyProfile();
   const areas = state.status === 'ready' ? state.areas : [];
   const { data, refresh, refreshing, loadMore, loadingMore, moreFailed } = useFeed(areas.join(','));
-  const now = new Date();
+  // `now` and the press handler stay the same between renders, so cards that did not change are not redrawn when a
+  // page loads or the pull spinner flips. `now` moves on when the list itself is reloaded.
+  // `data` is only the trigger (a new load means a new "now"), it is not read inside
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now = useMemo(() => new Date(), [data]);
+  const openJob = useCallback((id: string) => router.push(jobHref(id)), [router]);
 
   const subtitle = data.status === 'ready' ? feedSubtitle(data.trades, areas) : '';
 
@@ -67,7 +73,7 @@ export default function OpenJobsScreen() {
 
         {data.status === 'ready'
           ? data.jobs.map((job) => (
-              <FeedJobCard key={job.id} job={job} now={now} onPress={() => router.push(jobHref(job.id))} />
+              <FeedJobCard key={job.id} job={job} now={now} onPress={openJob} />
             ))
           : null}
 

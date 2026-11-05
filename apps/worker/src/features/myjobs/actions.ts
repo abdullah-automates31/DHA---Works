@@ -71,6 +71,9 @@ export function startJob(client: ActionClient, jobId: string): Promise<ActionRes
 
 export type Bill = { bytes: ArrayBuffer; mime: string };
 
+// Answers that prove the database did NOT complete the job, so the uploaded bill can safely be removed.
+const DEFINITE_REFUSALS: ActionErrorKey[] = ['myjobs.errors.cannotComplete', 'myjobs.errors.billRequired', 'myjobs.errors.billInvalid'];
+
 /**
  * Marks the job complete. When the accepted quote had materials, the bill photo is required: it is checked and
  * uploaded first, and removed again if the job could not be completed (so nothing is left behind).
@@ -88,8 +91,12 @@ export function completeJob(client: ActionClient, input: { jobId: string; materi
     }
     const { error } = await client.completeJob(input.jobId, path);
     if (error) {
-      if (path) await client.deleteBill(path).then(undefined, () => undefined);
-      return { ok: false, key: actionErrorKey(error) };
+      const key = actionErrorKey(error);
+      // Remove the upload only when the database definitely refused the job. After a network or unknown error the
+      // job may really have been completed, and then the bill is the resident's evidence: keep it (a retry reuses
+      // a new upload, an orphan file costs nothing).
+      if (path && DEFINITE_REFUSALS.includes(key)) await client.deleteBill(path).then(undefined, () => undefined);
+      return { ok: false, key };
     }
     return { ok: true };
   });

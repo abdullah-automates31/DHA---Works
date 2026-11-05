@@ -37,6 +37,9 @@ async function fetchStatus(id: string): Promise<JobStatusState> {
     supabase.from('cash_records').select('worker_amount, agreed_amount').eq('job_id', id).maybeSingle(),
     supabase.from('cancellation_requests').select('id, requester_role').eq('job_id', id).eq('status', 'pending').maybeSingle(),
   ]);
+  // Do not guess when an extra read failed: without the quote the screen would skip the bill prompt, and without
+  // the cash row it would offer the write-once form again. A reload that fails keeps the screen already shown.
+  if (interest.error || quote.error || cash.error || cancel.error) return { status: 'error' };
   if (cash.data?.worker_amount !== null && cash.data?.worker_amount !== undefined) job.cashRecorded = true;
   return {
     status: 'ready',

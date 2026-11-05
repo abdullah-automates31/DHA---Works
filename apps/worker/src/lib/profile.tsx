@@ -64,7 +64,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   }, [userId]);
 
   const refresh = useCallback(async () => {
-    if (userId) setState(await fetchProfile(userId));
+    if (!userId) return;
+    const next = await fetchProfile(userId);
+    // Only the first load may show the full-screen error. If a later refresh fails (a network blip after saving
+    // areas or a document), keep what is already on screen instead of replacing the whole app with an error.
+    setState((current) => (next.status === 'error' && current.status === 'ready' ? current : next));
   }, [userId]);
 
   const value = useMemo(() => ({ state, refresh }), [state, refresh]);

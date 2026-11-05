@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 
 import { useLiveRefresh } from '@/features/live/useLiveRefresh';
 
-import { isSameDay } from './format';
+import { HOME_COUNT_CAP, cappedCount, isSameDay } from './format';
 import { supabase } from '@/lib/supabase';
 
 export type TodayJob = {
@@ -21,12 +21,13 @@ export type TodayJob = {
 export type HomeData =
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'ready'; newJobs: number; today: TodayJob[]; unread: boolean };
+  | { status: 'ready'; newJobs: number; newJobsMore: boolean; today: TodayJob[]; unread: boolean };
 
 async function fetchHome(now: Date): Promise<HomeData> {
   // All three read the caller's own view of the data (security-definer views and own-row policies).
   const [feed, jobs, unread] = await Promise.all([
-    supabase.from('worker_feed').select('id', { count: 'exact', head: true }),
+    // A banner only needs a rough number, so read a few ids instead of counting the whole feed (cappedCount).
+    supabase.from('worker_feed').select('id').limit(HOME_COUNT_CAP + 1),
     supabase
       .from('worker_jobs')
       .select('id, title, status, phase, lane, scheduled_start, scheduled_end, resident_name, my_quote_total, is_mine')
@@ -50,7 +51,8 @@ async function fetchHome(now: Date): Promise<HomeData> {
       residentName: j.resident_name,
       total: j.my_quote_total,
     }));
-  return { status: 'ready', newJobs: feed.count ?? 0, today, unread: !unread.error && (unread.count ?? 0) > 0 };
+  const newJobs = cappedCount(feed.data?.length ?? 0);
+  return { status: 'ready', newJobs: newJobs.count, newJobsMore: newJobs.more, today, unread: !unread.error && (unread.count ?? 0) > 0 };
 }
 
 export function useHome(): { data: HomeData; refresh: () => Promise<void> } {

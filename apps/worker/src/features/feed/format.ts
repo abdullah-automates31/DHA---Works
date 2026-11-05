@@ -1,4 +1,6 @@
 // Display helpers for W07 Open jobs (unit tested with node --test). Times are the phone's local time.
+import { t } from '../../i18n/index.ts';
+
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -8,26 +10,25 @@ export function timeAgo(iso: string | null | undefined, now: Date = new Date()):
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return '';
   const minutes = Math.max(0, Math.floor((now.getTime() - then) / 60_000));
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 1) return t('feed.justNow');
+  if (minutes < 60) return t('feed.minAgo', { n: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return hours === 1 ? '1 hr ago' : `${hours} hrs ago`;
+  if (hours < 24) return hours === 1 ? t('feed.hrAgo') : t('feed.hrsAgo', { n: hours });
   const days = Math.floor(hours / 24);
-  return days === 1 ? '1 day ago' : `${days} days ago`;
+  return days === 1 ? t('feed.dayAgo') : t('feed.daysAgo', { n: days });
 }
 
 /** ["Plumbing"] -> "Plumbing"; two -> "A and B"; three -> "A, B and C". */
 export function joinList(items: readonly string[]): string {
   if (items.length <= 1) return items[0] ?? '';
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+  return t('feed.listAnd', { list: items.slice(0, -1).join(', '), last: items[items.length - 1] ?? '' });
 }
 
 /** "Plumbing jobs in Phase 5, 6 and 7" (the design's subtitle, built from the worker's own trades and phases). */
 export function feedSubtitle(trades: readonly string[], phases: readonly number[]): string {
   const sorted = [...phases].sort((a, b) => a - b);
-  const where = sorted.length === 0 ? '' : ` in Phase ${joinList(sorted.map(String))}`;
-  const what = trades.length === 0 ? 'Jobs' : `${joinList(trades)} jobs`;
-  return `${what}${where}`;
+  const what = trades.length === 0 ? t('feed.subtitleJobs') : t('feed.subtitleTrades', { trades: joinList(trades) });
+  return sorted.length === 0 ? what : t('feed.subtitleWhere', { what, phases: joinList(sorted.map(String)) });
 }
 
 function clock(hours: number, minutes: number): { text: string; period: 'AM' | 'PM' } {
@@ -77,7 +78,7 @@ export function whenPill(
       posted.getFullYear() === now.getFullYear() &&
       posted.getMonth() === now.getMonth() &&
       posted.getDate() === now.getDate();
-    return { urgent: true, text: today ? 'As soon as possible · today' : 'As soon as possible' };
+    return { urgent: true, text: today ? t('feed.asapToday') : t('feed.asap') };
   }
   const parts = [shortDate(job.preferredDate), timeRange(job.windowFrom, job.windowTo)].filter(Boolean);
   return { urgent: false, text: parts.join(' · ') };

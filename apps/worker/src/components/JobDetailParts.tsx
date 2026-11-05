@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { formatDuration } from '@/features/work/rules';
 import { t } from '@/i18n';
-import { stableSource } from '@/lib/image';
+import { stableCacheKey, stableSource } from '@/lib/image';
 import { colors, fontFamily } from '@/theme';
 
 import { PauseIcon, PlayIcon, UserIcon, UsersIcon } from './icons';
@@ -21,7 +21,7 @@ export function PhotoRow({ photos }: { photos: string[] }) {
   const scroll = photos.length > 3;
   const tiles = photos.map((uri, index) => (
     <Image
-      key={uri}
+      key={stableCacheKey(uri)}
       source={stableSource(uri)}
       contentFit="cover"
       cachePolicy="memory-disk"

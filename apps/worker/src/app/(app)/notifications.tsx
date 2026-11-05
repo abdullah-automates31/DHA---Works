@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,6 +21,15 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, reload, markRead, loadMore, loadingMore, moreFailed } = useNotifications();
+  const [pulling, setPulling] = useState(false);
+  const pull = useCallback(async () => {
+    setPulling(true);
+    try {
+      await reload();
+    } finally {
+      setPulling(false);
+    }
+  }, [reload]);
   const now = new Date();
   const notices = data.status === 'ready' ? data.notices : [];
   const unread = unreadIds(notices);
@@ -63,7 +73,7 @@ export default function NotificationsScreen() {
           onScroll={(event) => {
             if (nearEnd(event.nativeEvent)) void loadMore();
           }}
-          refreshControl={<RefreshControl refreshing={false} onRefresh={() => void reload()} tintColor={colors.green} />}>
+          refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => void pull()} tintColor={colors.green} />}>
           {groups.length === 0 ? (
             <View style={styles.empty}>
               <BellIcon size={28} color={colors.green} />
@@ -125,7 +135,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 12 },
   back: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: 20, color: colors.ink },
-  markAll: { paddingVertical: 10, paddingHorizontal: 4 },
+  markAll: { minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' },
   markAllText: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.green },
   content: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 32, gap: 16 },
   groupLabel: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.muted },

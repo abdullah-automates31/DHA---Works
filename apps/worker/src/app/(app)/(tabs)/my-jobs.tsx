@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,7 +27,13 @@ export default function MyJobsScreen() {
   const insets = useSafeAreaInsets();
   const { data, refresh, refreshing, loadMore, loadingMore, moreFailed } = useMyJobs();
   const [tab, setTab] = useState<MyJobsTab>('active');
-  const now = new Date();
+  // Stable between renders so the memoised cards are not redrawn when a page loads or the tab changes back.
+  // `data` is only the trigger (a new load means a new "now"), it is not read inside
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now = useMemo(() => new Date(), [data]);
+  const openJob = useCallback((id: string) => router.push(statusHref(id)), [router]);
+  const quoteJob = useCallback((id: string) => router.push(quoteHref(id)), [router]);
+  const cashJob = useCallback((id: string) => router.push(cashHref(id)), [router]);
 
   const jobs = data.status === 'ready' ? data.jobs.filter((j) => inTab(jobKind(j), tab)) : [];
 
@@ -82,22 +88,10 @@ export default function MyJobsScreen() {
           </View>
         ) : null}
 
-        {jobs.map((job, index) => {
-          // Every job the worker engaged with opens its status screen (W12): the timeline and the next action.
-          // A rejected quote is a plain record: the card cannot be opened (and shows no details).
-          const open = jobKind(job) === 'not_chosen' ? undefined : () => router.push(statusHref(job.id));
-          return (
-            <MyJobCard
-              key={job.id}
-              job={job}
-              index={index}
-              now={now}
-              onOpen={open}
-              onQuote={() => router.push(quoteHref(job.id))}
-              onCash={() => router.push(cashHref(job.id))}
-            />
-          );
-        })}
+        {/* Every job the worker engaged with opens its status screen (W12); a rejected quote is a plain record. */}
+        {jobs.map((job, index) => (
+          <MyJobCard key={job.id} job={job} index={index} now={now} onOpen={openJob} onQuote={quoteJob} onCash={cashJob} />
+        ))}
 
         {data.status === 'ready' ? (
           <LoadMoreFooter hasMore={data.hasMore} loading={loadingMore} failed={moreFailed} onLoad={() => void loadMore()} skeleton={<JobCardSkeleton />} />

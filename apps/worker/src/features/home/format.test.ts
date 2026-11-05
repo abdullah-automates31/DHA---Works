@@ -8,6 +8,8 @@ import {
   formatTodayHeading,
   initialsOf,
   isSameDay,
+  HOME_COUNT_CAP,
+  cappedCount,
   newJobsText,
   shortName,
   timeWindow,
@@ -63,4 +65,12 @@ test('new-jobs banner text', () => {
   assert.equal(newJobsText(3), '3 new jobs near you');
   assert.equal(newJobsText(1), '1 new job near you');
   assert.equal(newJobsText(0), '0 new jobs near you');
+});
+
+test('the Home banner counts up to the cap and then says "more"', () => {
+  assert.deepEqual(cappedCount(0), { count: 0, more: false });
+  assert.deepEqual(cappedCount(37), { count: 37, more: false });
+  assert.deepEqual(cappedCount(HOME_COUNT_CAP), { count: HOME_COUNT_CAP, more: false });
+  assert.deepEqual(cappedCount(HOME_COUNT_CAP + 1), { count: HOME_COUNT_CAP, more: true });
+  assert.deepEqual(cappedCount(5000), { count: HOME_COUNT_CAP, more: true });
 });

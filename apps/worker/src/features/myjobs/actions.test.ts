@@ -99,6 +99,15 @@ test('if the job cannot be completed the uploaded bill is removed again', async 
   assert.deepEqual(calls, ['upload:image/jpeg:jpg', 'delete:u/bill-1-aa.jpg']);
 });
 
+test('after a network or unknown error the uploaded bill is kept, because the job may have been completed', async () => {
+  for (const error of [{ name: 'TypeError', message: 'Network request failed' }, { message: 'weird' }]) {
+    const { client, calls } = fake({ completeJob: async () => ({ error }) });
+    const r = await completeJob(client, { jobId: 'j1', materials: 1, bill: { bytes: bytes(10), mime: 'image/jpeg' } });
+    assert.equal(r.ok, false);
+    assert.deepEqual(calls, ['upload:image/jpeg:jpg']);
+  }
+});
+
 test('a lost connection is a network message, not a crash', async () => {
   const down = fake({
     startJob: async () => {
