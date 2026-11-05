@@ -204,9 +204,13 @@ anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
-sign_in_sign_ups = 30
+# 10 (was 30): a person needs one or two; a bot trying many numbers from one address is cut off quickly.
+sign_in_sign_ups = 10
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
-token_verifications = 30
+# 10 (was 30): this is the brute-force limit on guessing a 6-digit code from one address (about 120 guesses an hour).
+# GoTrue cannot kill ONE code after N wrong tries; Twilio Verify does (5 tries, then the code is cancelled), see
+# docs/SECURITY.md section 3 and the [auth.sms.twilio_verify] block below.
+token_verifications = 10
 # Number of Web3 logins that can be made in a 5 minute interval per IP address.
 web3 = 30
 
@@ -271,8 +275,9 @@ enable_signup = true
 enable_confirmations = false
 # Template for sending OTP to users
 template = "Your code is {{ `{{ .Code }}` }}"
-# Controls the minimum amount of time that must pass before sending another sms otp.
-max_frequency = "5s"
+# Controls the minimum amount of time that must pass before sending another sms otp. 60 s (was 5 s) matches the app's
+# resend countdown, so a script cannot ask for a new code for the same number every few seconds.
+max_frequency = "60s"
 
 # Static test OTPs are NOT configured here: this file is what `supabase config push` sends to hosted projects.
 # The local-only numbers are added by scripts/local-supabase.mjs to a generated, git-ignored copy (.supabase-local/).

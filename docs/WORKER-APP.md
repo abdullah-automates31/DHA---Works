@@ -81,6 +81,7 @@ Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built
 | 20261105000030 | audit fix: filed material bills cannot be deleted; `complete_job` checks the bill file exists |
 | 20261105000031 | claim-and-lock: `accept_job` (price + lock in one transaction); also fixes the stale `cash_records` row left by Replace worker |
 | 20261106000032 | security hardening: upload gate and file caps, `worker-media` readable only by owner, staff and a resident with a quote from that worker, text and amount limits |
+| 20261106000033 | authentication hardening: strict JSON for references, contact phone = verified login phone (trigger), unique phone, race-safe `register_profile` |
 
 Hosted DEV is at 0030 (0016, 0017 and 0020 pushed on 31 Oct; 0021 to 0026 on 3 Nov; 0027 to 0030 on 5 Nov). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
 
