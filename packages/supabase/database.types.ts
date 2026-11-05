@@ -1884,6 +1884,16 @@ export type Database = {
       }
     }
     Functions: {
+      accept_job: {
+        Args: {
+          p_job_id: string
+          p_labour: number
+          p_materials?: number
+          p_materials_note?: string
+          p_note?: string
+        }
+        Returns: string
+      }
       accept_quote: { Args: { p_quote_id: string }; Returns: undefined }
       add_verification_document: {
         Args: {

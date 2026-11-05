@@ -1,6 +1,6 @@
 # Worker app (apps/worker): build record
 
-Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the local Supabase stack; hosted DEV has all 28 migrations (0001 to 0030), so the app also works against DEV. W09 (Direct requests) is out of the MVP. W01 uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. Committed and pushed to `dev` up to `1ea890b`, which includes the 5 Nov performance work (skeleton loaders, image caching and compression, paged lists, one-trip reads; see [PERFORMANCE.md](PERFORMANCE.md)). The 3 Nov screens (quote toggle, Complete Job bill, Rejected card, Introduction, status timeline) and the 5 Nov performance changes (skeletons, Show more, voice at 16 kHz mono, bill photo at 1280 px, profile picture) have unit and database tests but are **not yet tried on a real phone**. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
+Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the local Supabase stack; hosted DEV has migrations 0001 to 0030 and 0031 (claim-and-lock) once pushed, so the app also works against DEV. W09 (Direct requests) is out of the MVP. W01 uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. Committed and pushed to `dev` up to `1ea890b`, which includes the 5 Nov performance work (skeleton loaders, image caching and compression, paged lists, one-trip reads; see [PERFORMANCE.md](PERFORMANCE.md)). The 3 Nov screens (quote toggle, Complete Job bill, Rejected card, Introduction, status timeline) and the 5 Nov performance changes (skeletons, Show more, voice at 16 kHz mono, bill photo at 1280 px, profile picture) have unit and database tests but are **not yet tried on a real phone**. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack and layout
 
@@ -20,9 +20,9 @@ Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built
 | W05 Areas | `areas` | `set_my_areas` |
 | W06 Home | `(tabs)/home` | `worker_feed` (count), `worker_jobs`, `notifications` (unread dot) |
 | W07 Open jobs | `(tabs)/open-jobs` | `worker_feed` |
-| W08 Job detail | `job/[id]` | `worker_feed`, `record_job_view`, `express_interest`; shows "When the customer wants you" (`worker_jobs.preferred_date`, `window_from`, `window_to`). A rejected or cancelled job cannot be opened (the database hides it). |
+| W08 Job detail | `job/[id]` | `worker_feed`, `record_job_view` (no more `express_interest`: the button is "Accept this job" and opens W10); shows "When the customer wants you" (`worker_jobs.preferred_date`, `window_from`, `window_to`). A rejected or cancelled job cannot be opened (the database hides it). |
 | W08b Job details (from W12 "Job details >") | `job/[id]?from=status` | same screen as W08; shows the worker's status chip, bar "Back to job status" + "Create quote" while still quotable, never "I will quote this job" |
-| W10 Create quote | `job/[id]/quote` | `submit_quote`: labour; With/Without materials toggle; with materials an itemised list (name + price, max 10) whose sum is the automatic "Material cost" (sent as `p_materials` and `p_materials_note`); no "Other" line; no bill and no visit time (a fixed box shows the customer's chosen time; the bill is uploaded at Complete Job) |
+| W10 Accept job (was Create quote) | `job/[id]/quote` | `accept_job` (claim-and-lock, 0031; asks "Accept this job?" first, then the job is Scheduled and the status screen opens): labour; With/Without materials toggle; with materials an itemised list (name + price, max 10) whose sum is the automatic "Material cost" (sent as `p_materials` and `p_materials_note`); no "Other" line; no bill and no visit time (a fixed box shows the customer's chosen time; the bill is uploaded at Complete Job) |
 | W11 My jobs (Active / Completed / All) | `(tabs)/my-jobs` | `worker_jobs`, `cash_records` |
 | W12 Job status | `job/[id]/status` | `worker_jobs`, `job_interests`, `quotes`, `cash_records`, `cancellation_requests`, `start_job`, `complete_job` (+ bill photo to `job-media`) |
 | W13 Record cash | `job/[id]/cash` | `record_cash_worker` |
@@ -79,6 +79,7 @@ Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built
 | 20261105000028 | performance: query indexes (`worker_categories`, report children, `reports.against_id`) |
 | 20261105000029 | performance: feed matching rules as plain SQL so indexes are used |
 | 20261105000030 | audit fix: filed material bills cannot be deleted; `complete_job` checks the bill file exists |
+| 20261105000031 | claim-and-lock: `accept_job` (price + lock in one transaction); also fixes the stale `cash_records` row left by Replace worker |
 
 Hosted DEV is at 0030 (0016, 0017 and 0020 pushed on 31 Oct; 0021 to 0026 on 3 Nov; 0027 to 0030 on 5 Nov). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
 

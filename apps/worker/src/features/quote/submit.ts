@@ -1,46 +1,42 @@
-// Sending the quote: one call to submit_quote, with every refusal turned into a friendly message.
-// Injectable client so the behaviour can be unit tested. Raw server text is never shown.
-import type { SubmitQuoteArgs } from './rules.ts';
+// Accepting a job: one call to accept_job (claim-and-lock, migration 0031), with every refusal turned into a friendly
+// message. Injectable client so the behaviour can be unit tested. Raw server text is never shown.
+import type { AcceptJobArgs } from './rules.ts';
 
-export type QuoteErrorKey =
+export type ClaimErrorKey =
   | 'quote.errors.notAvailable'
   | 'quote.errors.expired'
-  | 'quote.errors.needInterest'
   | 'quote.errors.rejected'
-  | 'quote.errors.alreadySent'
   | 'quote.errors.total'
-  | 'quote.errors.otherNote'
   | 'quote.errors.network'
   | 'quote.errors.generic';
 
 type Err = { name?: string; message?: string; details?: string | null } | null | undefined;
 
-export function quoteErrorKey(error: Err): QuoteErrorKey {
+export function claimErrorKey(error: Err): ClaimErrorKey {
   const text = `${error?.name ?? ''} ${error?.message ?? ''} ${error?.details ?? ''}`.toLowerCase();
-  if (text.includes('already sent a quote')) return 'quote.errors.alreadySent';
   if (text.includes('did not accept your quote')) return 'quote.errors.rejected';
   if (text.includes('has expired')) return 'quote.errors.expired';
-  if (text.includes('show interest in the job')) return 'quote.errors.needInterest';
-  if (text.includes('not available for quotes') || text.includes('not approved') || text.includes('suspended')) {
+  if (text.includes('not available') || text.includes('not approved') || text.includes('suspended')) {
     return 'quote.errors.notAvailable';
   }
-  if (text.includes('quotes_total_positive')) return 'quote.errors.total';
-  if (text.includes('quotes_other_note_required')) return 'quote.errors.otherNote';
+  if (text.includes('enter a price') || text.includes('cannot be negative') || text.includes('quotes_total_positive')) {
+    return 'quote.errors.total';
+  }
   if (text.includes('network') || text.includes('fetch') || error?.name === 'TypeError') return 'quote.errors.network';
   return 'quote.errors.generic';
 }
 
-export type QuoteClient = {
-  submitQuote(args: SubmitQuoteArgs): PromiseLike<{ error: Err }>;
+export type ClaimClient = {
+  acceptJob(args: AcceptJobArgs): PromiseLike<{ error: Err }>;
 };
 
-/** ok = sent. "alreadySent" is also reported as ok:false so the screen can explain, but it means the quote exists. */
-export type SendQuoteResult = { ok: true } | { ok: false; key: QuoteErrorKey };
+/** ok = the job is now locked to this worker. */
+export type ClaimResult = { ok: true } | { ok: false; key: ClaimErrorKey };
 
-export async function sendQuote(client: QuoteClient, args: SubmitQuoteArgs): Promise<SendQuoteResult> {
+export async function claimJob(client: ClaimClient, args: AcceptJobArgs): Promise<ClaimResult> {
   try {
-    const { error } = await client.submitQuote(args);
-    return error ? { ok: false, key: quoteErrorKey(error) } : { ok: true };
+    const { error } = await client.acceptJob(args);
+    return error ? { ok: false, key: claimErrorKey(error) } : { ok: true };
   } catch (thrown) {
     return { ok: false, key: thrown instanceof Error && thrown.name === 'TypeError' ? 'quote.errors.network' : 'quote.errors.generic' };
   }

@@ -1,5 +1,5 @@
-// Pure rules for W10 Create quote (unit tested with node --test). The database is the authority: it computes the
-// total and re-checks everything (submit_quote and the quotes table constraints). These rules only guide the form
+// Pure rules for W10 Accept job, the price form (unit tested with node --test). The database is the authority: it
+// computes the total and re-checks everything (accept_job and the quotes table constraints). These rules only guide the form
 // and build the request; the preview total is display only.
 
 const MAX_DIGITS = 7; // sanity limit on one amount (Rs 9,999,999); the database only needs a non-negative integer
@@ -65,22 +65,20 @@ export function isQuoteValid(input: QuoteInput): boolean {
 }
 
 // ---------------------------------------------------------------- the request
-export type SubmitQuoteArgs = {
+export type AcceptJobArgs = {
   p_job_id: string;
   p_labour: number;
   p_materials: number;
   p_materials_note: string | undefined;
-  p_other_amount: number;
-  p_other_note: string | undefined;
   p_note: undefined;
 };
 
 /**
- * The materials amount is the sum of the item prices and the list goes in the note ("Pipe Rs 500; Tape Rs 50").
- * "Other" charges are no longer part of a quote: they are always sent as 0. No total is ever sent, and no visit date or
+ * accept_job (claim-and-lock): the worker states a price and the job is theirs. The materials amount is the sum of the item prices and the list goes in the note ("Pipe Rs 500; Tape Rs 50").
+ * There is no "Other" charge. No total is ever sent, and no visit date or
  * time either (the customer chooses the schedule), and no bill: the actual bill is uploaded when the job is completed.
  */
-export function buildSubmitArgs(jobId: string, input: QuoteInput): SubmitQuoteArgs {
+export function buildSubmitArgs(jobId: string, input: QuoteInput): AcceptJobArgs {
   const materials = materialsTotal(input);
   const collapse = (text: string) => text.replace(/\s+/g, ' ').trim();
   const list = usedItems(input)
@@ -91,8 +89,6 @@ export function buildSubmitArgs(jobId: string, input: QuoteInput): SubmitQuoteAr
     p_labour: parseAmount(input.labour),
     p_materials: materials,
     p_materials_note: materials > 0 && list !== '' ? list : undefined,
-    p_other_amount: 0,
-    p_other_note: undefined,
     p_note: undefined,
   };
 }

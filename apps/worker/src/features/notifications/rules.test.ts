@@ -17,7 +17,7 @@ test('quote accepted names the job and the visit, never the resident', () => {
 test('each worker-facing type has its own words', () => {
   const title = (type: string) => describe(n({ type }), now).title;
   assert.equal(title('quote_not_selected'), 'Quote rejected');
-  assert.equal(title('quote_rejected'), 'Quote rejected');
+  assert.equal(title('quote_rejected'), 'You are off this job');
   assert.equal(title('job_cancelled'), 'Job cancelled');
   // A cancelled job is invisible to the worker, so its notice says so plainly and opens nothing.
   const cancelled = describe(n({ type: 'job_cancelled' }), now);
@@ -52,4 +52,10 @@ test('notices are grouped Today and Earlier, newest first', () => {
 
 test('unread ids drive Mark all read', () => {
   assert.deepEqual(unreadIds([n({ id: 'a' }), n({ id: 'b', readAt: at(10) })]), ['a']);
+});
+
+test('a worker taken off a job is told neutrally, with no reason and no customer detail', () => {
+  const v = describe(n({ type: 'quote_rejected' }), now);
+  assert.equal(v.body, "You are no longer on this job. Do not travel to the customer's address.");
+  assert.doesNotMatch(v.body, /Bathroom|customer rejected|reason/i);
 });

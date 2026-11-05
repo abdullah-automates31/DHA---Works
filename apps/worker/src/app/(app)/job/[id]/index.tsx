@@ -1,32 +1,30 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
 import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
-import { InfoCard, InterestCard, PhotoRow, ResidentCard, VoiceMessage } from '@/components/JobDetailParts';
+import { InfoCard, PhotoRow, ResidentCard, VoiceMessage } from '@/components/JobDetailParts';
 import { StatusChip } from '@/components/MyJobParts';
 import { BoltIcon, ChevronLeftIcon } from '@/components/icons';
-import { BottomBar, FieldError } from '@/components/onboarding';
+import { BottomBar } from '@/components/onboarding';
 import { timeAgo } from '@/features/feed/format';
-import { interestBanner, jobChip, postedText, startQuote } from '@/features/job/detail';
+import { jobChip, postedText } from '@/features/job/detail';
 import { quoteHref, statusHref } from '@/features/job/routes';
-import { expressInterest, recordJobView, useJob, type JobDetail } from '@/features/job/useJob';
+import { recordJobView, useJob } from '@/features/job/useJob';
 import { t } from '@/i18n';
 import { colors, fontFamily } from '@/theme';
 
-// W08 Job detail. Shows only what a worker may see before acceptance (photos, description, voice note, how many
-// others are interested, a verified-resident card with the phase). "I will quote this job" records the worker's
-// interest (safe to repeat) and opens quote creation. Jobs that are gone, expired or taken show a clear message.
+// W08 Job detail. Shows only what a worker may see before acceptance (photos, description, voice note, a
+// verified-resident card with the phase). "Accept this job" opens the price form; sending it locks the job to the
+// worker (claim-and-lock, accept_job). Jobs that are gone, expired or taken show a clear message.
 export default function JobDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const fromStatus = from === 'status'; // W08b: opened from the job status screen
   const { state, reload } = useJob(id ?? '');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const job = state.status === 'ready' ? state.job : null;
   const standing = job?.standing;
@@ -39,25 +37,6 @@ export default function JobDetailScreen() {
   const goBack = () => (router.canGoBack() ? router.back() : router.replace(fromStatus ? statusHref(id ?? '') : '/open-jobs'));
   const openQuote = (jobId: string) => router.push(quoteHref(jobId));
 
-  async function onQuote(detail: JobDetail) {
-    if (busy) return;
-    setError(null);
-    if (detail.standing === 'interested') {
-      openQuote(detail.id); // interest was recorded earlier
-      return;
-    }
-    setBusy(true);
-    const result = await startQuote({ expressInterest }, detail.id);
-    setBusy(false);
-    if (!result.ok) {
-      setError(t(result.key));
-      if (result.key === 'job.errors.unavailable' || result.key === 'job.errors.rejected') void reload();
-      return;
-    }
-    openQuote(detail.id);
-  }
-
-  const banner = job && job.standing === 'none' ? interestBanner(job.others, job.quotes) : null;
 
   return (
     <View style={styles.root}>
@@ -108,13 +87,6 @@ export default function JobDetailScreen() {
             {job.description ? <InfoCard title={t('job.customerSays')}>{job.description}</InfoCard> : null}
             {job.hasVoiceNote ? <VoiceMessage uri={job.voiceUrl} /> : null}
 
-            {banner ? (
-              <InterestCard
-                title={t(banner.titleKey, { count: banner.count })}
-                body={banner.quoted > 0 ? t('job.interested.subQuoted', { quoted: banner.quoted }) : t('job.interested.sub')}
-              />
-            ) : null}
-
             <ResidentCard phase={job.phase} />
 
             {job.standing === 'closed' && !fromStatus ? (
@@ -123,15 +95,14 @@ export default function JobDetailScreen() {
                 <Text style={styles.closedBody}>{t('job.closedBody')}</Text>
               </View>
             ) : null}
-            {error ? <FieldError>{error}</FieldError> : null}
           </ScrollView>
 
           {fromStatus ? (
-            // W08b: never "I will quote this job". "Create quote" only while the worker can still send one.
+            // W08b: "Accept this job" only for a job still open to this worker.
             job.standing === 'interested' ? (
               <BottomBar
                 hideArrow
-                label={t('myjobs.createQuote')}
+                label={t('job.acceptJob')}
                 onPress={() => openQuote(job.id)}
                 secondary={{ label: t('job.backToStatus'), onPress: goBack }}
               />
@@ -141,9 +112,8 @@ export default function JobDetailScreen() {
           ) : job.standing !== 'closed' ? (
             <BottomBar
               hideArrow
-              label={job.standing === 'quoted' ? t('job.quoteSent') : job.standing === 'interested' ? t('job.createQuote') : t('job.quoteThisJob')}
-              onPress={() => void onQuote(job)}
-              loading={busy}
+              label={job.standing === 'quoted' ? t('job.quoteSent') : t('job.acceptJob')}
+              onPress={() => openQuote(job.id)}
               disabled={job.standing === 'quoted'}
             />
           ) : null}

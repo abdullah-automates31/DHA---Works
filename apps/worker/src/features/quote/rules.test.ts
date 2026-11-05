@@ -57,8 +57,7 @@ test('the request carries amounts and the item list, never a total or a visit ti
   assert.equal(args.p_labour, 1500);
   assert.equal(args.p_materials, 1450);
   assert.equal(args.p_materials_note, 'Trap pipe Rs 900; Flexible hose Rs 550');
-  assert.equal(args.p_other_amount, 0);
-  assert.equal(args.p_other_note, undefined);
+  assert.ok(!('p_other_amount' in args)); // accept_job has no "Other" charge
   assert.equal(args.p_note, undefined);
   assert.ok(!('p_total' in args));
   // The customer chooses the schedule: a quote never carries a visit day or time.

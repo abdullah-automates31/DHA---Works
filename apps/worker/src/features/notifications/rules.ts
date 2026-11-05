@@ -37,7 +37,7 @@ export function describe(n: Notice, now: Date = new Date()): NoticeView {
     case 'quote_not_selected':
       return { title: t('notices.quoteRejectedTitle'), body: t('notices.quoteNotSelectedBody', { job }), icon: 'info', opensJob: false };
     case 'quote_rejected':
-      return { title: t('notices.quoteRejectedTitle'), body: t('notices.quoteRejectedBody', { job }), icon: 'info', opensJob: false };
+      return { title: t('notices.removedTitle'), body: t('notices.removedBody'), icon: 'alert', opensJob: false };
     case 'job_cancelled':
       return { title: t('notices.jobCancelledTitle'), body: t('notices.jobCancelledBody'), icon: 'alert', opensJob: false };
     case 'job_expired':

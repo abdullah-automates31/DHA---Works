@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
@@ -8,7 +8,7 @@ import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { ChevronLeftIcon } from '@/components/icons';
 import { BottomBar, FieldError, LabeledInput } from '@/components/onboarding';
 import { formatRupees } from '@/features/home/format';
-import { jobHref } from '@/features/job/routes';
+import { jobHref, statusHref } from '@/features/job/routes';
 import { useJob } from '@/features/job/useJob';
 import {
   amountDigits,
@@ -23,16 +23,15 @@ import {
   type MaterialItem,
   type QuoteInput,
 } from '@/features/quote/rules';
-import { sendQuote } from '@/features/quote/submit';
+import { claimJob } from '@/features/quote/submit';
 import { t } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { colors, fontFamily } from '@/theme';
 
-// W10 Create quote (worker/screens/w-quote.dc.html). The worker enters labour, materials (list optional), an
-// optional extra cost with its reason, and picks a visit day and a 2-hour window. The total shown is a preview:
-// the database computes the real total from the amounts and re-checks every rule when the quote is sent.
-// A sent quote is final (revisions are MVP 2). The mock's "Agree the price over a call" line is not used: there is
-// no contact before a quote is accepted (docs/UI-UX.md section 8).
+// W10 Accept job (was Create quote; worker/screens/w-quote.dc.html). The worker enters labour and materials (list
+// optional); the visit time is the customer's. The total shown is a preview: the database computes the real total and
+// re-checks every rule in accept_job. Sending it locks the job to this worker (claim-and-lock, migration 0031), so
+// the worker confirms first. The price is final (revisions are MVP 2).
 export default function QuoteScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -82,18 +81,14 @@ export default function QuoteScreen() {
         </Notice>
       ) : null}
 
-      {job && job.standing === 'none' ? (
-        <Notice title={t('quote.needInterestTitle')} body={t('quote.needInterestBody')}>
-          <PrimaryButton label={t('quote.backToJob')} onPress={() => router.replace(jobHref(job.id))} showArrow={false} />
-        </Notice>
+      {job && (job.standing === 'none' || job.standing === 'interested') ? (
+        <QuoteForm jobId={job.id} when={job.when} onAccepted={() => router.replace(statusHref(job.id))} />
       ) : null}
-
-      {job && job.standing === 'interested' ? <QuoteForm jobId={job.id} when={job.when} onSent={() => (router.canGoBack() ? router.back() : router.replace(jobHref(job.id)))} /> : null}
     </View>
   );
 }
 
-function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSent: () => void }) {
+function QuoteForm({ jobId, when, onAccepted }: { jobId: string; when: string; onAccepted: () => void }) {
   const [input, setInput] = useState<QuoteInput>({ labour: '', withMaterials: false, items: [{ name: '', price: '' }] });
   const [touched, setTouched] = useState(false);
   const [sending, setSending] = useState(false);
@@ -118,19 +113,27 @@ function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSen
     set({ items: rest.length > 0 ? rest : [{ name: '', price: '' }] });
   };
 
-  async function onSend() {
-    if (sending) return;
-    setTouched(true);
-    if (!valid) return;
+  async function accept() {
     setError(null);
     setSending(true);
-    const result = await sendQuote({ submitQuote: (args) => supabase.rpc('submit_quote', args) }, buildSubmitArgs(jobId, input));
+    const result = await claimJob({ acceptJob: (args) => supabase.rpc('accept_job', args) }, buildSubmitArgs(jobId, input));
     setSending(false);
-    if (result.ok || result.key === 'quote.errors.alreadySent') {
-      onSent(); // the quote exists either way; the job screen shows "Quote sent"
+    if (result.ok) {
+      onAccepted(); // the job is locked to this worker; the status screen shows it as Scheduled
       return;
     }
     setError(t(result.key));
+  }
+
+  function onSend() {
+    if (sending) return;
+    setTouched(true);
+    if (!valid) return;
+    // Accepting locks the job to this worker, so ask first.
+    Alert.alert(t('quote.confirmTitle'), t('quote.confirmBody', { total: formatRupees(total) }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('quote.confirmYes'), onPress: () => void accept() },
+    ]);
   }
 
   return (
@@ -225,7 +228,7 @@ function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSen
           {touched && errors.total ? <FieldError>{t('quote.errors.totalHint')}</FieldError> : null}
           {error ? <FieldError>{error}</FieldError> : null}
         </ScrollView>
-        <BottomBar hideArrow label={t('quote.send')} onPress={() => void onSend()} loading={sending} disabled={!valid} />
+        <BottomBar hideArrow label={t('quote.send')} onPress={onSend} loading={sending} disabled={!valid} />
       </KeyboardAvoidingView>
     </>
   );

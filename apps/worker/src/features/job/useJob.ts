@@ -148,7 +148,3 @@ export async function recordJobView(id: string): Promise<void> {
     // nothing to do
   }
 }
-
-export async function expressInterest(id: string) {
-  return supabase.rpc('express_interest', { p_job_id: id });
-}
