@@ -1,6 +1,6 @@
 # Worker app (apps/worker): build record
 
-Status at **3 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the local Supabase stack; hosted DEV has all 24 migrations (0001 to 0026), so the app also works against DEV. W09 (Direct requests) is out of the MVP. W01 uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. Committed to `dev` up to `895c237`; the bill-at-completion change (0026 and its app, test and doc edits) is not committed yet. The 3 Nov screens (quote toggle, Complete Job bill, Rejected card, Introduction, status timeline) have unit and database tests but are **not yet tried on a real phone**. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
+Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built and tested against the local Supabase stack; hosted DEV has all 27 migrations (0001 to 0029), so the app also works against DEV. W09 (Direct requests) is out of the MVP. W01 uses phone + WhatsApp OTP; local development uses fixed test OTPs and sends no message. Committed and pushed to `dev` up to `1ea890b`, which includes the 5 Nov performance work (skeleton loaders, image caching and compression, paged lists, one-trip reads; see [PERFORMANCE.md](PERFORMANCE.md)). The 3 Nov screens (quote toggle, Complete Job bill, Rejected card, Introduction, status timeline) and the 5 Nov performance changes (skeletons, Show more, voice at 16 kHz mono, bill photo at 1280 px, profile picture) have unit and database tests but are **not yet tried on a real phone**. Pending design decisions and unconfirmed assumptions are in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md); the product rules are in [DECISIONS.md](DECISIONS.md).
 
 ## Stack and layout
 
@@ -75,8 +75,11 @@ Status at **3 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built
 | 20261103000024 | quote material bill column (superseded by 0026, unused) |
 | 20261103000025 | customer-controlled schedule; rejected and cancelled jobs hidden from workers |
 | 20261103000026 | actual material bill required at `complete_job` when the quote has materials |
+| 20261105000027 | performance: `worker_feed.thumb_paths`, `worker_jobs.cash_recorded`, faster `worker_jobs`, `notifications_unread_idx` |
+| 20261105000028 | performance: query indexes (`worker_categories`, report children, `reports.against_id`) |
+| 20261105000029 | performance: feed matching rules as plain SQL so indexes are used |
 
-Hosted DEV is at 0026 (0016, 0017 and 0020 pushed on 31 Oct; 0021 to 0026 on 3 Nov). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
+Hosted DEV is at 0029 (0016, 0017 and 0020 pushed on 31 Oct; 0021 to 0026 on 3 Nov; 0027 to 0029 on 5 Nov). Two proposals are unapplied in `supabase/proposals/`: 0018 lock identity during review, 0019 owner delete and read of identity files (needs a privacy decision). Run them with `bash supabase/proposals/run_proposal_test.sh`.
 
 ## Run it locally
 
@@ -124,6 +127,6 @@ The SMS channel is for development. WhatsApp stays the product channel; its prod
 ## Open items
 
 - UI movement ("the layout moves here and there"): not reproduced; waiting for a screen recording or a description of the screen and motion.
-- Test the 3 Nov screens on a phone; for hosted DEV demos run `supabase/dev/hosted_dev_fake_open_jobs.sql` in the dashboard SQL Editor (4 "[FAKE]" open jobs; cleanup SQL inside). Commit the 0026 work when the user approves. The claim-and-lock job flow (final per the user, 1 Nov) is not built yet; it waits on Shariq's answers (docs/OPEN-QUESTIONS.md). Any later migration goes to DEV only on explicit request.
+- Test the 3 Nov screens on a phone; for hosted DEV demos run `supabase/dev/hosted_dev_fake_open_jobs.sql` in the dashboard SQL Editor (4 "[FAKE]" open jobs; cleanup SQL inside). Phone-test the 5 Nov performance changes too (checklist in PERFORMANCE.md). Six "[FAKE]" jobs DW-2010 to DW-2015 sit in DEV Open jobs and expire about 24 h after posting; they appear in Open jobs, not My Jobs (My Jobs lists only jobs the worker showed interest in, quoted or won). The claim-and-lock job flow (final per the user, 1 Nov) is not built yet; it waits on Shariq's answers (docs/OPEN-QUESTIONS.md). Any later migration goes to DEV only on explicit request.
 - Decisions: the two proposals, W09 revisit, native vs designed tab bar, public repo, account email named in HANDOVER and SETUP.
 - Not built: customer app (Shariq's), admin portal (starts next week or the week after, user 3 Nov) and the staff write RPCs (approve/reject, resolve reports, cancellation decisions, suspend).

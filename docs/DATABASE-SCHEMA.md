@@ -18,9 +18,9 @@ Size: 29 tables, 5 views, 33 functions the apps can call (listed in section 8), 
 
 | Environment | State |
 |---|---|
-| **Migration files in the repo** | 24 (0001 to 0017 and 0020 to 0026) |
+| **Migration files in the repo** | 27 (0001 to 0017 and 0020 to 0029) |
 | **Local (Docker) database** | All 24 applied; `supabase test db` passed 676 assertions in 18 files on 3 Nov 2026. |
-| **Hosted DEV** (Supabase free tier) | All 24 migrations are applied (0021 to 0026 on 3 Nov). Local and DEV match. |
+| **Hosted DEV** (Supabase free tier) | All 27 migrations are applied (0021 to 0026 on 3 Nov, 0027 to 0029 on 5 Nov). Local and DEV match. |
 | **Production** | Does not exist. No production Supabase project has been created. |
 
 The hosted-DEV status was checked with `supabase migration list --linked` on 3 Nov; re-check it before pushing. `docs/HANDOVER.md` and `README.md` carry the same 24-migration status. (Counts of tables, views and functions in this document were written on 30 Oct and do not yet include the 3 Nov functions `replace_worker`, `worker_public_profile`, `worker_may_see_job` and `worker_is_rejected_on`.)
@@ -223,6 +223,9 @@ A **migration** is a numbered SQL file that changes the database structure. File
 | 0024 | Material bill column on quotes. Its "bill with the quote" rules were replaced by 0026; the column is unused. |
 | 0025 | The customer controls the schedule (the quote's visit time is optional and ignored); rejected and cancelled jobs are hidden from workers. |
 | 0026 | The actual material bill is uploaded when the job is completed, and only when the quote has materials above 0. |
+| 0027 | Performance: `worker_feed` gains `thumb_paths` (first two photo paths, last column); `worker_jobs` gains `cash_recorded` (last column) and starts from the worker's own accepted jobs, quotes and interests instead of testing every job; `notifications_unread_idx`. |
+| 0028 | Performance: indexes with a real reader: `worker_categories(category_id)`, `report_photos/notes/calls(report_id)`, `reports(against_id)`. |
+| 0029 | Performance: the feed's matching rules written as plain SQL (they were SECURITY DEFINER functions, which Postgres cannot see into) so `jobs_feed_idx` is used. Same visible jobs, proven by `worker_feed_equivalence.test.sql`. |
 
 Two further files, `supabase/proposals/20261029000018` and `...019` (lock identity details during review; let owners delete their own identity files), are **proposals, not migrations**, and are not applied anywhere.
 

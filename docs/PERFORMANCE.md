@@ -1,6 +1,6 @@
 # Worker app performance work (5 Nov 2026)
 
-Source: the mentor's "Improvements on DHA - Works Worker" list (9 points). Each point was reviewed, fixed, verified and challenged. Everything below is **local and uncommitted** until the user says so. Hosted DEV does not have migrations 0027 to 0029 yet; **push them before running the new app build**, because the app now reads `worker_feed.thumb_paths` and `worker_jobs.cash_recorded`.
+Source: the mentor's "Improvements on DHA - Works Worker" list (9 points). Each point was reviewed, fixed, verified and challenged. Committed and pushed to `dev` as `1ea890b`. Migrations 0027 to 0029 are on hosted DEV (pushed 5 Nov, verified: columns, six indexes and grants). The app reads `worker_feed.thumb_paths` and `worker_jobs.cash_recorded`, so the database must always be ahead of the app build. **Not yet tried on a phone.** Later the same day: the profile picture was reworked so it no longer blinks (`ProfilePhoto` shares one signed link per file and fades the photo over the initials), and the quote Materials boxes got a visible fill and border on the white card.
 
 ## Results
 
@@ -42,6 +42,6 @@ Cause of the feed cost: the matching rules were `SECURITY DEFINER` functions, wh
 
 ## Before shipping
 
-1. User approves `supabase db push --linked` (0027, 0028, 0029). Order matters: database first, then the app.
+1. Done 5 Nov: `supabase db push --linked` (0027, 0028, 0029). Order matters: database first, then the app.
 2. Phone test: skeletons on slow network, scroll the feed to the end ("Show more"), voice intro record and play back, profile photo upload, bill photo legibility at 1280 px, My Jobs tabs.
-3. Commit and push to `dev` only when the user says so.
+3. Done 5 Nov: committed and pushed to `dev` (`1ea890b`) on the user's yes.
