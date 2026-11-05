@@ -6,14 +6,14 @@ import { confirmPhoneChange, requestPhoneChange } from './phoneChange.ts';
 test('requesting a change asks the server for a code on the new number and sends nothing else', async () => {
   const seen: unknown[] = [];
   const client = {
-    async updateUser(a: { phone: string }) {
+    async updateUser(a: { phone: string; channel?: string }) {
       seen.push(a);
       return { error: null };
     },
     verifyOtp: async () => ({ error: null }),
   };
   assert.deepEqual(await requestPhoneChange(client, '+923001234567'), { ok: true });
-  assert.deepEqual(seen, [{ phone: '+923001234567' }]);
+  assert.deepEqual(seen, [{ phone: '+923001234567', channel: 'whatsapp' }]);
 });
 
 test('confirming uses the phone_change type with the code from the NEW number', async () => {
@@ -41,4 +41,9 @@ test('a wrong or expired code and a rate limit become friendly keys, a lost conn
     verifyOtp: async () => ({ error: null }),
   };
   assert.deepEqual(await requestPhoneChange(down, '+92300'), { ok: false, key: 'auth.errors.network' });
+});
+
+test('a number already used by another account is refused with the neutral message', async () => {
+  const client = { updateUser: async () => ({ error: { code: 'phone_exists', status: 422 } }), verifyOtp: async () => ({ error: null }) };
+  assert.deepEqual(await requestPhoneChange(client, '+923001234567'), { ok: false, key: 'auth.errors.numberUnavailable' });
 });

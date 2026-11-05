@@ -40,3 +40,7 @@ test('a deleted or reset account counts as a gone session; a network failure doe
   assert.equal(isSessionGone({ status: 429, code: 'over_request_rate_limit' }), false);
   assert.equal(isSessionGone(null), false);
 });
+
+test('a number that belongs to another account gets one neutral message', () => {
+  assert.equal(authErrorKey({ code: 'phone_exists', status: 422 }), 'auth.errors.numberUnavailable');
+});

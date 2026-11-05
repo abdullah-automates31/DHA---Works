@@ -26,7 +26,8 @@ export type AppRoute =
   | '/notifications'
   | '/help'
   | '/report'
-  | '/introduction';
+  | '/introduction'
+  | '/change-number';
 
 export type StatusKind = 'wrong_role' | 'suspended' | 'pending' | 'visit_hq' | 'rejected';
 
@@ -58,7 +59,7 @@ export function allowedRoutes(p: ProfileSnapshot | null, areaCount = 0): AppRout
   if (!p) return ['/about'];
   if (statusKind(p) !== null) return ['/status'];
   if (p.verification_status === 'approved') {
-    return areaCount === 0 ? ['/areas'] : ['/home', '/open-jobs', '/my-jobs', '/profile', '/notifications', '/areas', '/help', '/report', '/introduction'];
+    return areaCount === 0 ? ['/areas'] : ['/home', '/open-jobs', '/my-jobs', '/profile', '/notifications', '/areas', '/help', '/report', '/introduction', '/change-number'];
   }
   // incomplete or needs_changes: identity first; once it is complete, the documents step and those after it.
   return identityComplete(p) ? ['/documents', '/references', '/work', '/about'] : ['/about'];

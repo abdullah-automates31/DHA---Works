@@ -121,6 +121,7 @@ export default function ProfileScreen() {
               <Row title={t('profile.introduction')} onPress={() => router.push('/introduction')} divider />
               <Row title={t('profile.areas')} value={areaSummary(areas)} onPress={() => router.push('/areas')} divider />
               <Row title={t('profile.help')} onPress={() => router.push('/help')} divider />
+              <Row title={t('profile.changeNumber')} onPress={() => router.push('/change-number')} divider />
               <Row title={t('profile.signOut')} danger onPress={() => void supabase.auth.signOut()} />
             </View>
             {switchError ? <FieldError>{t('profile.errors.generic')}</FieldError> : null}
