@@ -19,12 +19,12 @@ export type WorkData =
 
 async function fetchWork(): Promise<WorkData> {
   // RLS: categories are readable by every signed-in user; the worker's own choices and details only by them.
-  const [categories, mine, details] = await Promise.all([
-    supabase.from('categories').select('id, name').eq('active', true).order('sort'),
-    supabase.from('worker_categories').select('category_id'),
+  // One join: every active trade, with this worker's own choice nested inside it (an empty list when not chosen).
+  const [categories, details] = await Promise.all([
+    supabase.from('categories').select('id, name, worker_categories(category_id)').eq('active', true).order('sort'),
     supabase.from('worker_details').select('experience_years, visit_fee, voice_intro_path, about').maybeSingle(),
   ]);
-  if (categories.error || mine.error || details.error) return { status: 'error' };
+  if (categories.error || details.error) return { status: 'error' };
   const voicePath = details.data?.voice_intro_path ?? null;
   let voiceUrl: string | null = null;
   if (voicePath) {
@@ -35,7 +35,7 @@ async function fetchWork(): Promise<WorkData> {
   return {
     status: 'ready',
     trades: (categories.data ?? []).map((c) => ({ id: c.id, name: c.name })),
-    selected: (mine.data ?? []).map((m) => m.category_id),
+    selected: (categories.data ?? []).filter((c) => c.worker_categories.length > 0).map((c) => c.id),
     years: details.data?.experience_years ?? null,
     // The database default is 0 ("no visit fee"); show a field as empty rather than a fee the worker never entered.
     fee: fee === 0 ? null : fee,

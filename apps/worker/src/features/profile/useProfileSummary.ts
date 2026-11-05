@@ -14,19 +14,19 @@ export type ProfileSummary =
 
 async function fetchSummary(): Promise<ProfileSummary> {
   // Everything is the signed-in worker's own data (row-level security, and get_my_earnings reads the caller only).
-  const [earnings, details, categories, mine] = await Promise.all([
+  // The trades come as one join: every active trade with this worker's own choice nested inside it.
+  const [earnings, details, categories] = await Promise.all([
     supabase.rpc('get_my_earnings'),
     supabase.from('worker_details').select('available_today').maybeSingle(),
-    supabase.from('categories').select('id, name').eq('active', true).order('sort'),
-    supabase.from('worker_categories').select('category_id'),
+    supabase.from('categories').select('id, name, worker_categories(category_id)').eq('active', true).order('sort'),
   ]);
-  if (earnings.error || details.error || categories.error || mine.error) return { status: 'error' };
+  if (earnings.error || details.error || categories.error) return { status: 'error' };
   return {
     status: 'ready',
     earnings: parseEarnings(earnings.data),
     available: details.data?.available_today !== false,
     trades: (categories.data ?? []).map((c) => ({ id: c.id, name: c.name })),
-    mine: (mine.data ?? []).map((m) => m.category_id),
+    mine: (categories.data ?? []).filter((c) => c.worker_categories.length > 0).map((c) => c.id),
   };
 }
 

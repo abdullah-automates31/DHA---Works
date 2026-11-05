@@ -1,14 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { LoadMoreFooter } from '@/components/LoadMoreFooter';
+import { JobCardSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { MyJobCard } from '@/components/MyJobParts';
 import { cashHref, quoteHref, statusHref } from '@/features/job/routes';
 import { inTab, jobKind, type MyJobsTab } from '@/features/myjobs/rules';
 import { useMyJobs } from '@/features/myjobs/useMyJobs';
 import { t } from '@/i18n';
+import { nearEnd } from '@/lib/paging';
 import { colors, fontFamily } from '@/theme';
 
 const TABS: { key: MyJobsTab; label: 'myjobs.tabActive' | 'myjobs.tabCompleted' | 'myjobs.tabAll' }[] = [
@@ -22,7 +25,7 @@ const TABS: { key: MyJobsTab; label: 'myjobs.tabActive' | 'myjobs.tabCompleted' 
 export default function MyJobsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data, refresh, refreshing } = useMyJobs();
+  const { data, refresh, refreshing, loadMore, loadingMore, moreFailed } = useMyJobs();
   const [tab, setTab] = useState<MyJobsTab>('active');
   const now = new Date();
 
@@ -36,6 +39,10 @@ export default function MyJobsScreen() {
 
       <ScrollView
         contentContainerStyle={styles.content}
+        scrollEventThrottle={200}
+        onScroll={(event) => {
+          if (nearEnd(event.nativeEvent)) void loadMore();
+        }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={colors.green} />}
       >
         <View style={styles.seg} accessibilityRole="tablist">
@@ -52,7 +59,13 @@ export default function MyJobsScreen() {
           ))}
         </View>
 
-        {data.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 32 }} /> : null}
+        {data.status === 'loading' ? (
+          <SkeletonGroup style={{ gap: 12 }}>
+            <JobCardSkeleton />
+            <JobCardSkeleton />
+            <JobCardSkeleton />
+          </SkeletonGroup>
+        ) : null}
 
         {data.status === 'error' ? (
           <View style={styles.message}>
@@ -85,6 +98,10 @@ export default function MyJobsScreen() {
             />
           );
         })}
+
+        {data.status === 'ready' ? (
+          <LoadMoreFooter hasMore={data.hasMore} loading={loadingMore} failed={moreFailed} onLoad={() => void loadMore()} skeleton={<JobCardSkeleton />} />
+        ) : null}
       </ScrollView>
     </View>
   );

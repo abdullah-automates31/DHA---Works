@@ -7,6 +7,20 @@ export const MAX_FILE_BYTES = 5 * 1024 * 1024; // the bucket limit (supabase/mig
 export const MAX_IMAGE_EDGE = 1600; // pixels, longest side
 export const IMAGE_QUALITY = 0.7;
 
+// Every picture is re-encoded as JPEG before upload. How hard depends on what it is for: small print on a CNIC must
+// stay readable for staff, a profile picture is shown at about 100 px, a bill or report photo needs less than a CNIC.
+export const IMAGE_PROFILES = {
+  document: { maxEdge: MAX_IMAGE_EDGE, quality: IMAGE_QUALITY }, // CNIC, police certificate
+  evidence: { maxEdge: 1280, quality: 0.6 }, // material bill, problem-report photos
+  avatar: { maxEdge: 512, quality: 0.7 }, // profile picture
+} as const;
+export type ImageKind = keyof typeof IMAGE_PROFILES;
+
+/** CNIC and certificate stay sharp; the profile picture is small; everything else is evidence. */
+export function imageKindFor(type: DocType): ImageKind {
+  return type === 'profile_photo' ? 'avatar' : 'document';
+}
+
 type Bucket = 'identity' | 'worker-media';
 
 /** CNIC and certificate go to the staff-only identity bucket; the profile photo to worker-media. */

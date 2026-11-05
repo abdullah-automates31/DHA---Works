@@ -1,4 +1,5 @@
 import {
+  type RecordingOptions,
   RecordingPresets,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
@@ -9,7 +10,15 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { MAX_VOICE_MS, MIN_VOICE_MS, formatDuration, voiceProgress } from '@/features/work/rules';
+import {
+  MAX_VOICE_MS,
+  MIN_VOICE_MS,
+  VOICE_BIT_RATE,
+  VOICE_CHANNELS,
+  VOICE_SAMPLE_RATE,
+  formatDuration,
+  voiceProgress,
+} from '@/features/work/rules';
 import { t } from '@/i18n';
 import { colors, fontFamily } from '@/theme';
 
@@ -18,6 +27,15 @@ import { MicIcon, PauseIcon, PlayIcon, StopIcon } from './icons';
 // Voice introduction card (W03b). Designed state: recording (red stop button, bars, "0:18 / 0:30").
 // Idle and recorded states are not in the design; they reuse the same card (docs/OPEN-QUESTIONS.md).
 // Recording stops by itself at 30 seconds and when the screen is left. Nothing is uploaded here.
+
+// Same AAC .m4a file type as before, just mono, 16 kHz and 32 kbps (see features/work/rules.ts) to keep uploads small.
+const VOICE_PRESET: RecordingOptions = {
+  ...RecordingPresets.HIGH_QUALITY,
+  sampleRate: VOICE_SAMPLE_RATE,
+  numberOfChannels: VOICE_CHANNELS,
+  bitRate: VOICE_BIT_RATE,
+  web: { ...RecordingPresets.HIGH_QUALITY.web, bitsPerSecond: VOICE_BIT_RATE },
+};
 
 const RED = '#C0392B';
 const BAR_HEIGHTS = [10, 22, 30, 16, 26, 34, 18, 12, 20, 8, 14, 10];
@@ -33,7 +51,7 @@ type Props = {
 };
 
 export function VoiceIntro({ playbackUri, hasRecording, onRecorded, onError }: Props) {
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorder = useAudioRecorder(VOICE_PRESET);
   const player = useAudioPlayer(playbackUri ? { uri: playbackUri } : null);
   const playerStatus = useAudioPlayerStatus(player);
   const [recording, setRecording] = useState(false);

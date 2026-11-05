@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { InfoCard, InterestCard, PhotoRow, ResidentCard, VoiceMessage } from '@/components/JobDetailParts';
 import { StatusChip } from '@/components/MyJobParts';
 import { BoltIcon, ChevronLeftIcon } from '@/components/icons';
@@ -70,7 +71,11 @@ export default function JobDetailScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      {state.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 48 }} /> : null}
+      {state.status === 'loading' ? (
+        <SkeletonGroup>
+          <DetailSkeleton />
+        </SkeletonGroup>
+      ) : null}
 
       {state.status === 'unavailable' ? (
         <Message title={t('job.unavailableTitle')} body={t('job.unavailableBody')}>

@@ -1,13 +1,16 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { LoadMoreFooter } from '@/components/LoadMoreFooter';
+import { NoticeListSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { BellIcon, CheckIcon, ChevronLeftIcon } from '@/components/icons';
 import { statusHref } from '@/features/job/routes';
 import { ago, describe, groupNotices, unreadIds, type Notice, type NoticeIcon } from '@/features/notifications/rules';
 import { useNotifications } from '@/features/notifications/useNotifications';
 import { t } from '@/i18n';
+import { nearEnd } from '@/lib/paging';
 import { colors, fontFamily } from '@/theme';
 
 // W15 Notifications (worker/screens/w-notifs.dc.html): Today and Earlier, unread rows marked with a dot, a "Mark all
@@ -16,7 +19,7 @@ import { colors, fontFamily } from '@/theme';
 export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data, reload, markRead } = useNotifications();
+  const { data, reload, markRead, loadMore, loadingMore, moreFailed } = useNotifications();
   const now = new Date();
   const notices = data.status === 'ready' ? data.notices : [];
   const unread = unreadIds(notices);
@@ -39,7 +42,11 @@ export default function NotificationsScreen() {
         </Pressable>
       </View>
 
-      {data.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 48 }} /> : null}
+      {data.status === 'loading' ? (
+        <SkeletonGroup style={{ paddingHorizontal: 20 }}>
+          <NoticeListSkeleton />
+        </SkeletonGroup>
+      ) : null}
 
       {data.status === 'error' ? (
         <View style={styles.message}>
@@ -50,7 +57,13 @@ export default function NotificationsScreen() {
       ) : null}
 
       {data.status === 'ready' ? (
-        <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={false} onRefresh={() => void reload()} tintColor={colors.green} />}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          scrollEventThrottle={200}
+          onScroll={(event) => {
+            if (nearEnd(event.nativeEvent)) void loadMore();
+          }}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={() => void reload()} tintColor={colors.green} />}>
           {groups.length === 0 ? (
             <View style={styles.empty}>
               <BellIcon size={28} color={colors.green} />
@@ -89,6 +102,13 @@ export default function NotificationsScreen() {
               </View>
             </View>
           ))}
+          <LoadMoreFooter
+            hasMore={data.hasMore}
+            loading={loadingMore}
+            failed={moreFailed}
+            onLoad={() => void loadMore()}
+            skeleton={<NoticeListSkeleton rows={2} />}
+          />
         </ScrollView>
       ) : null}
     </View>

@@ -1,15 +1,12 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-
 import { useLiveRefresh } from '@/features/live/useLiveRefresh';
+import { mergeById, splitPage } from '@/lib/paging';
 import { supabase } from '@/lib/supabase';
+import { usePaged, type Paged } from '@/lib/usePaged';
 
 import { sortJobs, type MyJob } from './rules';
 
-export type MyJobsData = { status: 'loading' } | { status: 'error' } | { status: 'ready'; jobs: MyJob[] };
-
 export const MY_JOB_COLUMNS =
-  'id, code, status, title, phase, lane, scheduled_start, scheduled_end, started_at, completed_at, is_mine, my_quote_status, my_quote_total, resident_name, resident_phone, plot_no, floor, cancellation_pending';
+  'id, code, status, title, phase, lane, scheduled_start, scheduled_end, started_at, completed_at, is_mine, my_quote_status, my_quote_total, resident_name, resident_phone, plot_no, floor, cancellation_pending, cash_recorded';
 
 type Row = {
   id: string | null;
@@ -30,6 +27,7 @@ type Row = {
   plot_no: string | null;
   floor: string | null;
   cancellation_pending: boolean | null;
+  cash_recorded: boolean | null;
 };
 
 export function toMyJob(r: Row): MyJob {
@@ -52,53 +50,62 @@ export function toMyJob(r: Row): MyJob {
     plotNo: r.plot_no,
     floor: r.floor,
     cancellationPending: r.cancellation_pending === true,
+    cashRecorded: r.cash_recorded === true,
   };
 }
 
-async function fetchMyJobs(): Promise<MyJobsData> {
-  // worker_jobs only returns jobs this worker engaged with (interest, quote or won); the resident's name, phone and
-  // plot come back only for jobs this worker won. Nothing else is readable.
-  const { data, error } = await supabase.from('worker_jobs').select(MY_JOB_COLUMNS).limit(200);
-  if (error) return { status: 'error' };
-  const jobs = (data ?? []).map((r) => toMyJob(r as Row));
-  // Which completed jobs already have this worker's cash amount (row-level security shows only their own rows).
-  const completed = jobs.filter((j) => j.status === 'completed' && j.isMine === true).map((j) => j.id);
-  if (completed.length > 0) {
-    const cash = await supabase.from('cash_records').select('job_id, worker_amount').in('job_id', completed);
-    const done = new Set((cash.data ?? []).filter((c) => c.worker_amount !== null).map((c) => c.job_id));
-    for (const j of jobs) j.cashRecorded = done.has(j.id);
-  }
-  return { status: 'ready', jobs: sortJobs(jobs) };
+export const PAGE = 30;
+
+// The worker's own jobs that are still moving. They are always loaded in full, however old, so a job scheduled for
+// next month never falls off the list. This set is small by nature (a worker has only a few at a time).
+const IN_FLIGHT = ['accepted', 'scheduled', 'in_progress', 'completed', 'disputed'] as const;
+
+type Page = { jobs: MyJob[]; hasMore: boolean; consumed: number };
+
+/**
+ * Everything else, newest first, a page at a time. Open, interested and quoted jobs expire within a day, so they are
+ * always on the first page; older rows are history. One row more than `count` tells whether another page exists.
+ */
+async function fetchRecent(from: number, count: number): Promise<Page | null> {
+  const { data, error } = await supabase
+    .from('worker_jobs')
+    .select(MY_JOB_COLUMNS)
+    .order('posted_at', { ascending: false })
+    .order('id', { ascending: true })
+    .range(from, from + count);
+  if (error) return null;
+  const { rows, hasMore } = splitPage(data ?? [], count);
+  return { jobs: rows.map((r) => toMyJob(r as Row)), hasMore, consumed: rows.length };
+}
+
+async function fetchInFlight(): Promise<MyJob[] | null> {
+  const { data, error } = await supabase.from('worker_jobs').select(MY_JOB_COLUMNS).eq('is_mine', true).in('status', IN_FLIGHT).limit(100);
+  if (error) return null;
+  return (data ?? []).map((r) => toMyJob(r as Row));
+}
+
+type MyJobsState = { jobs: MyJob[]; hasMore: boolean; consumed: number };
+export type MyJobsData = Paged<MyJobsState>;
+
+// worker_jobs only returns jobs this worker engaged with (interest, quote or won); the resident's name, phone and
+// plot come back only for jobs this worker won. Whether the worker already entered their cash (`cash_recorded`)
+// comes in the same row, so there is no second query.
+async function fetchFirst(count: number): Promise<MyJobsState | null> {
+  const [recent, inFlight] = await Promise.all([fetchRecent(0, count), fetchInFlight()]);
+  if (!recent || !inFlight) return null;
+  return { jobs: sortJobs(mergeById(inFlight, recent.jobs)), hasMore: recent.hasMore, consumed: recent.consumed };
+}
+
+async function fetchMore(current: MyJobsState): Promise<MyJobsState | null> {
+  const page = await fetchRecent(current.consumed, PAGE);
+  if (!page) return null;
+  return { jobs: sortJobs(mergeById(current.jobs, page.jobs)), hasMore: page.hasMore, consumed: current.consumed + page.consumed };
 }
 
 /** Loads when the tab opens and each time it is shown again; keeps the list on screen if a reload fails. */
-export function useMyJobs(): { data: MyJobsData; refresh: () => Promise<void>; refreshing: boolean } {
-  const [data, setData] = useState<MyJobsData>({ status: 'loading' });
-  const [refreshing, setRefreshing] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      void fetchMyJobs().then((next) => {
-        if (active) setData((current) => (next.status === 'error' && current.status === 'ready' ? current : next));
-      });
-      return () => {
-        active = false;
-      };
-    }, []),
-  );
-
-  const refresh = useCallback(async () => {
-    setRefreshing(true);
-    const next = await fetchMyJobs();
-    setData((current) => (next.status === 'error' && current.status === 'ready' ? current : next));
-    setRefreshing(false);
-  }, []);
-
+export function useMyJobs() {
+  const paged = usePaged<MyJobsState>({ pageSize: PAGE, first: fetchFirst, more: fetchMore });
   // A notification (quote accepted, job cancelled, cash confirmed ...) means a job changed: reload quietly.
-  useLiveRefresh(() => {
-    void fetchMyJobs().then((next) => setData((current) => (next.status === 'error' && current.status === 'ready' ? current : next)));
-  });
-
-  return { data, refresh, refreshing };
+  useLiveRefresh(() => void paged.reload());
+  return paged;
 }

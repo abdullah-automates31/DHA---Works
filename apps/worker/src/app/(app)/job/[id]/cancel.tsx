@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { StatusChip } from '@/components/MyJobParts';
 import { ChevronLeftIcon } from '@/components/icons';
 import { BottomBar, FieldError, Pill } from '@/components/onboarding';
@@ -70,7 +71,11 @@ export default function RequestCancellationScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      {state.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 48 }} /> : null}
+      {state.status === 'loading' ? (
+        <SkeletonGroup>
+          <DetailSkeleton />
+        </SkeletonGroup>
+      ) : null}
 
       {state.status === 'unavailable' || failed ? (
         <Message title={failed ? t('job.loadFailedTitle') : t('job.unavailableTitle')} body={failed ? t('job.loadFailedBody') : t('job.unavailableBody')}>

@@ -943,8 +943,8 @@ export type Database = {
           id: string
           job_id: string
           labour: number
-          materials: number
           material_bill_path: string | null
+          materials: number
           materials_note: string | null
           note: string | null
           other_amount: number
@@ -962,8 +962,8 @@ export type Database = {
           id?: string
           job_id: string
           labour: number
-          materials?: number
           material_bill_path?: string | null
+          materials?: number
           materials_note?: string | null
           note?: string | null
           other_amount?: number
@@ -981,8 +981,8 @@ export type Database = {
           id?: string
           job_id?: string
           labour?: number
-          materials?: number
           material_bill_path?: string | null
+          materials?: number
           materials_note?: string | null
           note?: string | null
           other_amount?: number
@@ -1718,8 +1718,8 @@ export type Database = {
           job_id: string | null
           jobs_done: number | null
           labour: number | null
-          materials: number | null
           material_bill_path: string | null
+          materials: number | null
           materials_note: string | null
           note: string | null
           other_amount: number | null
@@ -1792,6 +1792,7 @@ export type Database = {
           quote_count: number | null
           status: Database["public"]["Enums"]["job_status"] | null
           thumb_path: string | null
+          thumb_paths: string[] | null
           title: string | null
           urgency: Database["public"]["Enums"]["job_urgency"] | null
           viewed_count: number | null
@@ -1825,10 +1826,8 @@ export type Database = {
       }
       worker_jobs: {
         Row: {
-          window_from: string | null
-          window_to: string | null
-          preferred_date: string | null
           cancellation_pending: boolean | null
+          cash_recorded: boolean | null
           category_id: number | null
           category_name: string | null
           code: string | null
@@ -1844,6 +1843,7 @@ export type Database = {
           phase: number | null
           plot_no: string | null
           posted_at: string | null
+          preferred_date: string | null
           resident_name: string | null
           resident_phone: string | null
           scheduled_end: string | null
@@ -1855,6 +1855,8 @@ export type Database = {
           under_review_reason: string | null
           urgency: Database["public"]["Enums"]["job_urgency"] | null
           voice_note_path: string | null
+          window_from: string | null
+          window_to: string | null
         }
         Relationships: [
           {
@@ -1960,6 +1962,10 @@ export type Database = {
         Args: { p_quote_id: string; p_reason?: string }
         Returns: undefined
       }
+      replace_worker: {
+        Args: { p_job_id: string; p_reason?: string }
+        Returns: undefined
+      }
       request_cancellation: {
         Args: {
           p_details?: string
@@ -1997,8 +2003,8 @@ export type Database = {
         Args: {
           p_job_id: string
           p_labour: number
-          p_materials?: number
           p_material_bill_path?: string
+          p_materials?: number
           p_materials_note?: string
           p_note?: string
           p_other_amount?: number
@@ -2073,10 +2079,13 @@ export type Database = {
       withdraw_interest: { Args: { p_job_id: string }; Returns: undefined }
       withdraw_quote: { Args: { p_quote_id: string }; Returns: undefined }
       worker_has_stake: { Args: { p_job: string }; Returns: boolean }
+      worker_is_rejected_on: { Args: { p_job: string }; Returns: boolean }
       worker_matches_job: {
         Args: { p_category: number; p_phase: number }
         Returns: boolean
       }
+      worker_may_see_job: { Args: { p_job: string }; Returns: boolean }
+      worker_public_profile: { Args: { p_worker_id: string }; Returns: Json }
     }
     Enums: {
       account_status: "active" | "suspended"

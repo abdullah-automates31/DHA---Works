@@ -1,13 +1,16 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { FeedCardSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { FeedJobCard } from '@/components/FeedJobCard';
+import { LoadMoreFooter } from '@/components/LoadMoreFooter';
 import { feedSubtitle } from '@/features/feed/format';
 import { useFeed } from '@/features/feed/useFeed';
 import { jobHref } from '@/features/job/routes';
 import { t } from '@/i18n';
+import { nearEnd } from '@/lib/paging';
 import { useMyProfile } from '@/lib/profile';
 import { colors, fontFamily } from '@/theme';
 
@@ -19,7 +22,7 @@ export default function OpenJobsScreen() {
   const insets = useSafeAreaInsets();
   const { state } = useMyProfile();
   const areas = state.status === 'ready' ? state.areas : [];
-  const { data, refresh, refreshing } = useFeed(areas.join(','));
+  const { data, refresh, refreshing, loadMore, loadingMore, moreFailed } = useFeed(areas.join(','));
   const now = new Date();
 
   const subtitle = data.status === 'ready' ? feedSubtitle(data.trades, areas) : '';
@@ -33,9 +36,19 @@ export default function OpenJobsScreen() {
 
       <ScrollView
         contentContainerStyle={styles.content}
+        scrollEventThrottle={200}
+        onScroll={(event) => {
+          if (nearEnd(event.nativeEvent)) void loadMore();
+        }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={colors.green} />}
       >
-        {data.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 40 }} /> : null}
+        {data.status === 'loading' ? (
+          <SkeletonGroup style={{ gap: 12 }}>
+            <FeedCardSkeleton />
+            <FeedCardSkeleton />
+            <FeedCardSkeleton />
+          </SkeletonGroup>
+        ) : null}
 
         {data.status === 'error' ? (
           <View style={styles.message}>
@@ -57,6 +70,10 @@ export default function OpenJobsScreen() {
               <FeedJobCard key={job.id} job={job} now={now} onPress={() => router.push(jobHref(job.id))} />
             ))
           : null}
+
+        {data.status === 'ready' && data.jobs.length > 0 ? (
+          <LoadMoreFooter hasMore={data.hasMore} loading={loadingMore} failed={moreFailed} onLoad={() => void loadMore()} skeleton={<FeedCardSkeleton />} />
+        ) : null}
       </ScrollView>
     </View>
   );

@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { ChevronLeftIcon } from '@/components/icons';
 import { BottomBar, FieldError, LabeledInput } from '@/components/onboarding';
 import { formatRupees } from '@/features/home/format';
@@ -51,7 +52,11 @@ export default function QuoteScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      {state.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 48 }} /> : null}
+      {state.status === 'loading' ? (
+        <SkeletonGroup>
+          <DetailSkeleton />
+        </SkeletonGroup>
+      ) : null}
 
       {state.status === 'unavailable' ? (
         <Notice title={t('job.unavailableTitle')} body={t('job.unavailableBody')}>
@@ -156,6 +161,7 @@ function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSen
                   <View style={{ flex: 1 }}>
                     <LabeledInput
                       label={t('quote.itemName')}
+                      onCard
                       value={item.name}
                       onChangeText={(v) => setItem(index, { name: v.slice(0, ITEM_NAME_MAX) })}
                       placeholder={t('quote.itemNamePlaceholder')}
@@ -166,6 +172,7 @@ function QuoteForm({ jobId, when, onSent }: { jobId: string; when: string; onSen
                   <View style={{ width: 104 }}>
                     <LabeledInput
                       label={t('quote.itemPrice')}
+                      onCard
                       value={item.price}
                       onChangeText={(v) => setItem(index, { price: amountDigits(v) })}
                       keyboardType="number-pad"

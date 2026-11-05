@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { stableSource } from '@/lib/image';
 import { colors, fontFamily } from '@/theme';
 
 import { CheckIcon, PlusIcon } from './icons';
@@ -61,7 +62,7 @@ export function ProfilePhotoCard({
   return (
     <View style={styles.card}>
       {photoUrl ? (
-        <Image source={{ uri: photoUrl }} style={styles.avatar} contentFit="cover" accessibilityLabel={title} />
+        <Image source={stableSource(photoUrl)} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" transition={150} accessibilityLabel={title} />
       ) : (
         <View style={[styles.avatar, styles.avatarEmpty]}>
           <Text style={styles.avatarText}>{initials}</Text>

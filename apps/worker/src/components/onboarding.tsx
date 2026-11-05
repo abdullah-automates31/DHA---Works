@@ -61,13 +61,13 @@ export function Stepper({ current }: { current: number }) {
   );
 }
 
-type LabeledProps = TextInputProps & { label: string; error?: string | null; invalid?: boolean };
+type LabeledProps = TextInputProps & { label: string; error?: string | null; invalid?: boolean; /** the field sits on a white card, so it needs its own tint and outline to be seen */ onCard?: boolean };
 
-export function LabeledInput({ label, error, invalid, style, ...rest }: LabeledProps) {
+export function LabeledInput({ label, error, invalid, onCard, style, ...rest }: LabeledProps) {
   return (
     <View style={styles.fld}>
       <Text style={styles.fldLabel}>{label}</Text>
-      <View style={[styles.inp, error || invalid ? styles.inpError : null]}>
+      <View style={[styles.inp, onCard ? styles.inpOnCard : null, error || invalid ? styles.inpError : null]}>
         <TextInput
           accessibilityLabel={label}
           placeholderTextColor="#8A978F"
@@ -247,6 +247,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14.5,
     justifyContent: 'center',
   },
+  inpOnCard: { backgroundColor: colors.background, borderColor: colors.line },
   inpError: { borderColor: colors.chip.declined.fg },
   inpText: { fontFamily: fontFamily.semibold, fontSize: 15, color: colors.ink, padding: 0, height: 48 },
   fieldError: { fontFamily: fontFamily.semibold, fontSize: 12, lineHeight: 17, color: colors.chip.declined.fg },

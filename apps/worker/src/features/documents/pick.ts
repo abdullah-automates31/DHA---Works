@@ -2,11 +2,11 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
-import { IMAGE_QUALITY, fitWithin } from './files';
+import { IMAGE_PROFILES, fitWithin, type ImageKind } from './files';
 
 // Native side of W03: picking a file and getting bytes ready to upload. Nothing here logs file names, paths or
-// contents. Images are always re-encoded as JPEG (HEIC from the iPhone becomes JPEG) at most 1600 px on the
-// longest side; re-encoding also drops the photo's embedded location data.
+// contents. Images are always re-encoded as JPEG (HEIC from the iPhone becomes JPEG) at the size and quality of
+// their kind (files.ts IMAGE_PROFILES); re-encoding also drops the photo's embedded location data.
 
 export type PickedFile = { bytes: ArrayBuffer; mime: string };
 export type PickResult =
@@ -20,16 +20,17 @@ async function readBytes(uri: string): Promise<ArrayBuffer> {
   return response.arrayBuffer();
 }
 
-async function prepareImage(uri: string, width: number, height: number): Promise<PickedFile> {
+async function prepareImage(uri: string, width: number, height: number, kind: ImageKind): Promise<PickedFile> {
+  const profile = IMAGE_PROFILES[kind];
   let context = ImageManipulator.ImageManipulator.manipulate(uri);
-  const fit = fitWithin(width, height);
+  const fit = fitWithin(width, height, profile.maxEdge);
   if (fit) context = context.resize(fit);
   const image = await context.renderAsync();
-  const saved = await image.saveAsync({ format: ImageManipulator.SaveFormat.JPEG, compress: IMAGE_QUALITY });
+  const saved = await image.saveAsync({ format: ImageManipulator.SaveFormat.JPEG, compress: profile.quality });
   return { bytes: await readBytes(saved.uri), mime: 'image/jpeg' };
 }
 
-export async function pickImage(source: 'camera' | 'library', options: { square?: boolean } = {}): Promise<PickResult> {
+export async function pickImage(source: 'camera' | 'library', options: { square?: boolean; kind?: ImageKind } = {}): Promise<PickResult> {
   try {
     if (source === 'camera') {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -45,7 +46,7 @@ export async function pickImage(source: 'camera' | 'library', options: { square?
     });
     const asset = result.canceled ? undefined : result.assets[0];
     if (!asset) return { status: 'cancelled' };
-    return { status: 'ok', file: await prepareImage(asset.uri, asset.width, asset.height) };
+    return { status: 'ok', file: await prepareImage(asset.uri, asset.width, asset.height, options.kind ?? 'document') };
   } catch {
     return { status: 'error' };
   }

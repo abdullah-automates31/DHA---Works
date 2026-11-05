@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ArrowRightIcon, BellIcon, ClockSmallIcon } from '@/components/icons';
+import { JobCardSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { ProgressBar } from '@/components/MyJobParts';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
 import {
@@ -59,7 +60,12 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => void refresh()} tintColor={colors.green} />}
       >
-        {data.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 32 }} /> : null}
+        {data.status === 'loading' ? (
+          <SkeletonGroup style={{ gap: 12 }}>
+            <JobCardSkeleton />
+            <JobCardSkeleton />
+          </SkeletonGroup>
+        ) : null}
         {data.status === 'error' ? <Text style={styles.error}>{t('home.loadFailed')}</Text> : null}
 
         {data.status === 'ready' ? (

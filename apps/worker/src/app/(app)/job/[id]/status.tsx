@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { Avatar, StatusChip, TimelineCard, whoLine } from '@/components/MyJobParts';
 import { ChevronLeftIcon, ChevronRightIcon, PhoneIcon, UserIcon } from '@/components/icons';
 import { BottomBar, FieldError } from '@/components/onboarding';
@@ -68,7 +69,7 @@ export default function JobStatusScreen() {
   }
 
   async function takeBill(source: 'camera' | 'library'): Promise<Bill | null> {
-    const picked = await pickImage(source);
+    const picked = await pickImage(source, { kind: 'evidence' });
     if (picked.status === 'ok') return { bytes: picked.file.bytes, mime: picked.file.mime };
     if (picked.status === 'denied') setError(t('documents.errors.permission'));
     else if (picked.status === 'error') setError(t('documents.errors.pickFailed'));
@@ -168,7 +169,11 @@ export default function JobStatusScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      {state.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 48 }} /> : null}
+      {state.status === 'loading' ? (
+        <SkeletonGroup>
+          <DetailSkeleton />
+        </SkeletonGroup>
+      ) : null}
 
       {state.status === 'unavailable' ? (
         <Message title={t('job.unavailableTitle')} body={t('job.unavailableBody')}>

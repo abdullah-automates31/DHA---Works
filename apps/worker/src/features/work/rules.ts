@@ -2,6 +2,17 @@
 
 export const MAX_VOICE_MS = 30_000; // design: "0:18 / 0:30"; the recording stops by itself at 30 s
 export const MIN_VOICE_MS = 1_000; // anything shorter is treated as an accidental tap and discarded
+
+// Speech needs far less than the HIGH_QUALITY preset (44.1 kHz stereo, 128 kbps = about 480 KB for 30 s). Mono at
+// 16 kHz and 32 kbps AAC is clear for a voice and about 120 KB for 30 s.
+export const VOICE_SAMPLE_RATE = 16_000;
+export const VOICE_CHANNELS = 1;
+export const VOICE_BIT_RATE = 32_000;
+
+/** Rough size of a recording of `ms` milliseconds at the voice bit rate (container overhead ignored). */
+export function estimateVoiceBytes(ms: number): number {
+  return Math.round((VOICE_BIT_RATE / 8) * (ms / 1000));
+}
 export const MAX_VOICE_BYTES = 5 * 1024 * 1024; // the worker-media bucket limit
 export const VOICE_MIME = 'audio/mp4'; // m4a (AAC); the bucket allows audio/mp4, audio/m4a, audio/mpeg, audio/aac
 

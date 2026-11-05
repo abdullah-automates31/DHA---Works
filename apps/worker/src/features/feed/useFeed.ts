@@ -1,7 +1,7 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-
+import { mergeById, splitPage } from '@/lib/paging';
+import { signedUrlMap } from '@/lib/signedUrls';
 import { supabase } from '@/lib/supabase';
+import { usePaged, type Paged } from '@/lib/usePaged';
 
 export type FeedJob = {
   id: string;
@@ -20,55 +20,38 @@ export type FeedJob = {
   photoCount: number;
 };
 
-export type FeedData =
-  | { status: 'loading' }
-  | { status: 'error' }
-  | { status: 'ready'; jobs: FeedJob[]; trades: string[] };
+type FeedState = { jobs: FeedJob[]; trades: string[]; hasMore: boolean; consumed: number };
+export type FeedData = Paged<FeedState>;
 
-const PAGE = 50;
+export const PAGE = 20;
 
-async function fetchFeed(): Promise<FeedData> {
-  // worker_feed already limits the rows to this worker's trades, phases and non-expired open jobs, hides jobs they
-  // engaged with, and carries no resident, phone, plot or address. Order: ASAP first (enum order), then newest.
-  const [feed, mine, categories] = await Promise.all([
-    supabase
-      .from('worker_feed')
-      .select('id, title, description, category_id, phase, lane, urgency, preferred_date, window_from, window_to, voice_note_path, posted_at, photo_count')
-      .order('urgency', { ascending: true })
-      .order('posted_at', { ascending: false })
-      .limit(PAGE),
-    supabase.from('worker_categories').select('category_id'),
-    supabase.from('categories').select('id, name').order('sort'),
-  ]);
-  if (feed.error || mine.error || categories.error) return { status: 'error' };
+// Only the columns the list draws (never select *: the view also computes counts the feed does not need).
+const COLUMNS =
+  'id, title, description, category_id, phase, lane, urgency, preferred_date, window_from, window_to, voice_note_path, posted_at, photo_count, thumb_paths';
 
-  const rows = feed.data ?? [];
-  const ids = rows.map((r) => r.id).filter((id): id is string => id !== null);
+type Page = { jobs: FeedJob[]; hasMore: boolean; consumed: number };
 
-  // Thumbnails: the first two photos of each job, signed for an hour. A photo problem never hides a job.
-  const urls = new Map<string, string[]>();
-  if (ids.length > 0) {
-    const photos = await supabase.from('job_photos').select('job_id, storage_path, sort').in('job_id', ids).lt('sort', 2).order('sort');
-    if (!photos.error && photos.data && photos.data.length > 0) {
-      const signed = await supabase.storage.from('job-media').createSignedUrls(
-        photos.data.map((p) => p.storage_path),
-        3600,
-      );
-      const byPath = new Map<string, string>();
-      for (const item of signed.data ?? []) if (item.path && item.signedUrl) byPath.set(item.path, item.signedUrl);
-      for (const p of photos.data) {
-        const url = byPath.get(p.storage_path);
-        if (url) urls.set(p.job_id, [...(urls.get(p.job_id) ?? []), url]);
-      }
-    }
-  }
-
-  const mineIds = new Set((mine.data ?? []).map((m) => m.category_id));
-  const trades = (categories.data ?? []).filter((c) => mineIds.has(c.id)).map((c) => c.name);
-
+/**
+ * Rows from..from+count of this worker's feed. worker_feed already limits the rows to this worker's trades, phases
+ * and non-expired open jobs, hides jobs they engaged with, and carries no resident, phone, plot or address. Order:
+ * ASAP first (enum order), then newest, then id so the order never wavers between pages. One row more than
+ * `count` is requested to learn whether another page exists. The first two photo paths come in the same row
+ * (thumb_paths), so there is no second query for photos.
+ */
+async function fetchPage(from: number, count: number): Promise<Page | null> {
+  const feed = await supabase
+    .from('worker_feed')
+    .select(COLUMNS)
+    .order('urgency', { ascending: true })
+    .order('posted_at', { ascending: false })
+    .order('id', { ascending: true })
+    .range(from, from + count);
+  if (feed.error) return null;
+  const { rows, hasMore } = splitPage(feed.data ?? [], count);
+  const urls = await signedUrlMap('job-media', rows.flatMap((r) => r.thumb_paths ?? []));
   return {
-    status: 'ready',
-    trades,
+    hasMore,
+    consumed: rows.length,
     jobs: rows.map((r) => ({
       id: r.id ?? '',
       title: r.title ?? '',
@@ -82,41 +65,37 @@ async function fetchFeed(): Promise<FeedData> {
       windowTo: r.window_to,
       hasVoiceNote: Boolean(r.voice_note_path),
       postedAt: r.posted_at,
-      photos: urls.get(r.id ?? '') ?? [],
+      photos: (r.thumb_paths ?? []).map((p) => urls.get(p)).filter((u): u is string => Boolean(u)),
       photoCount: r.photo_count ?? 0,
     })),
   };
 }
 
+/** The worker's trades, by name, in one join (categories that have a worker_categories row for this worker). */
+async function fetchTrades(): Promise<string[] | null> {
+  const { data, error } = await supabase.from('categories').select('name, worker_categories!inner(category_id)').order('sort');
+  if (error) return null;
+  return (data ?? []).map((c) => c.name);
+}
+
+/** The first `count` rows plus the worker's trades, fetched side by side. */
+async function fetchFirst(count: number): Promise<FeedState | null> {
+  const [page, trades] = await Promise.all([fetchPage(0, count), fetchTrades()]);
+  if (!page || !trades) return null;
+  return { jobs: page.jobs, trades, hasMore: page.hasMore, consumed: page.consumed };
+}
+
+async function fetchMore(current: FeedState): Promise<FeedState | null> {
+  const page = await fetchPage(current.consumed, PAGE);
+  if (!page) return null;
+  return { ...current, jobs: mergeById(current.jobs, page.jobs), hasMore: page.hasMore, consumed: current.consumed + page.consumed };
+}
+
 /**
- * Loads the feed when the tab is first shown and again every time it is shown (new jobs, changed areas), keeping
- * the list on screen while it reloads. `areaKey` (the worker's chosen phases) re-runs it when the areas change.
+ * The matching feed, a page at a time. Loads when the tab is shown and every time it is shown again (new jobs,
+ * changed areas), keeping the list on screen while it reloads. `areaKey` (the worker's chosen phases) re-runs it
+ * when the areas change.
  */
-export function useFeed(areaKey: string): { data: FeedData; refresh: () => Promise<void>; refreshing: boolean } {
-  const [data, setData] = useState<FeedData>({ status: 'loading' });
-  const [refreshing, setRefreshing] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      void fetchFeed().then((next) => {
-        // A failed silent reload keeps what is already shown; only a first load can end in the error state.
-        if (active) setData((current) => (next.status === 'error' && current.status === 'ready' ? current : next));
-      });
-      return () => {
-        active = false;
-      };
-    // areaKey is not read inside: it only makes the tab reload when the worker saves different phases
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [areaKey]),
-  );
-
-  const refresh = useCallback(async () => {
-    setRefreshing(true);
-    const next = await fetchFeed();
-    setData((current) => (next.status === 'error' && current.status === 'ready' ? current : next));
-    setRefreshing(false);
-  }, []);
-
-  return { data, refresh, refreshing };
+export function useFeed(areaKey: string) {
+  return usePaged<FeedState>({ pageSize: PAGE, first: fetchFirst, more: fetchMore, key: areaKey });
 }

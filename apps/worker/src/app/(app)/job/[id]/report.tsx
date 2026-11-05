@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { StatusChip } from '@/components/MyJobParts';
 import { ChevronLeftIcon, PhoneIcon, PlusIcon } from '@/components/icons';
 import { FieldError, Pill } from '@/components/onboarding';
@@ -54,7 +55,7 @@ export default function ReportProblemScreen() {
   const checked = checkReport(choice, details);
 
   async function addPhoto(source: 'camera' | 'library') {
-    const picked = await pickImage(source);
+    const picked = await pickImage(source, { kind: 'evidence' });
     if (picked.status === 'ok') setPhotos((current) => [...current, { bytes: picked.file.bytes, mime: picked.file.mime }].slice(0, MAX_PHOTOS));
     else if (picked.status === 'denied') setError(t('documents.errors.permission'));
     else if (picked.status === 'error') setError(t('documents.errors.pickFailed'));
@@ -108,7 +109,11 @@ export default function ReportProblemScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      {state.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 48 }} /> : null}
+      {state.status === 'loading' ? (
+        <SkeletonGroup>
+          <DetailSkeleton />
+        </SkeletonGroup>
+      ) : null}
 
       {state.status === 'unavailable' || failed ? (
         <Message title={failed ? t('job.loadFailedTitle') : t('job.unavailableTitle')} body={failed ? t('job.loadFailedBody') : t('job.unavailableBody')}>

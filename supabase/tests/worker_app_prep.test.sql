@@ -171,8 +171,10 @@ select is((select quote_count from public.worker_feed where title = 'Kitchen tap
 -- Shape and privacy of the view.
 select tests.back();
 select is((select attname::text from pg_attribute
+           where attrelid = 'public.worker_feed'::regclass and attnum = 21), 'quote_count', 'quote_count keeps its position (existing columns keep their order)');
+select is((select attname::text from pg_attribute
            where attrelid = 'public.worker_feed'::regclass and attnum > 0 and not attisdropped
-           order by attnum desc limit 1), 'quote_count', 'quote_count is the last column (existing columns keep their order)');
+           order by attnum desc limit 1), 'thumb_paths', 'thumb_paths (0027) is the last column, added at the end');
 select is((select attname::text from pg_attribute
            where attrelid = 'public.worker_feed'::regclass and attnum = 17), 'interest_count', 'interest_count keeps its position');
 select is((select count(*) from pg_attribute

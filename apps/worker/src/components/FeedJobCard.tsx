@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { categoryIconKey, timeAgo, whenPill } from '@/features/feed/format';
 import type { FeedJob } from '@/features/feed/useFeed';
 import { t } from '@/i18n';
+import { stableSource } from '@/lib/image';
 import { colors, fontFamily } from '@/theme';
 
 import {
@@ -73,8 +74,10 @@ export function FeedJobCard({ job, onPress, now }: { job: FeedJob; onPress: () =
             {job.photos.map((uri, index) => (
               <Image
                 key={uri}
-                source={{ uri }}
+                source={stableSource(uri)}
                 contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={150}
                 style={[styles.photo, { backgroundColor: PHOTO_TINTS[index % 2], marginLeft: index === 0 ? 0 : -8 }]}
                 accessibilityLabel={t('feed.photo')}
               />

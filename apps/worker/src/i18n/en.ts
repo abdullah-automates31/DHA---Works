@@ -13,6 +13,8 @@ export const en = {
     retry: 'Try again',
     ok: 'OK',
     loading: 'Loading',
+    showMore: 'Show more',
+    loadMoreFailed: 'Could not load more.',
   },
   auth: {
     // W01 (copy from worker/screens/Main.dc.html)

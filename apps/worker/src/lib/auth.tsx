@@ -1,4 +1,5 @@
 import type { Session } from '@supabase/supabase-js';
+import { Image } from 'expo-image';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { isSessionGone } from '@/features/auth/errors';
@@ -21,7 +22,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let active = true;
 
     // The listener only stores the session; no Supabase calls inside it (they can deadlock the auth lock).
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      // Cached private photos must not outlive the sign-in on a shared phone (images are cached by file path).
+      if (event === 'SIGNED_OUT') {
+        void Image.clearDiskCache().catch(() => false);
+        void Image.clearMemoryCache().catch(() => false);
+      }
       if (active) setState({ ready: true, session });
     });
     void supabase.auth.getSession().then(({ data }) => {

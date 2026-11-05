@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { formatDuration } from '@/features/work/rules';
 import { t } from '@/i18n';
+import { stableSource } from '@/lib/image';
 import { colors, fontFamily } from '@/theme';
 
 import { PauseIcon, PlayIcon, UserIcon, UsersIcon } from './icons';
@@ -21,8 +22,10 @@ export function PhotoRow({ photos }: { photos: string[] }) {
   const tiles = photos.map((uri, index) => (
     <Image
       key={uri}
-      source={{ uri }}
+      source={stableSource(uri)}
       contentFit="cover"
+      cachePolicy="memory-disk"
+      transition={150}
       accessibilityLabel={t('job.photoN', { n: index + 1 })}
       style={[styles.photo, scroll ? styles.photoFixed : styles.photoFlex, { backgroundColor: TILE_TINTS[index % 3] }]}
     />

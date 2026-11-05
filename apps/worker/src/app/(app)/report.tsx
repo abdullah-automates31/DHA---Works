@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
+import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { StatusChip } from '@/components/MyJobParts';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons';
 import { reportHref } from '@/features/job/routes';
@@ -30,7 +31,11 @@ export default function ReportPickScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {data.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 32 }} /> : null}
+        {data.status === 'loading' ? (
+          <SkeletonGroup>
+            <DetailSkeleton inset={false} />
+          </SkeletonGroup>
+        ) : null}
 
         {data.status === 'error' ? (
           <View style={styles.message}>

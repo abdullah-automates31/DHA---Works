@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import { jobKind, type JobKind } from '@/features/myjobs/rules';
+import { URL_TTL_SECONDS, signedUrlMap } from '@/lib/signedUrls';
 import { supabase } from '@/lib/supabase';
 
 import { whenPill } from '@/features/feed/format';
@@ -37,11 +38,22 @@ export type JobState =
 async function fetchJob(id: string): Promise<JobState> {
   // 1) A job the worker has not engaged with: worker_feed (matching trade and phase, not expired). It carries no
   //    resident name, phone, plot or address, so nothing private can reach this screen.
-  const feed = await supabase
-    .from('worker_feed')
-    .select('id, code, title, description, category_name, phase, lane, urgency, preferred_date, window_from, window_to, posted_at, voice_note_path, interest_count, quote_count')
-    .eq('id', id)
-    .maybeSingle();
+  //
+  // The three reads below depend only on the job id, so they run side by side instead of one after another. Which
+  // answer is used is decided afterwards, exactly as before: the feed first, then the worker's own jobs.
+  const [feed, mine, photoRows] = await Promise.all([
+    supabase
+      .from('worker_feed')
+      .select('id, code, title, description, category_name, phase, lane, urgency, preferred_date, window_from, window_to, posted_at, voice_note_path, interest_count, quote_count')
+      .eq('id', id)
+      .maybeSingle(),
+    supabase
+      .from('worker_jobs')
+      .select('id, code, title, description, category_name, phase, lane, urgency, preferred_date, window_from, window_to, posted_at, voice_note_path, status, my_quote_status, is_mine')
+      .eq('id', id)
+      .maybeSingle(),
+    supabase.from('job_photos').select('storage_path, sort').eq('job_id', id).order('sort'),
+  ]);
   if (feed.error) return { status: 'error' };
 
   let base: Omit<JobDetail, 'photos' | 'voiceUrl'> | null = null;
@@ -68,11 +80,6 @@ async function fetchJob(id: string): Promise<JobState> {
     };
   } else {
     // 2) A job this worker already engaged with (interest or quote): worker_jobs.
-    const mine = await supabase
-      .from('worker_jobs')
-      .select('id, code, title, description, category_name, phase, lane, urgency, preferred_date, window_from, window_to, posted_at, voice_note_path, status, my_quote_status, is_mine')
-      .eq('id', id)
-      .maybeSingle();
     if (mine.error) return { status: 'error' };
     if (!mine.data) return { status: 'unavailable' };
     // A job the customer rejected this worker on shows nothing at all: the database already blanks its details.
@@ -98,25 +105,13 @@ async function fetchJob(id: string): Promise<JobState> {
   }
 
   // Photos and the voice note are signed for an hour (private bucket). A problem here never hides the job.
-  const photos: string[] = [];
-  const rows = await supabase.from('job_photos').select('storage_path, sort').eq('job_id', id).order('sort');
-  if (!rows.error && rows.data && rows.data.length > 0) {
-    const signed = await supabase.storage.from('job-media').createSignedUrls(
-      rows.data.map((r) => r.storage_path),
-      3600,
-    );
-    const byPath = new Map<string, string>();
-    for (const item of signed.data ?? []) if (item.path && item.signedUrl) byPath.set(item.path, item.signedUrl);
-    for (const r of rows.data) {
-      const url = byPath.get(r.storage_path);
-      if (url) photos.push(url);
-    }
-  }
-  let voiceUrl: string | null = null;
-  if (voicePath) {
-    const signed = await supabase.storage.from('job-media').createSignedUrl(voicePath, 3600);
-    voiceUrl = signed.data?.signedUrl ?? null;
-  }
+  // The photos and the voice note are signed together (two storage calls at once).
+  const photoPaths = photoRows.error ? [] : (photoRows.data ?? []).map((r) => r.storage_path);
+  const [byPath, voiceUrl] = await Promise.all([
+    signedUrlMap('job-media', photoPaths),
+    voicePath ? supabase.storage.from('job-media').createSignedUrl(voicePath, URL_TTL_SECONDS).then((s) => s.data?.signedUrl ?? null) : Promise.resolve(null),
+  ]);
+  const photos = photoPaths.map((p) => byPath.get(p)).filter((u): u is string => Boolean(u));
 
   return { status: 'ready', job: { ...base, photos, voiceUrl } };
 }

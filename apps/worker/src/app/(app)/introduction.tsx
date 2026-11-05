@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AboutBox } from '@/components/AboutBox';
+import { DetailSkeleton, SkeletonGroup } from '@/components/Skeleton';
 import { PrimaryButton } from '@/components/AuthForm';
 import { VoiceIntro, type Recorded } from '@/components/VoiceIntro';
 import { ChevronLeftIcon } from '@/components/icons';
@@ -34,7 +35,11 @@ export default function IntroductionScreen() {
         <Text style={styles.topTitle}>{t('introduction.title')}</Text>
         <View style={styles.back} />
       </View>
-      {work.status === 'loading' ? <ActivityIndicator color={colors.green} style={{ marginTop: 40 }} /> : null}
+      {work.status === 'loading' ? (
+        <SkeletonGroup>
+          <DetailSkeleton />
+        </SkeletonGroup>
+      ) : null}
       {work.status === 'error' ? (
         <View style={{ padding: 20, gap: 14 }}>
           <FieldError>{t('introduction.errors.loadFailed')}</FieldError>

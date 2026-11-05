@@ -6,7 +6,7 @@ import { TextLink } from '@/components/AuthForm';
 import { ProfilePhotoCard, UploadBox } from '@/components/documents';
 import { BottomBar, FieldError, OnboardingTop, Stepper } from '@/components/onboarding';
 import { storageClient } from '@/features/documents/client';
-import { initials, missingItems, type DocType } from '@/features/documents/files';
+import { imageKindFor, initials, missingItems, type DocType } from '@/features/documents/files';
 import { pickImage, pickPdf, type PickResult } from '@/features/documents/pick';
 import { uploadDocument } from '@/features/documents/upload';
 import { useDocuments } from '@/features/documents/useDocuments';
@@ -39,7 +39,7 @@ export default function DocumentsScreen() {
     setBusy(type);
     let picked: PickResult;
     if (source === 'pdf') picked = await pickPdf();
-    else picked = await pickImage(source, { square: type === 'profile_photo' });
+    else picked = await pickImage(source, { square: type === 'profile_photo', kind: imageKindFor(type) });
 
     if (picked.status === 'denied') setError(t('documents.errors.permission'));
     else if (picked.status === 'error') setError(t('documents.errors.pickFailed'));
