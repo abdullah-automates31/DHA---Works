@@ -16,7 +16,7 @@ Updated 30 Oct 2026 (worker phone/WhatsApp auth); product defaults section still
 | 8 | Existing email-only worker accounts | Auth users are linked by id; phone login looks up `auth.users.phone`. Existing email-only workers need a one-time staff/service-role phone link before they can sign in again. Path and approval flow not built. |
 | 9 | Auth phone vs `profiles.phone` | W02 pre-fills the mobile from the profile or session but still allows edits, so the sign-in phone and contact phone can diverge. Decide whether to lock/change the auth phone with verification or keep them separate and document that login is by the original number. |
 | 10 | Who may read worker files in `worker-media` | Policy `worker-media_read` lets every approved worker read other workers' profile photos and voice intros (the worker app does not use this). Residents cannot read them at all, so the customer app will need a policy if it shows the worker's photo or voice intro before or after a quote is accepted. Shariq to say what residents may see (5 Nov audit). |
-| 11 | Pushing migration 0030 to hosted DEV | 0030 (filed material bills cannot be deleted by the worker; `complete_job` checks the bill file exists) exists locally only. The worker app works with or without it. Push when the user says so; it does not change any column the customer app reads. |
+| 11 | Migration 0030 and the customer app | 0030 (pushed to DEV 5 Nov) stops a worker deleting a stored file that a job or quote names as its material bill, and `complete_job` checks the bill file exists. It changes no column the customer app reads. For information: once a bill is filed it stays; nothing to decide. |
 
 ## Design work still to do
 
