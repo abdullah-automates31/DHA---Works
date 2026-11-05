@@ -16,3 +16,6 @@ supabase/.temp/
 .turbo/
 coverage/
 expo-env.d.ts
+
+# Android Studio / JetBrains IDE settings
+.idea/
