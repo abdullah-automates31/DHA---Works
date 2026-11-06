@@ -37,11 +37,6 @@ select tests.back();
 select is((select phone from public.profiles where id = '00000000-0000-0000-0000-0000000000b1'), '+923001110001',
           'a phone account cannot type a different contact phone');
 
--- a confirmed number change (GoTrue updates auth.users.phone after the OTP on the new number) reaches the profile
-update auth.users set phone = '923001110099' where id = '00000000-0000-0000-0000-0000000000b1';
-select is((select phone from public.profiles where id = '00000000-0000-0000-0000-0000000000b1'), '+923001110099',
-          'an OTP-confirmed number change updates the profile phone');
-
 -- an email account keeps the typed phone
 select tests.act('00000000-0000-0000-0000-0000000000b3');
 select public.register_profile('worker', 'Mail Worker', '03005550000', 'male', '1990-01-01', '42101-7654321-1');

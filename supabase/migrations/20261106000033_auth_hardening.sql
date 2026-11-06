@@ -2,8 +2,7 @@
 --  A. set_my_references took any JSON: any shape, any number of elements. Now a strict list of at most 5 objects with
 --     only name / phone / address, each a string within its length.
 --  B. The contact phone is now the phone that signed in. A phone-OTP account's profiles.phone is set from the verified
---     auth.users.phone (never from what the client sends), follows an OTP-confirmed number change (GoTrue phone_change)
---     through a trigger, and is unique. Email accounts (legacy / staff) keep the typed phone.
+--     auth.users.phone (never from what the client sends) and is unique. Email accounts (legacy / staff) keep the typed phone.
 --  C. register_profile is race-safe: concurrent registrations of one user are serialised and a duplicate CNIC or
 --     phone is reported as one clean error instead of a raw key violation.
 
@@ -64,30 +63,6 @@ update public.profiles p
 
 create unique index profiles_phone_unique on public.profiles (phone) where phone is not null;
 
--- When GoTrue confirms a new number (updateUser({phone}) + the OTP sent to the NEW number), mirror it to the profile.
--- If the number belongs to another profile already, the profile is left alone and the staff can resolve it.
-create function public.sync_profile_phone()
-returns trigger
-language plpgsql security definer set search_path = ''
-as $$
-begin
-  if nullif(new.phone, '') is not null and new.phone is distinct from old.phone then
-    begin
-      update public.profiles set phone = '+' || new.phone where id = new.id;
-    exception when unique_violation then
-      null;
-    end;
-  end if;
-  return new;
-end;
-$$;
-revoke all on function public.sync_profile_phone() from public, anon, authenticated;
-grant execute on function public.sync_profile_phone() to supabase_auth_admin;
-
-create trigger sync_profile_phone
-  after update of phone on auth.users
-  for each row execute function public.sync_profile_phone();
-
 -- ---------------------------------------------------------------------------
 -- C. register_profile: race-safe, phone from the verified login
 -- ---------------------------------------------------------------------------
@@ -145,8 +120,8 @@ begin
 end;
 $$;
 
--- update_my_profile: a phone-OTP account's contact phone cannot be typed over; it only changes through an OTP-confirmed
--- number change. (Same body as 0007 otherwise.)
+-- update_my_profile: a phone-OTP account's contact phone cannot be typed over; it is always the number that signed in.
+-- (Same body as 0007 otherwise.)
 create or replace function public.update_my_profile(
   p_full_name text default null,
   p_phone text default null,
