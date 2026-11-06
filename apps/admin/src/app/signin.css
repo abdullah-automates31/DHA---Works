@@ -12,8 +12,8 @@
 .si-hero p{margin:18px 0 0;font-size:17px;line-height:1.55;color:#D3E4D9}
 .si-points{margin-top:40px;padding-top:32px;border-top:1px solid rgba(255,255,255,.16);display:flex;flex-direction:column;gap:22px}
 .si-point{display:flex;gap:14px;align-items:flex-start}
-.si-tick{width:28px;height:28px;border-radius:50%;background:#E0B43A;display:grid;place-items:center;flex:none;margin-top:1px}
-.si-tick svg{width:16px;height:16px;fill:none;stroke:#241B00;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.si-tick{width:28px;height:28px;border-radius:50%;background:#E0B43A;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px;line-height:0}
+.si-tick svg{display:block;width:16px;height:16px;flex:none;fill:none;stroke:#241B00;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
 .si-point b{display:block;font-weight:800;font-size:16px}
 .si-point span{display:block;font-size:14px;color:#B9D3C4;margin-top:2px;line-height:1.45}
 .si-chips{position:relative;display:flex;gap:10px;flex-wrap:wrap}
@@ -35,3 +35,5 @@
 /* Keep the fields white when the browser autofills them, as in the design. */
 .si-form .inp:-webkit-autofill{-webkit-box-shadow:0 0 0 100px #fff inset;-webkit-text-fill-color:var(--ink)}
 .si-foot{white-space:nowrap}
+/* The tick circle is a span inside .si-point, so beat ".si-point span" (it forced display:block and margin-top:2px). */
+.si-point .si-tick{display:flex;align-items:center;justify-content:center;margin-top:1px}

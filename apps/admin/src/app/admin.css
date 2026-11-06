@@ -105,3 +105,7 @@ a.stat:hover{border-color:#B9CFC2;box-shadow:0 2px 8px rgba(16,38,28,.07)}
 .top h1{letter-spacing:-.015em}
 .tl .t{line-height:1.35}
 ::placeholder{color:#8A9C91}
+/* Checkboxes: same size, centred on the text line, brand colour. */
+input[type=checkbox]{width:18px;height:18px;margin:0;flex:none;accent-color:var(--g);cursor:pointer}
+.ck svg{display:block;margin:0}
+.ck{box-sizing:border-box;line-height:0}
