@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { parseStatus } from './status.ts';
 import { createClient } from './supabase/server.ts';
@@ -7,7 +8,7 @@ import { createClient } from './supabase/server.ts';
  * session as verified (migration 0037). Anything unexpected is treated as "not an admin". The database rules
  * (is_admin) are the real gate; this is the first, friendly one.
  */
-export async function requireAdmin() {
+export const requireAdmin = cache(async function requireAdmin() {
   const supabase = await createClient();
   // getClaims checks the token signature here, without a call to the auth server (the project signs with an asymmetric
   // key), so it costs no network time. A revoked or suspended session is still caught below: the database function
@@ -20,4 +21,4 @@ export async function requireAdmin() {
   if (s === 'not_admin') redirect('/signin?e=notadmin');
   if (s === 'needs_code') redirect('/signin/code');
   return { supabase, user: { id: sub, email: typeof data?.claims?.email === 'string' ? data.claims.email : null } };
-}
+});

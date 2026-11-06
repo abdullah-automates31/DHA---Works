@@ -1,11 +1,16 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { signOutAction } from '@/app/signin/actions';
 import { initials } from '@/features/verification/rules';
 import { Avatar, Icon, ICONS } from './ui';
 
 type Item = { href: string; label: string; icon: keyof typeof ICONS; badge?: number; red?: boolean };
 
-export function Sidebar({ active, name, workers, residents, reports }: { active: string; name: string | null; workers: number; residents: number; reports: number }) {
+export function Sidebar({ name, workers, residents, reports }: { name: string | null; workers: number; residents: number; reports: number }) {
+  const pathname = usePathname();
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const groups: { title?: string; items: Item[] }[] = [
     { items: [{ href: '/dashboard', label: 'Dashboard', icon: 'dashboard' }] },
     {
@@ -47,7 +52,7 @@ export function Sidebar({ active, name, workers, residents, reports }: { active:
         <div key={g.title ?? i} style={{ display: 'contents' }}>
           {g.title ? <div className="sep">{g.title}</div> : null}
           {g.items.map((it) => (
-            <Link key={it.href} className={`ni${active === it.href ? ' on' : ''}`} href={it.href} aria-current={active === it.href ? 'page' : undefined}>
+            <Link key={it.href} className={`ni${isActive(it.href) ? ' on' : ''}`} href={it.href} aria-current={isActive(it.href) ? 'page' : undefined}>
               <Icon>{ICONS[it.icon]}</Icon>
               {it.label}
               {it.badge ? <span className={`n${it.red ? ' r' : ''}`}>{it.badge}</span> : null}
