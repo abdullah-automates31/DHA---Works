@@ -85,6 +85,73 @@ export type Database = {
           },
         ]
       }
+      admin_factor_challenges: {
+        Row: {
+          code_hash: string
+          consumed: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          session_id: string
+          tries: number
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          session_id: string
+          tries?: number
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          session_id?: string
+          tries?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_factor_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_verified_sessions: {
+        Row: {
+          session_id: string
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          session_id: string
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          session_id?: string
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_verified_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           description: string | null
@@ -1349,27 +1416,46 @@ export type Database = {
       }
       staff_invites: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           created_at: string
           email: string
+          expires_at: string
           id: string
           invited_by: string
           status: string
+          token_hash: string | null
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           created_at?: string
           email: string
+          expires_at?: string
           id?: string
           invited_by: string
           status?: string
+          token_hash?: string | null
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           created_at?: string
           email?: string
+          expires_at?: string
           id?: string
           invited_by?: string
           status?: string
+          token_hash?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "staff_invites_accepted_by_fkey"
+            columns: ["accepted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "staff_invites_invited_by_fkey"
             columns: ["invited_by"]
@@ -1895,6 +1981,10 @@ export type Database = {
         Returns: string
       }
       accept_quote: { Args: { p_quote_id: string }; Returns: undefined }
+      accept_staff_invite: {
+        Args: { p_email: string; p_full_name: string; p_token: string }
+        Returns: undefined
+      }
       add_verification_document: {
         Args: {
           p_path: string
@@ -1902,11 +1992,48 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_decide_verification: {
+        Args: {
+          p_checklist: Json
+          p_decision: Database["public"]["Enums"]["verification_decision"]
+          p_profile: string
+          p_reason: string
+        }
+        Returns: undefined
+      }
+      admin_issue_challenge: {
+        Args: { p_session: string; p_user: string }
+        Returns: string
+      }
+      admin_session_status: { Args: never; Returns: string }
+      admin_set_account_status: {
+        Args: { p_profile: string; p_reason: string; p_suspend: boolean }
+        Returns: undefined
+      }
+      admin_verification_counts: {
+        Args: { p_role: Database["public"]["Enums"]["user_role"] }
+        Returns: Json
+      }
+      admin_verification_detail: { Args: { p_profile: string }; Returns: Json }
+      admin_verification_queue: {
+        Args: {
+          p_filter?: number
+          p_limit?: number
+          p_offset?: number
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_search?: string
+          p_status: Database["public"]["Enums"]["verification_status"]
+        }
+        Returns: Json
+      }
+      admin_verify_code: { Args: { p_code: string }; Returns: string }
+      can_upload_media: { Args: { p_bucket: string }; Returns: boolean }
       can_view_job: { Args: { p_job: string }; Returns: boolean }
       cancel_job: {
         Args: { p_job_id: string; p_reason?: string }
         Returns: undefined
       }
+      clear_my_notifications: { Args: never; Returns: undefined }
       complete_job: {
         Args: { p_bill_path?: string; p_job_id: string }
         Returns: undefined
@@ -1935,14 +2062,13 @@ export type Database = {
         Returns: Json
       }
       get_setting: { Args: { p_key: string }; Returns: Json }
+      invite_staff: { Args: { p_email: string }; Returns: string }
       is_accepted_worker: { Args: { p_job: string }; Returns: boolean }
       is_active_approved: {
         Args: { p_role: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
       }
-      clear_my_notifications: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
-      is_approved_worker: { Args: { p_id: string }; Returns: boolean }
       is_filed_bill: { Args: { p_name: string }; Returns: boolean }
       is_job_owner: { Args: { p_job: string }; Returns: boolean }
       mark_notifications_read: {
@@ -1986,6 +2112,11 @@ export type Database = {
         }
         Returns: string
       }
+      resident_may_see_worker_media: {
+        Args: { p_folder: string }
+        Returns: boolean
+      }
+      revoke_staff_invite: { Args: { p_invite: string }; Returns: undefined }
       save_job_draft: {
         Args: {
           p_address_id?: string

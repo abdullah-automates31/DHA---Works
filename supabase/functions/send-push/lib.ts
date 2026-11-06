@@ -144,6 +144,14 @@ const COPY: Record<string, Copy> = {
     title: "Job needs attention",
     body: (j) => `${forJob(j, "A job")} needs attention.`,
   },
+  verification_decided: {
+    title: "Application update",
+    body: () => "DHA staff reviewed your application. Open the app to see the result.",
+  },
+  account_reactivated: {
+    title: "Account active again",
+    body: () => "DHA staff reactivated your account.",
+  },
   new_sign_in: {
     title: "New sign-in",
     body: () => "Your account was signed in on another device. Not you? Open the app.",

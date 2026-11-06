@@ -436,3 +436,10 @@ enabled = true
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/send-push/index.ts"
+
+# Admin second step (migration 0037): emails a one-time code to the signed-in admin. The JWT check is ON: only a
+# signed-in user reaches it, and the handler reads the user and session from that token (never from the body).
+[functions.admin-2fa]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/admin-2fa/index.ts"

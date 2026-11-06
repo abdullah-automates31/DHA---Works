@@ -50,6 +50,15 @@ export function describe(n: Notice, now: Date = new Date()): NoticeView {
       return { title: t('notices.jobStuckTitle'), body: t('notices.jobStuckBody', { job: capitalize(job) }), icon: 'alert', opensJob: true };
     case 'cancellation_requested':
       return { title: t('notices.cancelRequestedTitle'), body: t('notices.cancelRequestedBody', { job }), icon: 'alert', opensJob: true };
+    case 'verification_decided': {
+      const d = text(n.payload?.decision);
+      if (d === 'approve') return { title: t('notices.verifyApprovedTitle'), body: t('notices.verifyApprovedBody'), icon: 'check', opensJob: false };
+      if (d === 'ask_for_changes') return { title: t('notices.verifyChangesTitle'), body: t('notices.verifyChangesBody'), icon: 'alert', opensJob: false };
+      if (d === 'visit_hq') return { title: t('notices.verifyHqTitle'), body: t('notices.verifyHqBody'), icon: 'alert', opensJob: false };
+      return { title: t('notices.verifyRejectedTitle'), body: t('notices.verifyRejectedBody'), icon: 'alert', opensJob: false };
+    }
+    case 'account_reactivated':
+      return { title: t('notices.accountReactivatedTitle'), body: t('notices.accountReactivatedBody'), icon: 'check', opensJob: false };
     case 'new_sign_in':
       return { title: t('notices.newSignInTitle'), body: t('notices.newSignInBody'), icon: 'alert', opensJob: false };
     default:

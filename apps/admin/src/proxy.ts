@@ -1,0 +1,38 @@
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
+import type { Database } from '@dha/supabase';
+
+// Runs before every page. Two jobs:
+//  1. Keep the Supabase session cookie fresh (a Server Component cannot write cookies, so the refresh happens here).
+//  2. Send anyone who is not signed in to the sign-in page. This is only the first, cheap gate: every page and action
+//     also calls requireAdmin(), and the database decides what an account may read or change (migration 0037).
+export async function proxy(request: NextRequest) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return new NextResponse('Portal is not configured.', { status: 500 });
+
+  let response = NextResponse.next({ request });
+  const supabase = createServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll: (list) => {
+        for (const { name, value } of list) request.cookies.set(name, value);
+        response = NextResponse.next({ request });
+        for (const { name, value, options } of list) response.cookies.set(name, value, options);
+      },
+    },
+  });
+
+  const { data } = await supabase.auth.getUser();
+  const isSignIn = request.nextUrl.pathname === '/signin' || request.nextUrl.pathname.startsWith('/signin/');
+  if (!data.user && !isSignIn) {
+    const redirect = NextResponse.redirect(new URL('/signin', request.url));
+    for (const c of response.cookies.getAll()) redirect.cookies.set(c);
+    return redirect;
+  }
+  return response;
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|dha-crest.png).*)'],
+};

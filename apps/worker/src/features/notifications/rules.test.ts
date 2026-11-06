@@ -33,6 +33,10 @@ test('each worker-facing type has its own words', () => {
   assert.doesNotMatch(`${legacy.title} ${legacy.body}`, /differ|match|dispute|DHA staff/i);
   assert.equal(title('job_stuck'), 'Job needs an update');
   assert.equal(title('cancellation_requested'), 'Cancellation requested');
+  assert.equal(describe(n({ type: 'verification_decided', jobId: null, payload: { decision: 'approve' } }), now).title, 'You are approved');
+  assert.equal(describe(n({ type: 'verification_decided', jobId: null, payload: { decision: 'reject' } }), now).title, 'Application not approved');
+  assert.equal(describe(n({ type: 'verification_decided', jobId: null, payload: { decision: 'visit_hq' } }), now).title, 'Please visit the DHA office');
+  assert.equal(describe(n({ type: 'account_reactivated', jobId: null, payload: {} }), now).title, 'Account active again');
   const signIn = describe(n({ type: 'new_sign_in', jobId: null, payload: {} }), now);
   assert.equal(signIn.title, 'New sign-in');
   assert.equal(signIn.opensJob, false);

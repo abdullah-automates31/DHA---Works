@@ -6,7 +6,7 @@ create schema tests;
 grant usage on schema tests to authenticated;
 create function tests.act(p_uid uuid) returns void language plpgsql as $$
 begin
-  perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated', 'session_id', p_uid)::text, true);
   execute 'set local role authenticated';
 end $$;
 create function tests.back() returns void language plpgsql as $$
@@ -40,6 +40,9 @@ insert into public.profiles (id, role, full_name, email, phone, verification_sta
   ('00000000-0000-0000-0000-0000000000b2', 'worker', 'Bilal Two', 'w2@test.dev', '03005556666', 'approved', 'active'),
   ('00000000-0000-0000-0000-0000000000d1', 'worker', 'Suspended', 'susp@test.dev', '03007778888', 'approved', 'suspended'),
   ('00000000-0000-0000-0000-0000000000e1', 'admin', 'Staff', 'admin@test.dev', '03009990000', 'approved', 'active');
+-- The test admin has passed the second step (migration 0037: is_admin() needs a verified session).
+insert into auth.sessions (id, user_id) values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000e1');
+insert into public.admin_verified_sessions (session_id, user_id) values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000e1');
 insert into public.worker_details (profile_id) values
   ('00000000-0000-0000-0000-0000000000b1'), ('00000000-0000-0000-0000-0000000000b2'), ('00000000-0000-0000-0000-0000000000d1');
 insert into public.worker_categories (worker_id, category_id) select id, 1 from public.profiles where role = 'worker' and id::text like '00000000-0000-0000-0000-%';

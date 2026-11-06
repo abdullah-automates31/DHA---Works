@@ -6,7 +6,7 @@ create schema tests;
 grant usage on schema tests to authenticated;
 create function tests.act(p_uid uuid) returns void language plpgsql as $$
 begin
-  perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated', 'session_id', p_uid)::text, true);
   execute 'set local role authenticated';
 end $$;
 create function tests.signed_out() returns void language plpgsql as $$
@@ -129,6 +129,9 @@ select tests.back();
 -- ---------------------------------------------------------------- privacy: who can read a profile
 insert into public.profiles (id, role, full_name, email, verification_status)
 values ('00000000-0000-0000-0000-000000000007', 'admin', 'Staff', 'u07@test.dev', 'approved');
+-- The test admin has passed the second step (migration 0037: is_admin() needs a verified session).
+insert into auth.sessions (id, user_id) values ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000007');
+insert into public.admin_verified_sessions (session_id, user_id) values ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000007');
 
 select tests.act('00000000-0000-0000-0000-000000000003');
 select is((select count(*) from public.profiles where id = '00000000-0000-0000-0000-000000000001'), 0::bigint,

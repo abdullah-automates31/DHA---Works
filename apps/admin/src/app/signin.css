@@ -1,0 +1,34 @@
+/* Staff sign-in (design A01). Layout rules copied from the design markup into classes. */
+.si{display:flex;min-height:100vh;width:100%;font-family:var(--font-jakarta),'Plus Jakarta Sans',sans-serif;background:#F7F8F4;color:var(--ink);line-height:1.4}
+.si-left{flex:1.1;min-width:0;background:#0F4F31;color:#fff;padding:64px 72px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.si-ring{position:absolute;right:-160px;top:-200px;width:560px;height:560px;border-radius:50%;border:1.5px solid rgba(224,180,58,.3)}
+.si-brand{position:relative;display:flex;align-items:center;gap:12px}
+.si-brand img{width:64px;height:64px;object-fit:contain;flex:none}
+.si-brand b{font-size:20px;font-weight:800;display:block;line-height:1.15}
+.si-brand span{font-size:13px;color:#B9D3C4;font-weight:600}
+.si-hero{margin:auto 0;position:relative;max-width:540px;padding:40px 0}
+.si-hero h1{margin:0;font-size:44px;line-height:1.1;font-weight:800;letter-spacing:-.03em}
+.si-hero h1 em{font-style:normal;color:#EBCB62}
+.si-hero p{margin:18px 0 0;font-size:17px;line-height:1.55;color:#D3E4D9}
+.si-points{margin-top:40px;padding-top:32px;border-top:1px solid rgba(255,255,255,.16);display:flex;flex-direction:column;gap:22px}
+.si-point{display:flex;gap:14px;align-items:flex-start}
+.si-tick{width:28px;height:28px;border-radius:50%;background:#E0B43A;display:grid;place-items:center;flex:none;margin-top:1px}
+.si-tick svg{width:16px;height:16px;fill:none;stroke:#241B00;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.si-point b{display:block;font-weight:800;font-size:16px}
+.si-point span{display:block;font-size:14px;color:#B9D3C4;margin-top:2px;line-height:1.45}
+.si-chips{position:relative;display:flex;gap:10px;flex-wrap:wrap}
+.si-chips .chip{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);height:34px;padding:0 14px}
+.si-right{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:48px}
+.si-form{width:100%;max-width:400px;display:flex;flex-direction:column;gap:18px}
+.si-form h2{margin:0;font-size:30px;font-weight:800;letter-spacing:-.02em;color:#0A3D28}
+.si-form p{margin:8px 0 0;font-size:14.5px;color:var(--mut)}
+.si-form .inp{height:50px}
+.si-form .btn{height:54px;border-radius:27px;font-size:16px;margin-top:4px;width:100%}
+.si-form .btn[disabled]{opacity:.6;cursor:wait}
+.si-foot{margin:0;font-size:13px;text-align:center;line-height:1.5;color:var(--mut)}
+.si-alert{border-radius:12px;padding:12px 14px;font-weight:600;font-size:14px;line-height:1.45}
+.si-alert.err{background:#FADCDA;color:#7A1411}
+.si-alert.ok{background:#E3EEE8;color:#0A3D28}
+.si-code{letter-spacing:.5em;text-align:center;font-size:26px;font-weight:800}
+.si-link{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--g);cursor:pointer;text-decoration:underline}
+@media (max-width:900px){.si{flex-direction:column}.si-left{padding:32px 24px}.si-hero h1{font-size:30px}.si-right{padding:32px 20px}}

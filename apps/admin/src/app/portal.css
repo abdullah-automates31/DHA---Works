@@ -1,0 +1,13 @@
+/* Small-screen additions to the design stylesheet (the designs are 1440 px wide; staff may use a laptop). */
+@media (max-width:1240px){
+  .split{grid-template-columns:minmax(0,1fr)}
+  .split > div[style*="sticky"]{position:static !important}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1000px){
+  .app{flex-direction:column}
+  .nav{width:auto;flex-direction:row;flex-wrap:wrap;padding:12px 16px;gap:4px}
+  .nav .sep,.nav .me{display:none}
+  .top{flex-wrap:wrap;padding:16px 20px}
+  .ct{padding:20px}
+}

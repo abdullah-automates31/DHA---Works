@@ -14,6 +14,9 @@ enabled = true
 account_sid = "env(A)"
 message_service_sid = "env(B)"
 auth_token = "env(C)"
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
 [auth.sessions]
 inactivity_timeout = "8h"
 `;
@@ -26,6 +29,11 @@ test('default rate limits block production', () => {
 test('a fast resend, no captcha, no Twilio Verify and no session limit each block', () => {
   const bad = GOOD.replace('"60s"', '"5s"').replace('[auth.captcha]\nenabled = true', '').replace('[auth.sms.twilio_verify]\nenabled = true', '[auth.sms.twilio_verify]\nenabled = false').replace('inactivity_timeout = "8h"', '');
   assert.deepEqual(codes(bad), ['SMS_FREQUENCY', 'NO_CAPTCHA', 'NO_TWILIO_VERIFY', 'NO_SESSION_LIMIT']);
+});
+test('the interim emailed admin code blocks production until authenticator-app MFA is on', () => {
+  assert.deepEqual(codes(GOOD.replace('enroll_enabled = true', 'enroll_enabled = false')), ['ADMIN_2FA_EMAIL']);
+  assert.deepEqual(codes(GOOD.replace('verify_enabled = true', 'verify_enabled = false')), ['ADMIN_2FA_EMAIL']);
+  assert.deepEqual(codes(GOOD.replace('[auth.mfa.totp]\nenroll_enabled = true\nverify_enabled = true\n', '')), ['ADMIN_2FA_EMAIL']);
 });
 test('static test OTPs block production too', () => assert.ok(codes(`${GOOD}\n[auth.sms.test_otp]\n923001234567 = "123456"\n`).includes('TEST_OTP')));
 test('a missing rate limit is a blocker, not a pass', () => assert.ok(codes('[auth]\n').includes('RATE_VERIFY')));

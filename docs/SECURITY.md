@@ -156,3 +156,19 @@ Sign-in is a phone number and a one-time code. These controls limit what a SIM s
 | Suspended worker keeps a session | 0036 trigger ends every session and removes the push tokens at the moment of suspension (on top of every RPC refusing a suspended account). Verified end to end. | Built, tested |
 | Sensitive actions after a takeover | Not built: no fresh-code check before cash entry or other sensitive steps. Recommended before launch. | **Open (design decision)** |
 | `send-push` | Reviewed: POST only, shared secret compared in constant time, fails closed with no secret, recipients only from the database, no phone, plot or amount in any push (tested), tokens of suspended accounts skipped. Still **not deployed**; deploying needs the secret, a scheduler and the user's go-ahead. | Reviewed, 24 Deno tests |
+
+## 16. Admin portal sign-in (7 Nov 2026, migrations 0037 to 0039, docs/ADMIN-PORTAL.md)
+
+Staff sign in with email + password and then an emailed six-digit code (Supabase's authenticator-app MFA needs a paid plan, so this is the interim second factor). Every control was attacked directly against the API, bypassing the screens (`scripts/challenge-admin-local.mjs`, 38 checks, all held), and the screens were driven in a real browser.
+
+| Risk | Control | Status |
+|---|---|---|
+| Stolen admin password | `is_admin()` also needs this session verified (`admin_verified_sessions`, 12 hours, deleted with the session). Password-only sessions are refused by every admin RPC, read no other profile, no audit log and no identity document; they cannot mark themselves verified. | Built, tested (pgTAP 67 + 84 assertions, live drill) |
+| Guessing the code | 5 wrong tries lock that code (a refused call returns a status instead of raising, so the count is kept); even the real code is refused once locked; 10 minute life; 1 code per minute and 5 per hour per account; a code works only for the session it was issued to and only once. | Built, tested |
+| Code leaks | Only a salted hash is stored; the code is never returned by the function, never written to the audit log, never in a URL. The function reads the user and session from the verified JWT and mails only that account's own address; the body cannot name anyone. | Built, tested (Deno 11 tests) |
+| Becoming an admin | No code path creates an admin except `accept_staff_invite`: needs an invite made by a verified admin, the one-time token (hash stored, 7 days, one use) AND a session for that same email. Invalid cases all give one message. `register_profile` still refuses `admin`. | Built, tested |
+| Identity data access | Opening an applicant is audited (`verification_viewed`); the queue never returns a CNIC, the detail only a masked one; documents open by signed URLs of 5 minutes; storage paths are validated; decisions need every checklist item (approve) or a reason (others) and are audited with a notification. | Built, tested |
+| Abuse of suspend | Cannot suspend yourself or another admin; reason required; ends sessions and push tokens (0036) and flags the worker's live jobs for staff. | Built, tested |
+| Web layer | No service-role key in the app; server actions re-validate everything; proxy refreshes cookies and redirects the signed out; CSP, no framing, no referrer, no-store, nosniff, HSTS. | Built. CSP still allows inline scripts (OPEN-QUESTIONS, admin portal item 4). |
+| Weaker second factor | One mailbox can reset the password and read the code. Move to TOTP on a paid plan before production (`safety:prod-ready` blocker `ADMIN_2FA_EMAIL`). | **Open (decision)** |
+| Mail delivery | `admin-2fa` needs a mail provider and secrets; not deployed. | **Open** |

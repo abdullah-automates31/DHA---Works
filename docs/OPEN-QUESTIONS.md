@@ -87,3 +87,13 @@ Built in the worker app and the shared database (migrations 0024 to 0026): the m
 5. **Material bill: decided, built (0026).** A quote carries the itemised materials list and the estimated material cost, no bill. The actual bill is uploaded when the job is completed, and only when the quote has materials above 0 (older quotes too). `quotes.material_bill_path` and `resident_quotes.material_bill_path` stay in the database, unused, so nothing reading them breaks.
 6. **Customer app (Shariq), not built here:** show "Rejected" instead of "Not Chosen"; stop showing the quote's visit window (new quotes have none: `resident_quotes.visit_start` and `visit_end` are null); keep showing the customer's own job schedule.
 7. **Schedule restrictions: built.** Workers cannot change the schedule in the app or the API (no write access to `jobs`; `submit_quote` ignores any visit time). The Scheduled screen tells a late worker to call the customer.
+
+## Admin portal (7 Nov 2026, docs/ADMIN-PORTAL.md)
+
+1. **Email provider for the admin code (needed before the portal can be used on DEV).** The `admin-2fa` function sends the code through a mail API (Resend is wired as the default; any provider works by changing one function). Needs: an account, a verified sending domain or address, `ADMIN_MAIL_API_KEY` and `ADMIN_MAIL_FROM` as function secrets. Supabase's built-in email (2 per hour) cannot carry it.
+2. **Authenticator-app 2FA (TOTP) needs a paid Supabase plan.** The emailed code is the interim second factor the user chose (7 Nov). It is weaker: one mailbox can reset the password and read the code. `npm run safety:prod-ready` fails with `ADMIN_2FA_EMAIL` until `[auth.mfa.totp]` is enabled. Decide before production.
+3. **First admin account on hosted DEV.** Nothing creates the first admin; it must be inserted by SQL by the user (email + password in Authentication > Users, then a `profiles` row with `role = 'admin'`). Shariq's account is the likely first one.
+4. **Content-Security-Policy still allows inline scripts** (Next.js bootstrap). A nonce-based policy is a later hardening step.
+5. **Helpline log (screen A09):** the design shows a log of helpline calls, but nothing in the database records them (`report_calls` is per report). Where are helpline calls recorded, and by whom? Not built until answered.
+6. **Dashboard numbers (A02) and the queue stats cards:** which figures does staff want (approved this week, average review time, ...)? Built in phase 3 from the audit log and decisions tables.
+7. **Resident review has no field for the address printed on the utility bill:** staff compare it by eye with the address the resident gave (as in the design). Confirm that is enough.
