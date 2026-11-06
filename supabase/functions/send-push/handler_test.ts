@@ -143,6 +143,12 @@ Deno.test("fails closed when the secret is not configured, even if the caller se
   assertEquals(calls.listed, 0);
 });
 
+Deno.test("a new sign-in alert carries no job title, number or place", () => {
+  const m = buildMessage("new_sign_in", { title: "Plot 12 Street 4", phone: "+923001234567" });
+  assertEquals(m.title, "New sign-in");
+  assertEquals(/Plot|Street|[+]92|[0-9]{5}/.test(m.body), false);
+});
+
 Deno.test("only POST is allowed", async () => {
   const { store } = fakeStore([], []);
   assertEquals(

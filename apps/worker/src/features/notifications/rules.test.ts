@@ -33,6 +33,10 @@ test('each worker-facing type has its own words', () => {
   assert.doesNotMatch(`${legacy.title} ${legacy.body}`, /differ|match|dispute|DHA staff/i);
   assert.equal(title('job_stuck'), 'Job needs an update');
   assert.equal(title('cancellation_requested'), 'Cancellation requested');
+  const signIn = describe(n({ type: 'new_sign_in', jobId: null, payload: {} }), now);
+  assert.equal(signIn.title, 'New sign-in');
+  assert.equal(signIn.opensJob, false);
+  assert.match(signIn.body, /sign out other devices/i);
   assert.match(describe(n({ type: 'quote_not_selected' }), now).body, /The customer rejected your quote for Bathroom flush tank leak\. Find more jobs\./);
 });
 

@@ -140,3 +140,19 @@ Each class was checked against the real code and hosted DEV, not assumed. Migrat
 | 15 | Registration races | **Fixed.** `register_profile` serialises one user's requests with an advisory lock and turns any unique violation into "profile already exists" or the original key error. Phone and CNIC are unique at the engine. Two sessions racing for one user or one CNIC give exactly one profile (`concurrency/register_race.sh`). | 0033 |
 
 Before real users: on hosted DEV set sign-ins and verifications to 10 per 5 min, one SMS per number per 60 s, and the SMS OTP expiry to 60 s in the dashboard (the DEV expiry is 300 s today); for production use `npm run supabase:config-push -- production` only once the real Twilio values are in place, switch to Twilio Verify, and remove the fixed DEV test OTPs (OPEN-QUESTIONS #12).
+
+## 15. Sign-in and takeover hardening (7 Nov 2026, migration 0036)
+
+Sign-in is a phone number and a one-time code. These controls limit what a SIM swap, a recycled number or code guessing can do. Each was attacked on purpose (`scripts/challenge-auth-local.mjs`, `scripts/challenge-guess-hosted.mjs`).
+
+| Risk | Control | Status |
+|---|---|---|
+| Code guessing | Config: 10 sign-ins and 10 verifications per 5 min per IP, 1 code per number per 60 s. **Local test:** the per-number 60 s limit works. The local auth server does not enforce per-IP limits at all (no rate-limit IP header), so they cannot be proven locally. **Hosted DEV drill (7 Nov): first FAIL** (30 wrong codes per 5 min, the Supabase default), because `config.toml` is never pushed to DEV. After the user set token verifications and sign-ins to 10 by hand in the dashboard, the drill printed **PASS** (cut off after 8 wrong codes). Re-run `HOSTED_ANON_KEY=... node scripts/challenge-guess-hosted.mjs` after any dashboard change. | **Fixed on DEV (7 Nov), by hand** |
+| Long code life | SMS OTP expiry 60 s (DEV is 300 s). Dashboard only. | **Open on DEV** |
+| Fixed test OTPs | They exist on hosted DEV by design for Shariq's testing; the tracked config can never hold them (guard). `npm run safety:prod-ready` fails while a test OTP, default rate limit, missing CAPTCHA, missing Twilio Verify or missing session limit would reach production. | **Open until production (OPEN-QUESTIONS #12)** |
+| No CAPTCHA, no 5-tries-per-code | Needs the Twilio account (Verify + Fraud Guard) and hCaptcha/Turnstile. `safety:prod-ready` reports them as blockers. | **Open, needs Twilio** |
+| Silent takeover | Migration 0036: every sign-in after the first creates a `new_sign_in` notification (no data in it; shown in the app and sent as a push once `send-push` is deployed). A failing notice never blocks a sign-in. | Built, tested |
+| Attacker keeps access | Profile > "Sign out other devices" (`signOut({scope:'others'})`). Verified on the local auth server: the other session cannot refresh, this one stays. | Built, tested |
+| Suspended worker keeps a session | 0036 trigger ends every session and removes the push tokens at the moment of suspension (on top of every RPC refusing a suspended account). Verified end to end. | Built, tested |
+| Sensitive actions after a takeover | Not built: no fresh-code check before cash entry or other sensitive steps. Recommended before launch. | **Open (design decision)** |
+| `send-push` | Reviewed: POST only, shared secret compared in constant time, fails closed with no secret, recipients only from the database, no phone, plot or amount in any push (tested), tokens of suspended accounts skipped. Still **not deployed**; deploying needs the secret, a scheduler and the user's go-ahead. | Reviewed, 24 Deno tests |

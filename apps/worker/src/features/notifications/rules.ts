@@ -50,6 +50,8 @@ export function describe(n: Notice, now: Date = new Date()): NoticeView {
       return { title: t('notices.jobStuckTitle'), body: t('notices.jobStuckBody', { job: capitalize(job) }), icon: 'alert', opensJob: true };
     case 'cancellation_requested':
       return { title: t('notices.cancelRequestedTitle'), body: t('notices.cancelRequestedBody', { job }), icon: 'alert', opensJob: true };
+    case 'new_sign_in':
+      return { title: t('notices.newSignInTitle'), body: t('notices.newSignInBody'), icon: 'alert', opensJob: false };
     default:
       return { title: t('notices.updateTitle'), body: n.jobId ? t('notices.updateBody', { job }) : t('notices.updateGeneric'), icon: 'job', opensJob: n.jobId !== null };
   }

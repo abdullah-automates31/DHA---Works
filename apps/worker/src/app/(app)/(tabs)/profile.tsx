@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { ShieldCheckIcon } from '@/components/icons';
 import { FieldError, Pill } from '@/components/onboarding';
+import { signOutOtherDevices } from '@/features/auth/devices';
 import { formatRupees } from '@/features/home/format';
 import { areaSummary, ratingText, tradeSummary } from '@/features/profile/summary';
 import { useProfileSummary } from '@/features/profile/useProfileSummary';
@@ -22,6 +23,18 @@ import { colors, fontFamily } from '@/theme';
 // language, reviews) are not drawn in the approved rows and are not built.
 export default function ProfileScreen() {
   const router = useRouter();
+  const confirmSignOutOthers = () =>
+    Alert.alert(t('profile.signOutOthersTitle'), t('profile.signOutOthersBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('profile.signOutOthers'),
+        style: 'destructive',
+        onPress: () =>
+          void signOutOtherDevices(supabase).then((r) =>
+            Alert.alert(r.ok ? t('profile.signOutOthersDone') : t('profile.signOutOthersFailed')),
+          ),
+      },
+    ]);
   const insets = useSafeAreaInsets();
   const { state: profileState } = useMyProfile();
   const { data, reload, setAvailable, saveTrades } = useProfileSummary();
@@ -121,6 +134,7 @@ export default function ProfileScreen() {
               <Row title={t('profile.introduction')} onPress={() => router.push('/introduction')} divider />
               <Row title={t('profile.areas')} value={areaSummary(areas)} onPress={() => router.push('/areas')} divider />
               <Row title={t('profile.help')} onPress={() => router.push('/help')} divider />
+              <Row title={t('profile.signOutOthers')} value={t('profile.signOutOthersHint')} onPress={confirmSignOutOthers} divider />
               <Row title={t('profile.signOut')} danger onPress={() => void supabase.auth.signOut()} />
             </View>
             {switchError ? <FieldError>{t('profile.errors.generic')}</FieldError> : null}

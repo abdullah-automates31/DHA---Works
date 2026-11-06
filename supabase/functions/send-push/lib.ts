@@ -144,6 +144,10 @@ const COPY: Record<string, Copy> = {
     title: "Job needs attention",
     body: (j) => `${forJob(j, "A job")} needs attention.`,
   },
+  new_sign_in: {
+    title: "New sign-in",
+    body: () => "Your account was signed in on another device. Not you? Open the app.",
+  },
   verification_submitted: {
     title: "Application submitted",
     body: () => "A new application is waiting for review.",
