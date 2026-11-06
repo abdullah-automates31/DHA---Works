@@ -23,11 +23,12 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getUser();
+  // Verifies the token locally and refreshes it when it is about to expire; only a refresh calls the auth server.
+  const { data } = await supabase.auth.getClaims();
   // Public pages: sign-in, and the invitation page (the invited person has no account yet).
   const path = request.nextUrl.pathname;
   const isPublic = path === '/signin' || path.startsWith('/signin/') || path === '/accept-invite';
-  if (!data.user && !isPublic) {
+  if (!data?.claims?.sub && !isPublic) {
     const redirect = NextResponse.redirect(new URL('/signin', request.url));
     for (const c of response.cookies.getAll()) redirect.cookies.set(c);
     return redirect;
