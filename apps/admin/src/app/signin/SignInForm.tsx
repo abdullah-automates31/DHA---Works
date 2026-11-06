@@ -30,7 +30,7 @@ export function SignInForm({ notAdmin }: { notAdmin: boolean }) {
       <button className="btn" type="submit" disabled={pending}>
         {pending ? 'Signing in...' : 'Sign in'}
       </button>
-      <p className="si-foot">No account? Ask the DHA Works administrator to invite you.</p>
+      <p className="si-foot">No account? Ask the DHA Works administrator to add you.</p>
     </form>
   );
 }

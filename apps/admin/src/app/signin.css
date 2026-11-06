@@ -32,3 +32,6 @@
 .si-code{letter-spacing:.5em;text-align:center;font-size:26px;font-weight:800}
 .si-link{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--g);cursor:pointer;text-decoration:underline}
 @media (max-width:900px){.si{flex-direction:column}.si-left{padding:32px 24px}.si-hero h1{font-size:30px}.si-right{padding:32px 20px}}
+/* Keep the fields white when the browser autofills them, as in the design. */
+.si-form .inp:-webkit-autofill{-webkit-box-shadow:0 0 0 100px #fff inset;-webkit-text-fill-color:var(--ink)}
+.si-foot{white-space:nowrap}

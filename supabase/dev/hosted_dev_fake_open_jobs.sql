@@ -1,4 +1,4 @@
--- Four FAKE open jobs for hosted DEV, to paste by hand into the Supabase dashboard SQL Editor (DEV project only).
+-- Ten FAKE open jobs for hosted DEV, to paste by hand into the Supabase dashboard SQL Editor (DEV project only).
 -- This is the one exception to "supabase/dev scripts are local only": it only adds jobs, never touches users or auth,
 -- and every job is tagged "[FAKE]" in its title so it is easy to find and remove (cleanup at the bottom).
 --
@@ -22,7 +22,13 @@ new_jobs as (
     (1::smallint, '[FAKE] Kitchen tap leaking',        'The mixer tap under the kitchen sink drips all day and the cupboard below is getting wet. Needs a new washer or cartridge.'),
     (2::smallint, '[FAKE] Fan and two lights not working', 'Bedroom ceiling fan stopped and two spotlights in the lounge do not switch on. Breaker looks fine.'),
     (3::smallint, '[FAKE] AC not cooling',             'Split AC runs but blows warm air. Probably needs a gas check and a service.'),
-    (8::smallint, '[FAKE] Hang curtains and fix door handle', 'Need three curtain rods fitted in the lounge and the main door handle tightened.')
+    (8::smallint, '[FAKE] Hang curtains and fix door handle', 'Need three curtain rods fitted in the lounge and the main door handle tightened.'),
+    (1::smallint, '[FAKE] Bathroom drain blocked',     'Water drains very slowly from the bathroom floor and the basin. Needs a drain clean.'),
+    (2::smallint, '[FAKE] Socket sparking in lounge',  'The wall socket behind the TV sparks when a plug goes in. Needs replacing.'),
+    (3::smallint, '[FAKE] Geyser not heating',         'Gas geyser lights but the water stays lukewarm. Needs a check.'),
+    (8::smallint, '[FAKE] Assemble wardrobe',          'Flat-pack wardrobe in the master bedroom needs assembling and fixing to the wall.'),
+    (1::smallint, '[FAKE] Toilet flush running',       'The flush tank keeps running after use. Probably a worn valve.'),
+    (2::smallint, '[FAKE] Install two ceiling fans',   'Two new ceiling fans to be fitted in the bedrooms, wiring points already exist.')
   ) as v(category_id, title, description)
   returning id, title
 )
