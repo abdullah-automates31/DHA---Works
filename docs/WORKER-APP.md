@@ -30,7 +30,6 @@ Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built
 | W14 Report a problem / I feel unsafe | `job/[id]/report` | `file_report`, photos to `report-media` |
 | W15 Notifications | `notifications` | `notifications`, `mark_notifications_read` |
 | W16 Profile | `(tabs)/profile` | `get_my_earnings`, `set_available_today`, `set_my_categories`, sign out |
-| Change number (Profile row; 6 Nov, not in the approved designs) | `change-number` | step 1 `updateUser({phone, channel})` sends a code to the NEW number, step 2 `verifyOtp(type phone_change)` confirms; the database trigger `sync_profile_phone` (0033) copies the number to the profile. Workers have no password: this is the account-security setting. A lost old number is not handled in the app (open question for Shariq). |
 | Introduction (Profile row; Shariq 2 Nov) | `introduction` | voice introduction (same card and storage rules as W03b) plus a written "about" (max 500), saved with `update_worker_details(p_voice_intro_path, p_about)`. The about box is also on W03b. Needs migration 0021 on the database. |
 | W17 Help and support | `help` | `app_settings` (helpline hidden until `helpline_enabled`) |
 | Report a problem (from W17) | `report` | `worker_jobs`: "Which job is this about?" lists jobs that can be reported (started, up to 7 days after completion) and opens W14 for the chosen one |

@@ -60,7 +60,6 @@ function ProfileGate() {
       <Stack.Screen name="help" />
       <Stack.Screen name="report" />
       <Stack.Screen name="introduction" />
-      <Stack.Screen name="change-number" />
     </Stack>
   );
 }

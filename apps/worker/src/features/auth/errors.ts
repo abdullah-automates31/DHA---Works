@@ -4,7 +4,6 @@ export type AuthErrorKey =
   | 'auth.errors.tooManyRequests'
   | 'auth.errors.wrongOrExpiredCode'
   | 'auth.errors.sendFailed'
-  | 'auth.errors.numberUnavailable'
   | 'auth.errors.network'
   | 'auth.errors.generic';
 
@@ -19,8 +18,6 @@ export function authErrorKey(error: ErrorLike): AuthErrorKey {
     return 'auth.errors.tooManyRequests';
   }
   if (code === 'sms_send_failed') return 'auth.errors.sendFailed';
-  // A number that belongs to another account. One neutral message, so it does not confirm who is registered.
-  if (code === 'phone_exists') return 'auth.errors.numberUnavailable';
   // Supabase returns otp_expired for both a wrong and an expired code.
   if (code === 'otp_expired' || code === 'otp_disabled' || message.includes('token has expired or is invalid')) {
     return 'auth.errors.wrongOrExpiredCode';
