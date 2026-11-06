@@ -44,7 +44,7 @@ export async function signInAction(_prev: FormState, formData: FormData): Promis
     await supabase.auth.signOut();
     return { error: GENERIC_SIGN_IN_ERROR };
   }
-  if (parseStatus(status) === 'verified') redirect('/workers');
+  if (parseStatus(status) === 'verified') redirect('/dashboard');
 
   const failure = await requestCode();
   redirect(failure ? `/signin/code?s=${encodeURIComponent('notsent')}` : '/signin/code');
@@ -66,7 +66,7 @@ export async function verifyCodeAction(_prev: FormState, formData: FormData): Pr
   if (!user.user) redirect('/signin');
   const { data, error } = await supabase.rpc('admin_verify_code', { p_code: code });
   if (error) redirect('/signin');
-  if (data === 'ok') redirect('/workers');
+  if (data === 'ok') redirect('/dashboard');
   return { error: codeMessage(data) };
 }
 

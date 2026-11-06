@@ -5,7 +5,7 @@ import { Avatar, Icon, ICONS } from './ui';
 
 type Item = { href: string; label: string; icon: keyof typeof ICONS; badge?: number; red?: boolean };
 
-export function Sidebar({ active, name, workers, residents }: { active: string; name: string | null; workers: number; residents: number }) {
+export function Sidebar({ active, name, workers, residents, reports }: { active: string; name: string | null; workers: number; residents: number; reports: number }) {
   const groups: { title?: string; items: Item[] }[] = [
     { items: [{ href: '/dashboard', label: 'Dashboard', icon: 'dashboard' }] },
     {
@@ -19,7 +19,7 @@ export function Sidebar({ active, name, workers, residents }: { active: string; 
       title: 'Operations',
       items: [
         { href: '/jobs', label: 'Jobs', icon: 'jobs' },
-        { href: '/reports', label: 'Reports', icon: 'reports' },
+        { href: '/reports', label: 'Reports', icon: 'reports', badge: reports, red: true },
         { href: '/helpline', label: 'Helpline log', icon: 'helpline' },
         { href: '/reviews', label: 'Reviews', icon: 'reviews' },
       ],

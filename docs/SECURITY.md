@@ -172,3 +172,17 @@ Staff sign in with email + password and then an emailed six-digit code (Supabase
 | Web layer | No service-role key in the app; server actions re-validate everything; proxy refreshes cookies and redirects the signed out; CSP, no framing, no referrer, no-store, nosniff, HSTS. | Built. CSP still allows inline scripts (OPEN-QUESTIONS, admin portal item 4). |
 | Weaker second factor | One mailbox can reset the password and read the code. Move to TOTP on a paid plan before production (`safety:prod-ready` blocker `ADMIN_2FA_EMAIL`). | **Open (decision)** |
 | Mail delivery | `admin-2fa` needs a mail provider and secrets; not deployed. | **Open** |
+
+## 17. Admin portal operations (8 Nov 2026, migrations 0041 and 0042)
+
+Every new admin function starts with `is_admin()` (a verified, second-factor session) and raises the same "not available" error for everyone else. pgTAP `admin_operations.test.sql` calls all 32 functions as a password-only admin, a resident and a worker and checks anon has no execute right; it also checks that the staff-only tables (`helpline_calls`, `staff_notes`) cannot be read directly.
+
+| Risk | Control |
+|---|---|
+| Staff act without a trace | Every action writes `audit_log` with the staff member and reason in the same transaction: report decisions, calls and notes, job cancel / resume / replace, cancellation decisions, review hide / show, settings, categories, phases, staff removal, messages, helpline calls. Opening a case, a person or an applicant is audited too. |
+| Identity data | Lists never return a CNIC; person pages return it masked. Documents open by 5-minute signed URL. Phone numbers appear only on the case, job and person pages (for call-back). |
+| Cancelling paid work | A job in cash collected or reviewed can never be cancelled; unpaid jobs need a written reason; both people are told. |
+| Locking everyone out | The last active category, the last active phase and the last active admin cannot be switched off or removed; nobody removes themselves. |
+| Review manipulation | Reviews are hidden, never deleted, with a reason; the average is recomputed by a trigger so a new rating cannot undo a hide. |
+| Invite abuse | /accept-invite is public but only works with the one-time token (hash stored, 7 days); every failure shows the same sentence. The invite list never shows tokens. The invite link is shown once. |
+| Search and paging | One escaped, length-capped search helper; pages are capped at 50 rows. |

@@ -59,6 +59,12 @@ export function describe(n: Notice, now: Date = new Date()): NoticeView {
     }
     case 'account_reactivated':
       return { title: t('notices.accountReactivatedTitle'), body: t('notices.accountReactivatedBody'), icon: 'check', opensJob: false };
+    case 'report_warning':
+      return { title: t('notices.reportWarningTitle'), body: t('notices.reportWarningBody', { message: text(n.payload?.message) || t('notices.updateGeneric') }), icon: 'alert', opensJob: false };
+    case 'staff_message':
+      return { title: t('notices.staffMessageTitle'), body: t('notices.staffMessageBody', { message: text(n.payload?.text) || t('notices.updateGeneric') }), icon: 'info', opensJob: false };
+    case 'cancellation_declined':
+      return { title: t('notices.cancelDeclinedTitle'), body: t('notices.cancelDeclinedBody', { job, message: text(n.payload?.message) }).trim(), icon: 'alert', opensJob: true };
     case 'new_sign_in':
       return { title: t('notices.newSignInTitle'), body: t('notices.newSignInBody'), icon: 'alert', opensJob: false };
     default:

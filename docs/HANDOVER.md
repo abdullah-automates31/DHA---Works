@@ -4,7 +4,8 @@ Read this first in a new session. It is the detailed record of where the work st
 
 ## 1. Where we are
 
-- **Admin portal (7 Nov):** phase 1 built and tested locally (see [ADMIN-PORTAL.md](ADMIN-PORTAL.md)): sign-in with emailed code, worker/resident verification screens, migrations 0037 to 0039, Edge Function `admin-2fa`. Migrations 0037 to 0039 are on DEV; the function is not deployed. Needs a mail provider and a first admin account on DEV before it can be used there.
+- **Admin portal (8 Nov): all screens A01 to A15 are built and tested locally** (migrations 0040 to 0042 are local only, NOT on hosted DEV; 1228 pgTAP assertions in 31 files; 53 portal unit tests). The note below describes phase 1.
+- **Admin portal (7 Nov):** phase 1 built and tested locally (see [ADMIN-PORTAL.md](ADMIN-PORTAL.md)): sign-in with emailed code, worker/resident verification screens, migrations 0037 to 0039, Edge Function `admin-2fa`. Migrations 0037 to 0039 and the admin-2fa function are on DEV (Brevo secrets set); no admin account yet. Needs a mail provider and a first admin account on DEV before it can be used there.
 
 - Documentation is complete and rewritten for the competing-quotes model (27 Oct), plus Shariq's 27 Oct feedback.
 - **Database and mobile API:** 31 migrations (0001 to 0017, 0020 to 0033; 0018 and 0019 are unapplied proposals in `supabase/proposals/`). **0001 to 0032 are applied to hosted DEV; 0033 (authentication hardening) once pushed (6 Nov)** (0030, protect filed material bills, a 5 Nov audit fix, pushed and verified 5 Nov) (`xiozwoocisesgmegewww`; 0013 to 0015 on 29 Oct, 0016, 0017 and 0020 on 31 Oct, 0021 to 0026 on 3 Nov, 0027 to 0029 on 5 Nov; checked with `supabase migration list --linked`, local and remote match). `supabase db lint --local` is clean apart from the intended unused `p_visit_start`/`p_visit_end` warning on `submit_quote`.

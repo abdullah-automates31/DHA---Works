@@ -152,6 +152,18 @@ const COPY: Record<string, Copy> = {
     title: "Account active again",
     body: () => "DHA staff reactivated your account.",
   },
+  report_warning: {
+    title: "Warning from DHA staff",
+    body: () => "DHA staff sent you a warning. Open the app to read it.",
+  },
+  staff_message: {
+    title: "Message from DHA staff",
+    body: () => "DHA staff sent you a message. Open the app to read it.",
+  },
+  cancellation_declined: {
+    title: "Cancellation not approved",
+    body: (j) => `The cancellation of ${forJob(j, "your job")} was not approved.`,
+  },
   new_sign_in: {
     title: "New sign-in",
     body: () => "Your account was signed in on another device. Not you? Open the app.",

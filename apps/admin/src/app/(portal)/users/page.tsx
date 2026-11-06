@@ -1,5 +1,5 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { UsersView } from '@/features/users/UsersView';
 
-export default function Page() {
-  return <ComingSoon href="/users" title="Users" text="The user list and user detail, with suspend and reactivate (designs A12 and A13), come in phase 3. The database actions already exist (migration 0039)." />;
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ role?: string; state?: string; phase?: string; q?: string; page?: string }> }) {
+  return <UsersView params={await searchParams} />;
 }

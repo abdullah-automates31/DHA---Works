@@ -1,5 +1,5 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { SettingsView } from '@/features/settings/SettingsView';
 
-export default function Page() {
-  return <ComingSoon href="/settings" title="Settings" text="Categories, areas, helpline settings and staff invites (design A14) come in phase 3. The invite functions already exist (migration 0037)." />;
+export default async function SettingsPage() {
+  return <SettingsView />;
 }

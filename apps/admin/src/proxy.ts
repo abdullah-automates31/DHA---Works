@@ -24,8 +24,10 @@ export async function proxy(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getUser();
-  const isSignIn = request.nextUrl.pathname === '/signin' || request.nextUrl.pathname.startsWith('/signin/');
-  if (!data.user && !isSignIn) {
+  // Public pages: sign-in, and the invitation page (the invited person has no account yet).
+  const path = request.nextUrl.pathname;
+  const isPublic = path === '/signin' || path.startsWith('/signin/') || path === '/accept-invite';
+  if (!data.user && !isPublic) {
     const redirect = NextResponse.redirect(new URL('/signin', request.url));
     for (const c of response.cookies.getAll()) redirect.cookies.set(c);
     return redirect;

@@ -421,6 +421,63 @@ export type Database = {
           },
         ]
       }
+      helpline_calls: {
+        Row: {
+          callback_done_at: string | null
+          called_at: string
+          caller_name: string
+          caller_phone: string
+          caller_role: string
+          id: string
+          logged_by: string
+          notes: string | null
+          outcome: string
+          reason: string
+          report_id: string | null
+        }
+        Insert: {
+          callback_done_at?: string | null
+          called_at?: string
+          caller_name: string
+          caller_phone: string
+          caller_role: string
+          id?: string
+          logged_by: string
+          notes?: string | null
+          outcome: string
+          reason: string
+          report_id?: string | null
+        }
+        Update: {
+          callback_done_at?: string | null
+          called_at?: string
+          caller_name?: string
+          caller_phone?: string
+          caller_role?: string
+          id?: string
+          logged_by?: string
+          notes?: string | null
+          outcome?: string
+          reason?: string
+          report_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "helpline_calls_logged_by_fkey"
+            columns: ["logged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "helpline_calls_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_events: {
         Row: {
           actor_id: string | null
@@ -1323,6 +1380,9 @@ export type Database = {
           comment: string | null
           completeness: number
           created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
           hire_again: boolean
           id: string
           job_id: string
@@ -1335,6 +1395,9 @@ export type Database = {
           comment?: string | null
           completeness: number
           created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           hire_again: boolean
           id?: string
           job_id: string
@@ -1347,6 +1410,9 @@ export type Database = {
           comment?: string | null
           completeness?: number
           created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           hire_again?: boolean
           id?: string
           job_id?: string
@@ -1355,6 +1421,13 @@ export type Database = {
           worker_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_job_id_fkey"
             columns: ["job_id"]
@@ -1459,6 +1532,45 @@ export type Database = {
           {
             foreignKeyName: "staff_invites_invited_by_fkey"
             columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_notes: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          note: string
+          profile_id: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          note: string
+          profile_id: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_notes_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1992,6 +2104,27 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_add_category: {
+        Args: { p_name: string; p_subtitle: string }
+        Returns: number
+      }
+      admin_add_staff_note: {
+        Args: { p_note: string; p_profile: string }
+        Returns: undefined
+      }
+      admin_cancel_job: {
+        Args: { p_job: string; p_reason: string }
+        Returns: undefined
+      }
+      admin_cancellations_list: {
+        Args: { p_limit?: number; p_offset?: number; p_status?: string }
+        Returns: Json
+      }
+      admin_dashboard: { Args: never; Returns: Json }
+      admin_decide_cancellation: {
+        Args: { p_approve: boolean; p_note: string; p_request: string }
+        Returns: undefined
+      }
       admin_decide_verification: {
         Args: {
           p_checklist: Json
@@ -2001,14 +2134,147 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_helpline_callback_done: {
+        Args: { p_call: string }
+        Returns: undefined
+      }
+      admin_helpline_list: {
+        Args: {
+          p_callback_only?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_range?: string
+          p_search?: string
+        }
+        Returns: Json
+      }
+      admin_helpline_summary: { Args: never; Returns: Json }
       admin_issue_challenge: {
         Args: { p_session: string; p_user: string }
         Returns: string
+      }
+      admin_job_detail: { Args: { p_job: string }; Returns: Json }
+      admin_job_replace_worker: {
+        Args: { p_job: string; p_reason: string }
+        Returns: undefined
+      }
+      admin_job_resume: {
+        Args: { p_job: string; p_note: string }
+        Returns: undefined
+      }
+      admin_jobs_counts: { Args: never; Returns: Json }
+      admin_jobs_list: {
+        Args: {
+          p_category?: number
+          p_limit?: number
+          p_offset?: number
+          p_phase?: number
+          p_search?: string
+          p_status?: Database["public"]["Enums"]["job_status"]
+          p_today?: boolean
+        }
+        Returns: Json
+      }
+      admin_log_call: {
+        Args: {
+          p_name: string
+          p_notes: string
+          p_outcome: string
+          p_phone: string
+          p_reason: string
+          p_report_code: string
+          p_role: string
+        }
+        Returns: string
+      }
+      admin_remove_staff: {
+        Args: { p_profile: string; p_reason: string }
+        Returns: undefined
+      }
+      admin_report_add_note: {
+        Args: { p_note: string; p_report: string }
+        Returns: undefined
+      }
+      admin_report_decide: {
+        Args: { p_choice: string; p_reason: string; p_report: string }
+        Returns: undefined
+      }
+      admin_report_detail: { Args: { p_report: string }; Returns: Json }
+      admin_report_log_call: {
+        Args: { p_called: string; p_outcome: string; p_report: string }
+        Returns: undefined
+      }
+      admin_reports_counts: { Args: never; Returns: Json }
+      admin_reports_list: {
+        Args: {
+          p_kind?: Database["public"]["Enums"]["report_kind"]
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_tab?: string
+        }
+        Returns: Json
+      }
+      admin_reviews_list: {
+        Args: {
+          p_category?: number
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_stars?: string
+          p_worker?: string
+        }
+        Returns: Json
+      }
+      admin_save_settings: {
+        Args: {
+          p_helpline_enabled: boolean
+          p_helpline_number: string
+          p_report_window_days: number
+          p_review_window_days: number
+        }
+        Returns: undefined
+      }
+      admin_send_message: {
+        Args: { p_profile: string; p_text: string }
+        Returns: undefined
       }
       admin_session_status: { Args: never; Returns: string }
       admin_set_account_status: {
         Args: { p_profile: string; p_reason: string; p_suspend: boolean }
         Returns: undefined
+      }
+      admin_set_phase_active: {
+        Args: { p_active: boolean; p_phase: number }
+        Returns: undefined
+      }
+      admin_set_review_hidden: {
+        Args: { p_hidden: boolean; p_reason: string; p_review: string }
+        Returns: undefined
+      }
+      admin_settings_get: { Args: never; Returns: Json }
+      admin_staff_list: { Args: never; Returns: Json }
+      admin_update_category: {
+        Args: {
+          p_active: boolean
+          p_id: number
+          p_name: string
+          p_subtitle: string
+        }
+        Returns: undefined
+      }
+      admin_user_detail: { Args: { p_profile: string }; Returns: Json }
+      admin_users_counts: { Args: never; Returns: Json }
+      admin_users_list: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_phase?: number
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_search?: string
+          p_state?: string
+        }
+        Returns: Json
       }
       admin_verification_counts: {
         Args: { p_role: Database["public"]["Enums"]["user_role"] }

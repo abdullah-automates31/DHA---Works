@@ -41,6 +41,11 @@ test('each worker-facing type has its own words', () => {
   assert.equal(signIn.title, 'New sign-in');
   assert.equal(signIn.opensJob, false);
   assert.match(signIn.body, /sign out other devices/i);
+  const warn = describe(n({ type: 'report_warning', jobId: null, payload: { message: 'Please be on time.' } }), now);
+  assert.equal(warn.title, 'Warning from DHA staff');
+  assert.equal(warn.body, 'Please be on time.');
+  assert.equal(describe(n({ type: 'staff_message', jobId: null, payload: { text: 'Upload a new certificate.' } }), now).body, 'Upload a new certificate.');
+  assert.match(describe(n({ type: 'cancellation_declined', payload: { title: 'Tap job', message: 'Please attend.' } }), now).body, /did not approve the cancellation of Tap job. Please attend./);
   assert.match(describe(n({ type: 'quote_not_selected' }), now).body, /The customer rejected your quote for Bathroom flush tank leak\. Find more jobs\./);
 });
 

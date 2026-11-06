@@ -1,5 +1,5 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { JobsView } from '@/features/jobs/JobsView';
 
-export default function Page() {
-  return <ComingSoon href="/jobs" title="Jobs" text="The jobs list and job detail, with staff cancel (designs A10 and A11), come in phase 2." />;
+export default async function JobsPage({ searchParams }: { searchParams: Promise<{ status?: string; phase?: string; cat?: string; today?: string; q?: string; page?: string }> }) {
+  return <JobsView params={await searchParams} />;
 }

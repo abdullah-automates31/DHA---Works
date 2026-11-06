@@ -11,7 +11,7 @@ export default async function CodePage({ searchParams }: { searchParams: Promise
   const { data: status } = await supabase.rpc('admin_session_status');
   const s = parseStatus(status);
   if (s === 'not_admin') redirect('/signin?e=notadmin');
-  if (s === 'verified') redirect('/workers');
+  if (s === 'verified') redirect('/dashboard');
   const { s: flag } = await searchParams;
   return (
     <SignInShell>

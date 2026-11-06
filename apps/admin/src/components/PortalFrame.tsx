@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { Database } from '@dha/supabase';
+import { loadReportCounts } from '@/features/reports/queries';
 import { loadCounts } from '@/features/verification/queries';
 import { Icon, ICONS } from './ui';
 import { Sidebar } from './Sidebar';
@@ -19,14 +20,15 @@ type Props = {
 
 /** The sidebar, header and content area of every portal screen. Pages call requireAdmin() first and pass the client in. */
 export async function PortalFrame({ supabase, user, active, title, sub, back, right, children }: Props) {
-  const [profile, workers, residents] = await Promise.all([
+  const [profile, workers, residents, reports] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
     loadCounts(supabase, 'worker'),
     loadCounts(supabase, 'resident'),
+    loadReportCounts(supabase),
   ]);
   return (
     <div className="app">
-      <Sidebar active={active} name={profile.data?.full_name ?? null} workers={workers.pending ?? 0} residents={residents.pending ?? 0} />
+      <Sidebar active={active} name={profile.data?.full_name ?? null} workers={workers.pending ?? 0} residents={residents.pending ?? 0} reports={reports.open} />
       <div className="main">
         <div className="top">
           {back ? (
