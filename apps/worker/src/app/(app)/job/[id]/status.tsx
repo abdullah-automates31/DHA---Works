@@ -270,8 +270,8 @@ export default function JobStatusScreen() {
             ) : null}
 
             {canRequestCancellation(kind, job.cancellationPending) ? (
-              <Pressable accessibilityRole="button" onPress={() => router.push(cancelHref(job.id))} style={styles.cancelLink}>
-                <Text style={styles.cancelLinkText}>{t('myjobs.requestCancellation')}</Text>
+              <Pressable accessibilityRole="button" onPress={() => router.push(cancelHref(job.id))} style={styles.cancelBtn}>
+                <Text style={styles.cancelBtnText}>{t('myjobs.requestCancellation')}</Text>
               </Pressable>
             ) : null}
 
@@ -322,8 +322,8 @@ const styles = StyleSheet.create({
   reportText: { fontFamily: fontFamily.extrabold, fontSize: 13 },
   withdraw: { alignSelf: 'flex-start', height: 44, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginTop: 6 },
   withdrawText: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.greenDark },
-  cancelLink: { alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 12 },
-  cancelLinkText: { fontFamily: fontFamily.bold, fontSize: 13, color: colors.muted, textDecorationLine: 'underline' },
+  cancelBtn: { height: 48, borderRadius: 14, borderWidth: 1.5, borderColor: colors.chip.declined.fg, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  cancelBtnText: { fontFamily: fontFamily.extrabold, fontSize: 14, color: colors.chip.declined.fg },
   message: { margin: 20, backgroundColor: colors.mint, borderRadius: 18, padding: 16, gap: 10 },
   messageTitle: { fontFamily: fontFamily.extrabold, fontSize: 16, color: colors.greenDark },
   messageBody: { fontFamily: fontFamily.semibold, fontSize: 13, lineHeight: 19, color: colors.muted },
