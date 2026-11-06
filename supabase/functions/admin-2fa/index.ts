@@ -1,9 +1,10 @@
-// Entry point: wires the handler to Supabase (service role, server-side only) and a mail provider.
-// Secrets (set with `supabase secrets set`, never committed): ADMIN_MAIL_API_KEY, ADMIN_MAIL_FROM.
-// The provider below is Resend's HTTP API; the choice is still open (docs/OPEN-QUESTIONS.md), swap sendMail to change it.
+// Entry point: wires the handler to Supabase (service role, server-side only) and Brevo for the email.
+// Secrets (set with `supabase secrets set`, never committed): ADMIN_MAIL_API_KEY (Brevo v3 API key),
+// ADMIN_MAIL_FROM (a sender verified in Brevo). Local only: ADMIN_MAIL_MODE=dev-log (see devMailAllowed).
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected by Supabase.
 import { createClient } from "@supabase/supabase-js";
 import { devMailAllowed, handle, type IssueResult } from "./handler.ts";
+import { sendViaBrevo } from "./mail.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -24,21 +25,17 @@ Deno.serve((req) =>
       const { data, error } = await db.auth.admin.getUserById(userId);
       return error ? null : (data.user?.email ?? null);
     },
-    async sendMail(to, subject, text) {
+    sendMail(to, subject, text) {
       if (devMailAllowed(Deno.env.get("ADMIN_MAIL_MODE"), Deno.env.get("SUPABASE_URL"))) {
         console.log(`[admin-2fa dev] to=${to} ${text.split("\n")[0]}`); // local only, see devMailAllowed
-        return true;
+        return Promise.resolve(true);
       }
-      const key = Deno.env.get("ADMIN_MAIL_API_KEY");
-      const from = Deno.env.get("ADMIN_MAIL_FROM");
-      if (!key || !from) return false; // fail closed: no provider configured, no code goes out
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-        body: JSON.stringify({ from, to: [to], subject, text }),
-        signal: AbortSignal.timeout(10_000),
-      });
-      return res.ok;
+      return sendViaBrevo(
+        { fetch, apiKey: Deno.env.get("ADMIN_MAIL_API_KEY"), from: Deno.env.get("ADMIN_MAIL_FROM") },
+        to,
+        subject,
+        text,
+      );
     },
   })
 );

@@ -90,7 +90,7 @@ Built in the worker app and the shared database (migrations 0024 to 0026): the m
 
 ## Admin portal (7 Nov 2026, docs/ADMIN-PORTAL.md)
 
-1. **Email provider for the admin code (needed before the portal can be used on DEV).** The `admin-2fa` function sends the code through a mail API (Resend is wired as the default; any provider works by changing one function). Needs: an account, a verified sending domain or address, `ADMIN_MAIL_API_KEY` and `ADMIN_MAIL_FROM` as function secrets. Supabase's built-in email (2 per hour) cannot carry it.
+1. **Email provider for the admin code (needed before the portal can be used on DEV).** The `admin-2fa` function sends the code through a mail API (Brevo is wired (supabase/functions/admin-2fa/mail.ts, v3 transactional API); another provider means changing that one file). Needs: a Brevo account, a sender verified in Brevo (a verified domain with SPF and DKIM is better for deliverability), a v3 API key as `ADMIN_MAIL_API_KEY` and the sender as `ADMIN_MAIL_FROM` (function secrets). Supabase's built-in email (2 per hour) cannot carry it.
 2. **Authenticator-app 2FA (TOTP) needs a paid Supabase plan.** The emailed code is the interim second factor the user chose (7 Nov). It is weaker: one mailbox can reset the password and read the code. `npm run safety:prod-ready` fails with `ADMIN_2FA_EMAIL` until `[auth.mfa.totp]` is enabled. Decide before production.
 3. **First admin account on hosted DEV.** Nothing creates the first admin; it must be inserted by SQL by the user (email + password in Authentication > Users, then a `profiles` row with `role = 'admin'`). Shariq's account is the likely first one.
 4. **Content-Security-Policy still allows inline scripts** (Next.js bootstrap). A nonce-based policy is a later hardening step.
