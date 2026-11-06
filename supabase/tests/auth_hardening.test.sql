@@ -51,7 +51,7 @@ select tests.act('00000000-0000-0000-0000-0000000000b2');
 select throws_ok($$ select public.register_profile('worker', 'Copy', '+923000000000', 'male', '1990-01-01', '42101-1234567-1') $$,
                  '23505', null, 'a CNIC already used by another worker is refused (unique, not a race)');
 select tests.back();
-select throws_ok($$ insert into public.profiles (id, role, full_name, phone) values ('00000000-0000-0000-0000-0000000000b2', 'worker', 'Dup', '+923001110099') $$,
+select throws_ok($$ insert into public.profiles (id, role, full_name, phone) values ('00000000-0000-0000-0000-0000000000b2', 'worker', 'Dup', '+923001110001') $$,
                  '23505', null, 'two profiles cannot share a phone number');
 
 -- ---------------------------------------------------------------- strict references

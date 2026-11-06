@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/AuthForm';
@@ -20,7 +20,7 @@ import { colors, fontFamily } from '@/theme';
 export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data, reload, markRead, loadMore, loadingMore, moreFailed } = useNotifications();
+  const { data, reload, markRead, clearAll, loadMore, loadingMore, moreFailed } = useNotifications();
   const [pulling, setPulling] = useState(false);
   const pull = useCallback(async () => {
     setPulling(true);
@@ -34,6 +34,21 @@ export default function NotificationsScreen() {
   const notices = data.status === 'ready' ? data.notices : [];
   const unread = unreadIds(notices);
   const groups = groupNotices(notices, now);
+
+  function confirmClear() {
+    Alert.alert(t('notices.clearConfirmTitle'), t('notices.clearConfirmBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('notices.clearAll'),
+        style: 'destructive',
+        onPress: () => {
+          void clearAll().then((ok) => {
+            if (!ok) Alert.alert(t('notices.clearFailed'));
+          });
+        },
+      },
+    ]);
+  }
 
   function open(n: Notice) {
     if (n.readAt === null) void markRead([n.id]);
@@ -51,6 +66,13 @@ export default function NotificationsScreen() {
           <Text style={[styles.markAllText, unread.length === 0 && { color: colors.muted }]}>{unread.length === 0 ? t('notices.allRead') : t('notices.markAll')}</Text>
         </Pressable>
       </View>
+      {notices.length > 0 ? (
+        <View style={styles.clearRow}>
+          <Pressable accessibilityRole="button" onPress={confirmClear} style={styles.markAll}>
+            <Text style={[styles.markAllText, { color: colors.chip.declined.fg }]}>{t('notices.clearAll')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {data.status === 'loading' ? (
         <SkeletonGroup style={{ paddingHorizontal: 20 }}>
@@ -137,6 +159,7 @@ const styles = StyleSheet.create({
   topTitle: { flex: 1, fontFamily: fontFamily.extrabold, fontSize: 20, color: colors.ink },
   markAll: { minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' },
   markAllText: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.green },
+  clearRow: { alignItems: 'flex-end', paddingHorizontal: 12 },
   content: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 32, gap: 16 },
   groupLabel: { fontFamily: fontFamily.extrabold, fontSize: 13, color: colors.muted },
   card: { backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 14 },

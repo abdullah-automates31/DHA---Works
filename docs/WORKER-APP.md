@@ -28,7 +28,7 @@ Status at **5 Nov 2026**: all worker screens W01 to W08 and W10 to W18 are built
 | W13 Record cash | `job/[id]/cash` | `record_cash_worker` |
 | W18 Request cancellation | `job/[id]/cancel` | `request_cancellation`, `withdraw_cancellation_request` |
 | W14 Report a problem / I feel unsafe | `job/[id]/report` | `file_report`, photos to `report-media` |
-| W15 Notifications | `notifications` | `notifications`, `mark_notifications_read` |
+| W15 Notifications | `notifications` | `notifications`, `mark_notifications_read`, `clear_my_notifications` (Clear all, with a confirmation; migration 0035) |
 | W16 Profile | `(tabs)/profile` | `get_my_earnings`, `set_available_today`, `set_my_categories`, sign out |
 | Introduction (Profile row; Shariq 2 Nov) | `introduction` | voice introduction (same card and storage rules as W03b) plus a written "about" (max 500), saved with `update_worker_details(p_voice_intro_path, p_about)`. The about box is also on W03b. Needs migration 0021 on the database. |
 | W17 Help and support | `help` | `app_settings` (helpline hidden until `helpline_enabled`) |

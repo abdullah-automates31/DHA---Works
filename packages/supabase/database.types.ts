@@ -1940,6 +1940,7 @@ export type Database = {
         Args: { p_role: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
       }
+      clear_my_notifications: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       is_approved_worker: { Args: { p_id: string }; Returns: boolean }
       is_filed_bill: { Args: { p_name: string }; Returns: boolean }

@@ -69,5 +69,13 @@ export function useNotifications() {
     [mutate],
   );
 
-  return { data: paged.data, reload, markRead, loadMore: paged.loadMore, loadingMore: paged.loadingMore, moreFailed: paged.moreFailed };
+  /** Deletes all of the user's notifications, then empties the list. Returns false if the server refused. */
+  const clearAll = useCallback(async () => {
+    const { error } = await supabase.rpc('clear_my_notifications');
+    if (error) return false;
+    mutate(() => ({ notices: [], hasMore: false, consumed: 0 }));
+    return true;
+  }, [mutate]);
+
+  return { data: paged.data, reload, markRead, clearAll, loadMore: paged.loadMore, loadingMore: paged.loadingMore, moreFailed: paged.moreFailed };
 }
