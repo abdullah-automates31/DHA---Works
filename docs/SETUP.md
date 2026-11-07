@@ -55,7 +55,7 @@ pnpm dev                 # runs apps through Turborepo
 
 ## Environments and branches (set 28 Oct)
 
-GitHub: `https://github.com/abdullah-automates31/DHA---Works.git`
+GitHub: `https://github.com/abdullah-automates31/DHA-Works-Platform.git`
 
 | Environment | Git branch | Supabase project | Status |
 | --- | --- | --- | --- |
